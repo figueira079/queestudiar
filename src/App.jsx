@@ -242,7 +242,7 @@ function RegionPanel({ regionData }) {
       {regionData.map((r, i) => (
         <div key={i} className="req-panel">
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 12 }}>
-            <div><div style={{ fontWeight: 700, fontSize: 14 }}>{r.region}</div><div style={{ fontSize: 11, color: "var(--muted)", fontFamily: "var(--mono)" }}>{r.program_type === "fp_superior" ? "FP Grado Superior" : "Grado Universitario"}</div></div>
+            <div><div style={{ fontWeight: 700, fontSize: 14 }}>{r.region}</div><div style={{ fontSize: 11, color: "var(--muted)", fontFamily: "var(--mono)" }}>{{ "fp_superior": "FP Grado Superior", "university_bachelor": "Grado Universitario", "university_master": "Máster" }[r.program_type] || r.program_type}</div></div>
             <div style={{ textAlign: "right" }}><div style={{ fontSize: 20, fontWeight: 800, color: r.public_cost_eur === 0 ? "#81C784" : "var(--accent)" }}>{r.public_cost_eur === 0 ? "Gratuito" : `${r.public_cost_eur}€`}</div><div style={{ fontSize: 10, color: "var(--muted)", fontFamily: "var(--mono)" }}>público / año</div></div>
           </div>
           {r.private_cost_range && <div style={{ marginBottom: 8 }}><span className="req-pill">Privado: {r.private_cost_range}€/año</span>{r.non_eu_surcharge && <span className="req-pill" style={{ color: "#FFB74D" }}>⚠ Recargo no-UE</span>}</div>}
@@ -279,12 +279,33 @@ function StudentDetail({ student, onStatusChange, onNotesSave }) {
 
   async function loadRequirements() {
     try {
-      const ptype = student.education_level === "bachillerato" ? "university_bachelor" : "fp_superior";
+      const ptypeMap = {
+        "bachillerato": "university_bachelor",
+        "fp_superior": "fp_superior",
+        "grado": "university_master",
+        "master": "university_master",
+      };
+      const ptype = ptypeMap[student.education_level] || "university_bachelor";
       const origin = student.student_origin || "extracomunitario";
       const reqs = await query("admission_requirements", "*", { program_type: ptype, student_origin: origin });
       if (Array.isArray(reqs) && reqs.length > 0) setRequirements(reqs[0]);
-      const allRegions = await query("admission_by_region", "*", { program_type: ptype });
-      if (Array.isArray(allRegions)) setRegionData(allRegions.slice(0, 4));
+
+      // Filtrar por ciudades del estudiante si las tiene
+      const studentCities = student.preferred_cities || [];
+      let allRegions = [];
+      if (studentCities.length > 0) {
+        // Buscar regiones que coincidan con las ciudades del estudiante
+        const cityParams = studentCities.map(c => encodeURIComponent(c)).join(",");
+        const url = `${SUPABASE_URL}/rest/v1/admission_by_region?select=*&program_type=eq.${ptype}&region=in.(${cityParams})`;
+        const res = await fetch(url, { headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` } });
+        allRegions = await res.json();
+      }
+      // Si no hay resultados por ciudad, mostrar las primeras 4
+      if (!Array.isArray(allRegions) || allRegions.length === 0) {
+        const fallback = await query("admission_by_region", "*", { program_type: ptype });
+        allRegions = Array.isArray(fallback) ? fallback.slice(0, 4) : [];
+      }
+      setRegionData(allRegions);
     } catch {}
   }
 
@@ -337,7 +358,7 @@ function StudentDetail({ student, onStatusChange, onNotesSave }) {
           );})}</div>}
         </div>
       )}
-      {tab === "requisitos" && <div className="section"><div style={{ fontSize: 11, fontFamily: "var(--mono)", color: "var(--muted)", marginBottom: 16 }}>Perfil: <span style={{ color: "var(--accent2)" }}>{getOriginLabel(student.student_origin || "extracomunitario")}</span>{" · "}<span style={{ color: "var(--accent2)" }}>{student.education_level === "bachillerato" ? "Grado universitario" : "FP Grado Superior"}</span></div><RequirementsPanel req={requirements} /></div>}
+      {tab === "requisitos" && <div className="section"><div style={{ fontSize: 11, fontFamily: "var(--mono)", color: "var(--muted)", marginBottom: 16 }}>Perfil: <span style={{ color: "var(--accent2)" }}>{getOriginLabel(student.student_origin || "extracomunitario")}</span>{" · "}<span style={{ color: "var(--accent2)" }}>{{ "bachillerato": "Grado Universitario", "fp_superior": "FP Grado Superior", "grado": "Máster", "master": "Máster" }[student.education_level] || "Programa"}</span></div><RequirementsPanel req={requirements} /></div>}
       {tab === "region" && <div className="section"><RegionPanel regionData={regionData} /></div>}
       {tab === "notas" && <div className="section"><div className="section-title">Notas del expediente</div><textarea className="notes-area" value={notes} onChange={e => setNotes(e.target.value)} placeholder="Documentos recibidos, comunicaciones, estado de homologación..." /><button className="save-btn" onClick={saveNotes} disabled={saving}>{saving ? "Guardando..." : saved ? "✓ Guardado" : "Guardar notas"}</button></div>}
     </div>

@@ -289,23 +289,33 @@ function StudentDetail({ student, onStatusChange, onNotesSave }) {
       const origin = student.student_origin || "extracomunitario";
       const reqs = await query("admission_requirements", "*", { program_type: ptype, student_origin: origin });
       if (Array.isArray(reqs) && reqs.length > 0) setRequirements(reqs[0]);
-
-      // Filtrar por ciudades del estudiante si las tiene
-      const studentCities = student.preferred_cities || [];
-      let allRegions = [];
-      if (studentCities.length > 0) {
-        // Buscar regiones que coincidan con las ciudades del estudiante
-        const cityParams = studentCities.map(c => encodeURIComponent(c)).join(",");
-        const url = `${SUPABASE_URL}/rest/v1/admission_by_region?select=*&program_type=eq.${ptype}&region=in.(${cityParams})`;
+      // Mapear ciudades a comunidades autónomas para admission_by_region
+      const cityToRegion = {
+        "Madrid": "Madrid", "Barcelona": "Cataluña", "Valencia": "Comunidad Valenciana",
+        "Sevilla": "Andalucía", "Málaga": "Andalucía", "Granada": "Andalucía",
+        "Bilbao": "País Vasco", "San Sebastián": "País Vasco", "Vitoria": "País Vasco",
+        "Zaragoza": "Aragón", "Pamplona": "Navarra", "Santander": "Cantabria",
+        "A Coruña": "Galicia", "Santiago de Compostela": "Galicia", "Vigo": "Galicia",
+        "Murcia": "Murcia", "Alicante": "Comunidad Valenciana", "Castellón": "Comunidad Valenciana",
+        "Valladolid": "Castilla y León", "Salamanca": "Castilla y León",
+        "Toledo": "Castilla-La Mancha", "Albacete": "Castilla-La Mancha",
+        "Palma de Mallorca": "Islas Baleares", "Las Palmas": "Canarias", "Santa Cruz de Tenerife": "Canarias",
+        "Oviedo": "Asturias", "Logroño": "La Rioja", "Mérida": "Extremadura",
+      };
+      const studentCities = Array.isArray(student.preferred_cities) ? student.preferred_cities : [];
+      const regions = [...new Set(studentCities.map(c => cityToRegion[c]).filter(Boolean))];
+      let regionResults = [];
+      if (regions.length > 0) {
+        const regionParam = regions.map(r => encodeURIComponent(r)).join(",");
+        const url = `${SUPABASE_URL}/rest/v1/admission_by_region?select=*&program_type=eq.${ptype}&region=in.(${regionParam})`;
         const res = await fetch(url, { headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` } });
-        allRegions = await res.json();
+        regionResults = await res.json();
       }
-      // Si no hay resultados por ciudad, mostrar las primeras 4
-      if (!Array.isArray(allRegions) || allRegions.length === 0) {
+      if (!Array.isArray(regionResults) || regionResults.length === 0) {
         const fallback = await query("admission_by_region", "*", { program_type: ptype });
-        allRegions = Array.isArray(fallback) ? fallback.slice(0, 4) : [];
+        regionResults = Array.isArray(fallback) ? fallback.slice(0, 4) : [];
       }
-      setRegionData(allRegions);
+      setRegionData(regionResults);
     } catch {}
   }
 

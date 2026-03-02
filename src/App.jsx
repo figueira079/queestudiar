@@ -242,7 +242,7 @@ function RegionPanel({ regionData }) {
       {regionData.map((r, i) => (
         <div key={i} className="req-panel">
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 12 }}>
-            <div><div style={{ fontWeight: 700, fontSize: 14 }}>{r.region}</div><div style={{ fontSize: 11, color: "var(--muted)", fontFamily: "var(--mono)" }}>{{ "fp_superior": "FP Grado Superior", "grado": "Grado Universitario", "master": "Máster" }[r.program_type] || r.program_type}</div></div>
+            <div><div style={{ fontWeight: 700, fontSize: 14 }}>{r.region}</div><div style={{ fontSize: 11, color: "var(--muted)", fontFamily: "var(--mono)" }}>{{ "fp_superior": "FP Grado Superior", "university_bachelor": "Grado Universitario", "university_master": "Máster" }[r.program_type] || r.program_type}</div></div>
             <div style={{ textAlign: "right" }}><div style={{ fontSize: 20, fontWeight: 800, color: r.public_cost_eur === 0 ? "#81C784" : "var(--accent)" }}>{r.public_cost_eur === 0 ? "Gratuito" : `${r.public_cost_eur}€`}</div><div style={{ fontSize: 10, color: "var(--muted)", fontFamily: "var(--mono)" }}>público / año</div></div>
           </div>
           {r.private_cost_range && <div style={{ marginBottom: 8 }}><span className="req-pill">Privado: {r.private_cost_range}€/año</span>{r.non_eu_surcharge && <span className="req-pill" style={{ color: "#FFB74D" }}>⚠ Recargo no-UE</span>}</div>}
@@ -279,13 +279,14 @@ function StudentDetail({ student, onStatusChange, onNotesSave }) {
 
   async function loadRequirements() {
     try {
+      // university_bachelor/university_master/fp_superior para requirements y region
       const ptypeMap = {
-        "bachillerato": "grado",
+        "bachillerato": "university_bachelor",
         "fp_superior": "fp_superior",
-        "grado": "master",
-        "master": "master",
+        "grado": "university_master",
+        "master": "university_master",
       };
-      const ptype = ptypeMap[student.education_level] || "grado";
+      const ptype = ptypeMap[student.education_level] || "university_bachelor";
       const origin = student.student_origin || "extracomunitario";
       const reqs = await query("admission_requirements", "*", { program_type: ptype, student_origin: origin });
       if (Array.isArray(reqs) && reqs.length > 0) setRequirements(reqs[0]);

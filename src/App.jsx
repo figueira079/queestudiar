@@ -271,7 +271,7 @@ function StudentDetail({ student, onStatusChange, onNotesSave }) {
   async function loadMatches() {
     setLoadingMatches(true);
     try {
-      const data = await query("matches", "*, programas(nombre, institution_name, city, tipo_programa, nivel, area_conocimiento, url_solicitud, web_url)", { student_id: student.id });
+      const data = await query("matches", "*, programas(nombre, ciudad, tipo, familia_area, url_solicitud, url_detalle, modalidad, idioma)", { student_id: student.id });
       setMatches(Array.isArray(data) ? data : []);
     } catch { setMatches([]); }
     setLoadingMatches(false);
@@ -357,11 +357,11 @@ function StudentDetail({ student, onStatusChange, onNotesSave }) {
           : <div className="program-grid">{matches.map((m, i) => { const p = m.programas || {}; return (
             <div key={i} className="program-card">
               <div className="program-name">{p.nombre || "Programa sin nombre"}</div>
-              <div className="program-inst">{p.institution_name || "—"} · {p.city || "—"}</div>
-              <div className="program-tags">{p.nivel && <span className="tag highlight">{p.nivel}</span>}{p.tipo_programa && <span className="tag">{p.tipo_programa}</span>}{p.area_conocimiento && <span className="tag">{p.area_conocimiento}</span>}</div>
+              <div className="program-inst">{p.ciudad || "—"}</div>
+              <div className="program-tags">{p.tipo && <span className="tag highlight">{p.tipo}</span>}{p.modalidad && <span className="tag">{p.modalidad}</span>}{p.familia_area && <span className="tag">{p.familia_area}</span>}{p.idioma && <span className="tag">{p.idioma}</span>}</div>
               <div className="program-footer">
                 {p.url_solicitud && <a href={p.url_solicitud} target="_blank" rel="noreferrer" className="url-btn">↗ URL Solicitud</a>}
-                {p.web_url && <a href={p.web_url} target="_blank" rel="noreferrer" className="url-btn" style={{ borderColor: "var(--accent2)", color: "var(--accent2)" }}>↗ Web universidad</a>}
+                {p.url_detalle && <a href={p.url_detalle} target="_blank" rel="noreferrer" className="url-btn" style={{ borderColor: "var(--accent2)", color: "var(--accent2)" }}>↗ Ver programa</a>}
               </div>
             </div>
           );})}</div>}

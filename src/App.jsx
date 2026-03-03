@@ -271,7 +271,7 @@ function StudentDetail({ student, onStatusChange, onNotesSave }) {
   async function loadMatches() {
     setLoadingMatches(true);
     try {
-      const data = await query("matches", "*, programs(nombre, institution_name, city, tipo_programa, nivel, area_conocimiento, url_solicitud, web_url)", { student_id: student.id });
+      const data = await query("matches", "*, programas(nombre, institution_name, city, tipo_programa, nivel, area_conocimiento, url_solicitud, web_url)", { student_id: student.id });
       setMatches(Array.isArray(data) ? data : []);
     } catch { setMatches([]); }
     setLoadingMatches(false);
@@ -279,7 +279,6 @@ function StudentDetail({ student, onStatusChange, onNotesSave }) {
 
   async function loadRequirements() {
     try {
-      // university_bachelor/university_master/fp_superior para requirements y region
       const ptypeMap = {
         "bachillerato": "university_bachelor",
         "fp_superior": "fp_superior",
@@ -290,7 +289,6 @@ function StudentDetail({ student, onStatusChange, onNotesSave }) {
       const origin = student.student_origin || "extracomunitario";
       const reqs = await query("admission_requirements", "*", { program_type: ptype, student_origin: origin });
       if (Array.isArray(reqs) && reqs.length > 0) setRequirements(reqs[0]);
-      // Mapear ciudades a comunidades autónomas
       const cityToRegion = {
         "Madrid": "Madrid", "Barcelona": "Cataluña", "Valencia": "Comunidad Valenciana",
         "Sevilla": "Andalucía", "Málaga": "Andalucía", "Granada": "Andalucía",
@@ -356,7 +354,7 @@ function StudentDetail({ student, onStatusChange, onNotesSave }) {
         <div className="section">
           {loadingMatches ? <div className="loading"><div className="spinner" /> Cargando programas...</div>
           : matches.length === 0 ? <div style={{ color: "var(--muted)", fontSize: 13, fontFamily: "var(--mono)", padding: "20px 0" }}>Sin matches aún. N8N los guardará cuando el estudiante complete el formulario.</div>
-          : <div className="program-grid">{matches.map((m, i) => { const p = m.programs || {}; return (
+          : <div className="program-grid">{matches.map((m, i) => { const p = m.programas || {}; return (
             <div key={i} className="program-card">
               <div className="program-name">{p.nombre || "Programa sin nombre"}</div>
               <div className="program-inst">{p.institution_name || "—"} · {p.city || "—"}</div>

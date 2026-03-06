@@ -235,15 +235,28 @@ function RequirementsPanel({ req }) {
   );
 }
 
-function RegionPanel({ regionData }) {
+function RegionPanel({ regionData, studentOrigin }) {
   if (!regionData || regionData.length === 0) return <div style={{ color: "var(--muted)", fontSize: 12, fontFamily: "var(--mono)" }}>Sin datos de costes para las regiones seleccionadas.</div>;
+  const isNonEU = studentOrigin === "extracomunitario";
+  const ptypeLabel = { "fp_superior": "FP Grado Superior", "university_bachelor": "Grado Universitario", "university_master": "Máster" };
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
       {regionData.map((r, i) => (
         <div key={i} className="req-panel">
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 12 }}>
-            <div><div style={{ fontWeight: 700, fontSize: 14 }}>{r.region}</div><div style={{ fontSize: 11, color: "var(--muted)", fontFamily: "var(--mono)" }}>{{ "fp_superior": "FP Grado Superior", "university_bachelor": "Grado Universitario", "university_master": "Máster" }[r.program_type] || r.program_type}</div></div>
-            <div style={{ textAlign: "right" }}><div style={{ fontSize: 20, fontWeight: 800, color: r.public_cost_eur === 0 ? "#81C784" : "var(--accent)" }}>{r.public_cost_eur === 0 ? "Gratuito" : `${r.public_cost_eur}€`}</div><div style={{ fontSize: 10, color: "var(--muted)", fontFamily: "var(--mono)" }}>público / año</div></div>
+            <div>
+              <div style={{ fontWeight: 700, fontSize: 14 }}>{r.region}</div>
+              <div style={{ fontSize: 11, color: "var(--muted)", fontFamily: "var(--mono)" }}>{ptypeLabel[r.program_type] || r.program_type}</div>
+            </div>
+            <div style={{ textAlign: "right" }}>
+              <div style={{ fontSize: 20, fontWeight: 800, color: r.public_cost_eur === 0 ? "#81C784" : "var(--accent)" }}>
+                {r.public_cost_eur === 0 ? "Gratuito" : `${r.public_cost_eur?.toLocaleString("es-ES")}€`}
+              </div>
+              <div style={{ fontSize: 10, color: "var(--muted)", fontFamily: "var(--mono)" }}>público UE / año</div>
+              {isNonEU && r.non_eu_surcharge && (
+                <div style={{ fontSize: 11, color: "#FFB74D", fontFamily: "var(--mono)", marginTop: 2 }}>⚠ +recargo no-UE</div>
+              )}
+            </div>
           </div>
           {r.private_cost_range && <div style={{ marginBottom: 8 }}><span className="req-pill">Privado: {r.private_cost_range}€/año</span>{r.non_eu_surcharge && <span className="req-pill" style={{ color: "#FFB74D" }}>⚠ Recargo no-UE</span>}</div>}
           {r.key_dates?.length > 0 && <div className="dates-list" style={{ marginBottom: 8 }}>{r.key_dates.map((d, j) => <div key={j} className="date-item"><span className="date-hito">{d.hito}</span><span className="date-mes">{d.fecha || d.mes}</span></div>)}</div>}
@@ -264,14 +277,15 @@ function StudentDetail({ student, onStatusChange, onNotesSave }) {
   const [requirements, setRequirements] = useState(null);
   const [regionData, setRegionData] = useState([]);
   const [loadingMatches, setLoadingMatches] = useState(true);
+  const [filterArea, setFilterArea] = useState("all");
 
-  useEffect(() => { setNotes(student.notes || ""); setTab("matches"); }, [student.id]);
+  useEffect(() => { setNotes(student.notes || ""); setTab("matches"); setFilterArea("all"); }, [student.id]);
   useEffect(() => { loadMatches(); loadRequirements(); }, [student.id]);
 
   async function loadMatches() {
     setLoadingMatches(true);
     try {
-      const data = await query("matches", "*, programas(nombre, ciudad, tipo, familia_area, url_solicitud, url_detalle, modalidad, idioma)", { student_id: student.id });
+      const data = await query("matches", "*, programas(nombre, ciudad, tipo, familia_area, url_solicitud, url_detalle, modalidad, idioma, precio_anual_eur, precio_extracomunitario_eur)", { student_id: student.id });
       setMatches(Array.isArray(data) ? data : []);
     } catch { setMatches([]); }
     setLoadingMatches(false);
@@ -280,12 +294,18 @@ function StudentDetail({ student, onStatusChange, onNotesSave }) {
   async function loadRequirements() {
     try {
       const ptypeMap = {
+        "grado": "university_bachelor",
+        "fp_superior": "fp_superior",
+        "master": "university_master",
+        "doctorado": "university_master",
+      };
+      const ptypeMapLegacy = {
         "bachillerato": "university_bachelor",
         "fp_superior": "fp_superior",
         "grado": "university_master",
         "master": "university_master",
       };
-      const ptype = ptypeMap[student.education_level] || "university_bachelor";
+      const ptype = ptypeMap[student.desired_program_type] || ptypeMapLegacy[student.education_level] || "university_bachelor";
       const origin = student.student_origin || "extracomunitario";
       const reqs = await query("admission_requirements", "*", { program_type: ptype, student_origin: origin });
       if (Array.isArray(reqs) && reqs.length > 0) setRequirements(reqs[0]);
@@ -341,6 +361,8 @@ function StudentDetail({ student, onStatusChange, onNotesSave }) {
           <select className="status-select" value={student.status || "nuevo"} onChange={e => onStatusChange(student.id, e.target.value)} style={{ color: sc.color, borderColor: sc.color, background: sc.bg }}>
             {Object.entries(STATUS_CONFIG).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
           </select>
+          {(student.desired_program_type || student.education_level) && <div style={{ fontSize: 11, fontFamily: "var(--mono)", color: "var(--muted)" }}>Programa deseado: <span style={{ color: "var(--text)" }}>{student.desired_program_type || student.education_level}</span></div>}
+          {student.base_degree && <div style={{ fontSize: 11, fontFamily: "var(--mono)", color: "var(--muted)" }}>Titulación base: <span style={{ color: "var(--text)" }}>{student.base_degree}</span></div>}
           {student.preferred_cities && <div style={{ fontSize: 11, fontFamily: "var(--mono)", color: "var(--muted)" }}>Ciudades: <span style={{ color: "var(--text)" }}>{Array.isArray(student.preferred_cities) ? student.preferred_cities.join(", ") : student.preferred_cities}</span></div>}
           {student.study_area && <div style={{ fontSize: 11, fontFamily: "var(--mono)", color: "var(--muted)" }}>Área: <span style={{ color: "var(--text)" }}>{student.study_area}</span></div>}
         </div>
@@ -354,21 +376,66 @@ function StudentDetail({ student, onStatusChange, onNotesSave }) {
         <div className="section">
           {loadingMatches ? <div className="loading"><div className="spinner" /> Cargando programas...</div>
           : matches.length === 0 ? <div style={{ color: "var(--muted)", fontSize: 13, fontFamily: "var(--mono)", padding: "20px 0" }}>Sin matches aún. N8N los guardará cuando el estudiante complete el formulario.</div>
-          : <div className="program-grid">{matches.map((m, i) => { const p = m.programas || {}; return (
-            <div key={i} className="program-card">
-              <div className="program-name">{p.nombre || "Programa sin nombre"}</div>
-              <div className="program-inst">{p.ciudad || "—"}</div>
-              <div className="program-tags">{p.tipo && <span className="tag highlight">{p.tipo}</span>}{p.modalidad && <span className="tag">{p.modalidad}</span>}{p.familia_area && <span className="tag">{p.familia_area}</span>}{p.idioma && <span className="tag">{p.idioma}</span>}</div>
-              <div className="program-footer">
-                {p.url_solicitud && <a href={p.url_solicitud} target="_blank" rel="noreferrer" className="url-btn">↗ URL Solicitud</a>}
-                {p.url_detalle && <a href={p.url_detalle} target="_blank" rel="noreferrer" className="url-btn" style={{ borderColor: "var(--accent2)", color: "var(--accent2)" }}>↗ Ver programa</a>}
-              </div>
-            </div>
-          );})}</div>}
+          : (() => {
+              const areas = ["all", ...Array.from(new Set(matches.map(m => m.programas?.familia_area).filter(Boolean))).sort()];
+              const filtered = filterArea === "all" ? matches : matches.filter(m => m.programas?.familia_area === filterArea);
+              return (
+                <>
+                  {areas.length > 2 && (
+                    <div style={{ marginBottom: 16, display: "flex", gap: 6, flexWrap: "wrap" }}>
+                      {areas.map(a => (
+                        <div key={a} className={`filter-chip ${filterArea === a ? "active" : ""}`} onClick={() => setFilterArea(a)}>
+                          {a === "all" ? `Todas las áreas (${matches.length})` : `${a} (${matches.filter(m => m.programas?.familia_area === a).length})`}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  <div className="program-grid">{filtered.map((m, i) => { const p = m.programas || {};
+                    const isNonEU = student.student_origin === "extracomunitario";
+                    const price = isNonEU && p.precio_extracomunitario_eur != null ? p.precio_extracomunitario_eur : p.precio_anual_eur;
+                    const priceLabel = isNonEU && p.precio_extracomunitario_eur !== p.precio_anual_eur ? "no-UE" : "UE/residente";
+                    return (
+                    <div key={i} className="program-card">
+                      <div className="program-name">{p.nombre || "Programa sin nombre"}</div>
+                      <div className="program-inst">{p.ciudad || "—"}</div>
+                      <div className="program-tags">
+                        {p.tipo && <span className="tag highlight">{p.tipo}</span>}
+                        {p.modalidad && <span className="tag">{p.modalidad}</span>}
+                        {p.familia_area && <span className="tag">{p.familia_area}</span>}
+                        {p.idioma && <span className="tag">{p.idioma}</span>}
+                        {price != null && <span className="tag" style={{ color: "#81C784", borderColor: "#81C78444" }}>{price === 0 ? "Gratuito" : `${price.toLocaleString("es-ES")}€/año`} · {priceLabel}</span>}
+                      </div>
+                      <div className="program-footer">
+                        {p.url_solicitud && <a href={p.url_solicitud} target="_blank" rel="noreferrer" className="url-btn">↗ URL Solicitud</a>}
+                        {p.url_detalle && <a href={p.url_detalle} target="_blank" rel="noreferrer" className="url-btn" style={{ borderColor: "var(--accent2)", color: "var(--accent2)" }}>↗ Ver programa</a>}
+                      </div>
+                    </div>
+                  );})}</div>
+                </>
+              );
+            })()}
         </div>
       )}
-      {tab === "requisitos" && <div className="section"><div style={{ fontSize: 11, fontFamily: "var(--mono)", color: "var(--muted)", marginBottom: 16 }}>Perfil: <span style={{ color: "var(--accent2)" }}>{getOriginLabel(student.student_origin || "extracomunitario")}</span>{" · "}<span style={{ color: "var(--accent2)" }}>{{ "bachillerato": "Grado Universitario", "fp_superior": "FP Grado Superior", "grado": "Máster", "master": "Máster" }[student.education_level] || "Programa"}</span></div><RequirementsPanel req={requirements} /></div>}
-      {tab === "region" && <div className="section"><RegionPanel regionData={regionData} /></div>}
+      {tab === "requisitos" && (
+        <div className="section">
+          <div style={{ fontSize: 11, fontFamily: "var(--mono)", color: "var(--muted)", marginBottom: 16 }}>
+            Perfil: <span style={{ color: "var(--accent2)" }}>{getOriginLabel(student.student_origin || "extracomunitario")}</span>
+            {" · "}
+            <span style={{ color: "var(--accent2)" }}>
+              {{ "grado": "Grado Universitario", "fp_superior": "FP Grado Superior", "master": "Máster", "doctorado": "Doctorado" }[student.desired_program_type]
+              || { "bachillerato": "Grado Universitario", "fp_superior": "FP Grado Superior", "grado": "Máster", "master": "Máster" }[student.education_level]
+              || "Programa"}
+            </span>
+          </div>
+          {(student.desired_program_type === "grado" || (!student.desired_program_type && student.education_level === "bachillerato")) && (
+            <div style={{ marginBottom: 16, padding: "10px 14px", background: "#1c1500", border: "1px solid #FFB74D44", borderRadius: 8, fontSize: 11, fontFamily: "var(--mono)", color: "#FFB74D", lineHeight: 1.7 }}>
+              ⚠ <strong>PCE (UNED):</strong> Requerida para carreras con nota de corte: Medicina, Enfermería, Psicología, Ingenierías. Excepción: estudiantes colombianos con Saber 11.
+            </div>
+          )}
+          <RequirementsPanel req={requirements} />
+        </div>
+      )}
+      {tab === "region" && <div className="section"><RegionPanel regionData={regionData} studentOrigin={student.student_origin} /></div>}
       {tab === "notas" && <div className="section"><div className="section-title">Notas del expediente</div><textarea className="notes-area" value={notes} onChange={e => setNotes(e.target.value)} placeholder="Documentos recibidos, comunicaciones, estado de homologación..." /><button className="save-btn" onClick={saveNotes} disabled={saving}>{saving ? "Guardando..." : saved ? "✓ Guardado" : "Guardar notas"}</button></div>}
     </div>
   );
@@ -441,7 +508,7 @@ export default function App() {
               <div key={s.id} className={`student-item ${selected?.id === s.id ? "active" : ""}`} onClick={() => setSelected(s)}>
                 <div className="student-name">{s.full_name || "Sin nombre"}</div>
                 <div className="student-meta">{s.email || "—"} · {s.country_of_origin || "—"}</div>
-                <div className="match-count">{s.education_level ? `${s.education_level} · ` : ""}{formatDate(s.created_at)}</div>
+                <div className="match-count">{(s.desired_program_type || s.education_level) ? `${s.desired_program_type || s.education_level} · ` : ""}{formatDate(s.created_at)}</div>
                 <div className="student-status" style={{ color: sc.color, background: sc.bg }}>{sc.label}</div>
               </div>
             );})}

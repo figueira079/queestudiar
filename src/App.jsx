@@ -1,51 +1,107 @@
 import { useState, useEffect, useCallback } from "react";
 
-// ─── CONFIG ────────────────────────────────────────────────────────────────
+// ‚îÄ‚îÄ‚îÄ CONFIG ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_KEY;
 
-const TEAM_CREDENTIALS = [
-  { user: "maria", password: "edunova2024", name: "María" },
-  { user: "admin", password: "edunova2024", name: "Administrador" },
-];
+// ‚îÄ‚îÄ‚îÄ AUTH HELPERS ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ
+async function authSignIn(email, password) {
+  const res = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=password`, {
+    method: "POST",
+    headers: { apikey: SUPABASE_KEY, "Content-Type": "application/json" },
+    body: JSON.stringify({ email, password }),
+  });
+  const data = await res.json();
+  if (data.error) throw new Error(data.error_description || data.error || "Error de autenticaci√≥n");
+  return data;
+}
+
+async function authRefreshToken(refreshToken) {
+  const res = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=refresh_token`, {
+    method: "POST",
+    headers: { apikey: SUPABASE_KEY, "Content-Type": "application/json" },
+    body: JSON.stringify({ refresh_token: refreshToken }),
+  });
+  const data = await res.json();
+  if (data.error) throw new Error(data.error_description || data.error);
+  return data;
+}
+
+async function authSignOut(accessToken) {
+  await fetch(`${SUPABASE_URL}/auth/v1/logout`, {
+    method: "POST",
+    headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${accessToken}` },
+  });
+}
+
+// Gesti√≥n de sesi√≥n
+function saveSession(session) {
+  localStorage.setItem("queestudiar_session", JSON.stringify({
+    access_token: session.access_token,
+    refresh_token: session.refresh_token,
+    expires_at: session.expires_at || (Date.now() / 1000 + session.expires_in),
+    user: {
+      id: session.user.id,
+      email: session.user.email,
+      name: session.user.user_metadata?.name || session.user.email.split("@")[0],
+      role: session.user.user_metadata?.role || "team",
+    },
+  }));
+}
+
+function loadSession() {
+  try {
+    const raw = localStorage.getItem("queestudiar_session");
+    if (!raw) return null;
+    const session = JSON.parse(raw);
+    // Si expira en menos de 5 min, intentar refresh
+    if (session.expires_at < Date.now() / 1000 + 300) {
+      return { ...session, needsRefresh: true };
+    }
+    return session;
+  } catch { return null; }
+}
+
+function clearSession() {
+  localStorage.removeItem("queestudiar_session");
+}
+
+// Token activo para las llamadas API (se actualiza al hacer login/refresh)
+let _accessToken = null;
+function setAccessToken(token) { _accessToken = token; }
+function getAuthHeaders() {
+  const token = _accessToken || SUPABASE_KEY;
+  return { apikey: SUPABASE_KEY, Authorization: `Bearer ${token}` };
+}
 
 const STATUS_CONFIG = {
   nuevo:       { label: "Nuevo",        color: "#4FC3F7", bg: "#0d2a38" },
   contactado:  { label: "Contactado",   color: "#FFB74D", bg: "#2d1f0a" },
   en_proceso:  { label: "En proceso",   color: "#CE93D8", bg: "#1e0d2a" },
-  cerrado:     { label: "Cerrado ✓",    color: "#81C784", bg: "#0d2213" },
+  cerrado:     { label: "Cerrado ‚úì",    color: "#81C784", bg: "#0d2213" },
   descartado:  { label: "Descartado",   color: "#EF9A9A", bg: "#2a0d0d" },
 };
 
-// ─── SUPABASE CLIENT ────────────────────────────────────────────────────────
+// ‚îÄ‚îÄ‚îÄ SUPABASE CLIENT ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ
 async function query(table, select = "*", filters = {}) {
   let url = `${SUPABASE_URL}/rest/v1/${table}?select=${encodeURIComponent(select)}`;
   Object.entries(filters).forEach(([k, v]) => {
     url += `&${k}=eq.${encodeURIComponent(v)}`;
   });
-  const res = await fetch(url, {
-    headers: {
-      apikey: SUPABASE_KEY,
-      Authorization: `Bearer ${SUPABASE_KEY}`,
-    },
-  });
+  const res = await fetch(url, { headers: getAuthHeaders() });
   return res.json();
 }
 
 async function patch(table, id, data) {
   const res = await fetch(`${SUPABASE_URL}/rest/v1/${table}?id=eq.${id}`, {
     method: "PATCH",
-    headers: {
-      apikey: SUPABASE_KEY,
-      Authorization: `Bearer ${SUPABASE_KEY}`,
-      "Content-Type": "application/json",
-    },
+    headers: { ...getAuthHeaders(), "Content-Type": "application/json" },
     body: JSON.stringify(data),
   });
   return res.ok;
 }
 
-// ─── STYLES ─────────────────────────────────────────────────────────────────
+// ‚îÄ‚îÄ‚îÄ STYLES ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ
 const css = `
   @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&display=swap');
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -149,7 +205,7 @@ const css = `
 `;
 
 function formatDate(d) {
-  if (!d) return "—";
+  if (!d) return "‚Äî";
   return new Date(d).toLocaleDateString("es-ES", { day: "2-digit", month: "short", year: "numeric" });
 }
 
@@ -159,25 +215,41 @@ function getOriginLabel(origin) {
 }
 
 function Login({ onLogin }) {
-  const [user, setUser] = useState("");
+  const [email, setEmail] = useState("");
   const [pass, setPass] = useState("");
   const [err, setErr] = useState("");
-  function handle(e) {
+  const [loading, setLoading] = useState(false);
+  async function handle(e) {
     e.preventDefault();
-    const found = TEAM_CREDENTIALS.find(c => c.user === user && c.password === pass);
-    if (found) onLogin(found);
-    else setErr("Credenciales incorrectas");
+    setLoading(true);
+    setErr("");
+    try {
+      const session = await authSignIn(email, pass);
+      saveSession(session);
+      setAccessToken(session.access_token);
+      onLogin({
+        name: session.user.user_metadata?.name || email.split("@")[0],
+        email: session.user.email,
+        id: session.user.id,
+        role: session.user.user_metadata?.role || "team",
+      });
+    } catch (error) {
+      setErr(error.message === "Invalid login credentials"
+        ? "Email o contrase√±a incorrectos"
+        : error.message || "Error al iniciar sesi√≥n");
+    }
+    setLoading(false);
   }
   return (
     <div className="login-wrap">
       <div className="login-card">
-        <div className="login-logo">▸ QueEstudiar · Admisiones</div>
-        <div className="login-title">Panel de gestión</div>
+        <div className="login-logo">‚ñ∏ QueEstudiar ¬∑ Admisiones</div>
+        <div className="login-title">Panel de gesti√≥n</div>
         <div className="login-sub">Acceso restringido al equipo de admisiones</div>
         <form onSubmit={handle}>
-          <div className="field"><label>Usuario</label><input value={user} onChange={e => { setUser(e.target.value); setErr(""); }} autoComplete="username" /></div>
-          <div className="field"><label>Contraseña</label><input type="password" value={pass} onChange={e => { setPass(e.target.value); setErr(""); }} autoComplete="current-password" /></div>
-          <button className="btn-primary" type="submit">Entrar →</button>
+          <div className="field"><label>Email</label><input type="email" value={email} onChange={e => { setEmail(e.target.value); setErr(""); }} autoComplete="email" placeholder="tu@queestudiar.es" /></div>
+          <div className="field"><label>Contrase√±a</label><input type="password" value={pass} onChange={e => { setPass(e.target.value); setErr(""); }} autoComplete="current-password" /></div>
+          <button className="btn-primary" type="submit" disabled={loading}>{loading ? "Verificando..." : "Entrar ‚Üí"}</button>
           {err && <div className="login-err">{err}</div>}
         </form>
       </div>
@@ -195,35 +267,35 @@ function RequirementsPanel({ req }) {
   return (
     <div className="req-panel">
       <div className="req-block">
-        <div className="req-label">📋 Homologación del título</div>
-        <div className="req-value">{hom.proceso || "—"}</div>
-        {hom.tasa_eur && <div style={{ marginTop: 8 }}><span className="req-pill">Tasa: {hom.tasa_eur}€</span>{hom.modelo_tasa && <span className="req-pill">Modelo {hom.modelo_tasa}</span>}{hom.plazo_resolucion_meses && <span className="req-pill">Plazo: {hom.plazo_resolucion_meses} meses</span>}</div>}
-        {hom.volante_condicional && <div style={{ marginTop: 8, fontSize: 12, color: "#FFB74D", fontFamily: "var(--mono)" }}>⚠ Volante Condicional disponible</div>}
+        <div className="req-label">üìã Homologaci√≥n del t√≠tulo</div>
+        <div className="req-value">{hom.proceso || "‚Äî"}</div>
+        {hom.tasa_eur && <div style={{ marginTop: 8 }}><span className="req-pill">Tasa: {hom.tasa_eur}‚Ç¨</span>{hom.modelo_tasa && <span className="req-pill">Modelo {hom.modelo_tasa}</span>}{hom.plazo_resolucion_meses && <span className="req-pill">Plazo: {hom.plazo_resolucion_meses} meses</span>}</div>}
+        {hom.volante_condicional && <div style={{ marginTop: 8, fontSize: 12, color: "#FFB74D", fontFamily: "var(--mono)" }}>‚ö† Volante Condicional disponible</div>}
       </div>
       <div className="req-block">
-        <div className="req-label">🗣 Requisito lingüístico</div>
-        <div className="req-value">Nivel mínimo: <strong>{lang.nivel_minimo || "—"}</strong> ({lang.marco || ""})</div>
+        <div className="req-label">üó£ Requisito ling√º√≠stico</div>
+        <div className="req-value">Nivel m√≠nimo: <strong>{lang.nivel_minimo || "‚Äî"}</strong> ({lang.marco || ""})</div>
         {lang.certificados_aceptados?.length > 0 && <div style={{ marginTop: 6 }}>{lang.certificados_aceptados.map(c => <span key={c} className="req-pill">{c}</span>)}</div>}
       </div>
       {tests.nombre && (
         <div className="req-block">
-          <div className="req-label">📝 {tests.nombre}</div>
+          <div className="req-label">üìù {tests.nombre}</div>
           {tests.organismo && <div style={{ fontSize: 11, color: "var(--accent2)", fontFamily: "var(--mono)", marginBottom: 6 }}>{tests.organismo}</div>}
           <div className="req-value">{tests.descripcion || ""}</div>
           {tests.formula_nota_base && <div style={{ marginTop: 10, padding: "8px 12px", background: "#0a1020", borderRadius: 6, fontFamily: "var(--mono)", fontSize: 11, color: "var(--accent2)" }}>{tests.formula_nota_base}</div>}
-          {tests.convocatorias?.map((c, i) => <div key={i} style={{ marginTop: 8, fontSize: 12, color: "var(--muted)" }}>📅 <strong style={{ color: "var(--text)" }}>{c.tipo}:</strong> {c.fechas_espana}{c.fechas_sedes_internacionales && ` · Internacional: ${c.fechas_sedes_internacionales}`}</div>)}
+          {tests.convocatorias?.map((c, i) => <div key={i} style={{ marginTop: 8, fontSize: 12, color: "var(--muted)" }}>üìÖ <strong style={{ color: "var(--text)" }}>{c.tipo}:</strong> {c.fechas_espana}{c.fechas_sedes_internacionales && ` ¬∑ Internacional: ${c.fechas_sedes_internacionales}`}</div>)}
         </div>
       )}
       {scholarships.length > 0 && (
         <div className="req-block">
-          <div className="req-label">🎓 Becas disponibles</div>
+          <div className="req-label">üéì Becas disponibles</div>
           <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
             {scholarships.map((b, i) => (
               <div key={i} style={{ padding: "8px 12px", background: "#0a1020", borderRadius: 6, borderLeft: "2px solid var(--accent)" }}>
                 <div style={{ fontSize: 12, fontWeight: 700 }}>{b.nombre}</div>
                 {b.organismo && <div style={{ fontSize: 11, color: "var(--muted)", fontFamily: "var(--mono)" }}>{b.organismo}</div>}
-                {(b.cuantia || b.cuantia_eur) && <div style={{ fontSize: 11, color: "var(--accent2)", marginTop: 2 }}>{b.cuantia || `${b.cuantia_eur}€`}</div>}
-                {b.url && <a href={b.url} target="_blank" rel="noreferrer" style={{ fontSize: 10, color: "var(--accent)", fontFamily: "var(--mono)" }}>→ {b.url}</a>}
+                {(b.cuantia || b.cuantia_eur) && <div style={{ fontSize: 11, color: "var(--accent2)", marginTop: 2 }}>{b.cuantia || `${b.cuantia_eur}‚Ç¨`}</div>}
+                {b.url && <a href={b.url} target="_blank" rel="noreferrer" style={{ fontSize: 10, color: "var(--accent)", fontFamily: "var(--mono)" }}>‚Üí {b.url}</a>}
               </div>
             ))}
           </div>
@@ -231,11 +303,11 @@ function RequirementsPanel({ req }) {
       )}
       {dates.length > 0 && (
         <div className="req-block">
-          <div className="req-label">📆 Calendario clave</div>
+          <div className="req-label">üìÜ Calendario clave</div>
           <div className="dates-list">{dates.map((d, i) => <div key={i} className="date-item"><span className="date-hito">{d.hito}</span><span className="date-mes">{d.mes || d.fecha}</span></div>)}</div>
         </div>
       )}
-      {req.notes && <div className="req-block"><div className="req-label">📌 Notas</div><div className="req-value" style={{ fontSize: 12, color: "var(--muted)", lineHeight: 1.7 }}>{req.notes}</div></div>}
+      {req.notes && <div className="req-block"><div className="req-label">üìå Notas</div><div className="req-value" style={{ fontSize: 12, color: "var(--muted)", lineHeight: 1.7 }}>{req.notes}</div></div>}
     </div>
   );
 }
@@ -243,7 +315,7 @@ function RequirementsPanel({ req }) {
 function RegionPanel({ regionData, studentOrigin }) {
   if (!regionData || regionData.length === 0) return <div style={{ color: "var(--muted)", fontSize: 12, fontFamily: "var(--mono)" }}>Sin datos de costes para las regiones seleccionadas.</div>;
   const isNonEU = studentOrigin === "extracomunitario";
-  const ptypeLabel = { "fp_superior": "FP Grado Superior", "university_bachelor": "Grado Universitario", "university_master": "Máster" };
+  const ptypeLabel = { "fp_superior": "FP Grado Superior", "university_bachelor": "Grado Universitario", "university_master": "M√°ster" };
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
       {regionData.map((r, i) => (
@@ -255,17 +327,17 @@ function RegionPanel({ regionData, studentOrigin }) {
             </div>
             <div style={{ textAlign: "right" }}>
               <div style={{ fontSize: 20, fontWeight: 800, color: r.public_cost_eur === 0 ? "#81C784" : "var(--accent)" }}>
-                {r.public_cost_eur === 0 ? "Gratuito" : `${r.public_cost_eur?.toLocaleString("es-ES")}€`}
+                {r.public_cost_eur === 0 ? "Gratuito" : `${r.public_cost_eur?.toLocaleString("es-ES")}‚Ç¨`}
               </div>
-              <div style={{ fontSize: 10, color: "var(--muted)", fontFamily: "var(--mono)" }}>público UE / año</div>
+              <div style={{ fontSize: 10, color: "var(--muted)", fontFamily: "var(--mono)" }}>p√∫blico UE / a√±o</div>
               {isNonEU && r.non_eu_surcharge && (
-                <div style={{ fontSize: 11, color: "#FFB74D", fontFamily: "var(--mono)", marginTop: 2 }}>⚠ +recargo no-UE</div>
+                <div style={{ fontSize: 11, color: "#FFB74D", fontFamily: "var(--mono)", marginTop: 2 }}>‚ö† +recargo no-UE</div>
               )}
             </div>
           </div>
-          {r.private_cost_range && <div style={{ marginBottom: 8 }}><span className="req-pill">Privado: {r.private_cost_range}€/año</span>{r.non_eu_surcharge && <span className="req-pill" style={{ color: "#FFB74D" }}>⚠ Recargo no-UE</span>}</div>}
+          {r.private_cost_range && <div style={{ marginBottom: 8 }}><span className="req-pill">Privado: {r.private_cost_range}‚Ç¨/a√±o</span>{r.non_eu_surcharge && <span className="req-pill" style={{ color: "#FFB74D" }}>‚ö† Recargo no-UE</span>}</div>}
           {r.key_dates?.length > 0 && <div className="dates-list" style={{ marginBottom: 8 }}>{r.key_dates.map((d, j) => <div key={j} className="date-item"><span className="date-hito">{d.hito}</span><span className="date-mes">{d.fecha || d.mes}</span></div>)}</div>}
-          {r.platform_url && <a href={r.platform_url} target="_blank" rel="noreferrer" className="url-btn" style={{ marginTop: 4 }}>↗ Portal de admisión</a>}
+          {r.platform_url && <a href={r.platform_url} target="_blank" rel="noreferrer" className="url-btn" style={{ marginTop: 4 }}>‚Üó Portal de admisi√≥n</a>}
           {r.notes && <div style={{ marginTop: 10, fontSize: 11, color: "var(--muted)", lineHeight: 1.6, fontFamily: "var(--mono)" }}>{r.notes}</div>}
         </div>
       ))}
@@ -276,18 +348,18 @@ function RegionPanel({ regionData, studentOrigin }) {
 function UrlBtn({ url, status, label, style: extraStyle }) {
   if (!url) return null;
   if (status === "rota") {
-    return <span className="url-rota" title="URL rota o no disponible">⚠ {label}: no disponible</span>;
+    return <span className="url-rota" title="URL rota o no disponible">‚ö† {label}: no disponible</span>;
   }
   if (status === "generica") {
     return (
-      <a href={url} target="_blank" rel="noreferrer" className="url-btn url-generica" title="URL genérica — redirige a la web principal de la institución" style={extraStyle}>
-        🔗 {label}
+      <a href={url} target="_blank" rel="noreferrer" className="url-btn url-generica" title="URL gen√©rica ‚Äî redirige a la web principal de la instituci√≥n" style={extraStyle}>
+        üîó {label}
       </a>
     );
   }
   return (
     <a href={url} target="_blank" rel="noreferrer" className="url-btn url-ok" style={extraStyle}>
-      ↗ {label}
+      ‚Üó {label}
     </a>
   );
 }
@@ -334,16 +406,16 @@ function StudentDetail({ student, onStatusChange, onNotesSave }) {
       const reqs = await query("admission_requirements", "*", { program_type: ptype, student_origin: origin });
       if (Array.isArray(reqs) && reqs.length > 0) setRequirements(reqs[0]);
       const cityToRegion = {
-        "Madrid": "Madrid", "Barcelona": "Cataluña", "Valencia": "Comunidad Valenciana",
-        "Sevilla": "Andalucía", "Málaga": "Andalucía", "Granada": "Andalucía",
-        "Bilbao": "País Vasco", "San Sebastián": "País Vasco", "Vitoria": "País Vasco",
-        "Zaragoza": "Aragón", "Pamplona": "Navarra", "Santander": "Cantabria",
-        "A Coruña": "Galicia", "Santiago de Compostela": "Galicia", "Vigo": "Galicia",
-        "Murcia": "Murcia", "Alicante": "Comunidad Valenciana", "Castellón": "Comunidad Valenciana",
-        "Valladolid": "Castilla y León", "Salamanca": "Castilla y León",
+        "Madrid": "Madrid", "Barcelona": "Catalu√±a", "Valencia": "Comunidad Valenciana",
+        "Sevilla": "Andaluc√≠a", "M√°laga": "Andaluc√≠a", "Granada": "Andaluc√≠a",
+        "Bilbao": "Pa√≠s Vasco", "San Sebasti√°n": "Pa√≠s Vasco", "Vitoria": "Pa√≠s Vasco",
+        "Zaragoza": "Arag√≥n", "Pamplona": "Navarra", "Santander": "Cantabria",
+        "A Coru√±a": "Galicia", "Santiago de Compostela": "Galicia", "Vigo": "Galicia",
+        "Murcia": "Murcia", "Alicante": "Comunidad Valenciana", "Castell√≥n": "Comunidad Valenciana",
+        "Valladolid": "Castilla y Le√≥n", "Salamanca": "Castilla y Le√≥n",
         "Toledo": "Castilla-La Mancha", "Albacete": "Castilla-La Mancha",
         "Palma de Mallorca": "Islas Baleares", "Las Palmas": "Canarias", "Santa Cruz de Tenerife": "Canarias",
-        "Oviedo": "Asturias", "Logroño": "La Rioja", "Mérida": "Extremadura",
+        "Oviedo": "Asturias", "Logro√±o": "La Rioja", "M√©rida": "Extremadura",
       };
       const studentCities = Array.isArray(student.preferred_cities) ? student.preferred_cities : [];
       const regions = [...new Set(studentCities.map(c => cityToRegion[c]).filter(Boolean))];
@@ -351,7 +423,7 @@ function StudentDetail({ student, onStatusChange, onNotesSave }) {
       if (regions.length > 0) {
         const regionParam = regions.map(r => encodeURIComponent(r)).join(",");
         const url = `${SUPABASE_URL}/rest/v1/admission_by_region?select=*&program_type=eq.${ptype}&region=in.(${regionParam})`;
-        const res = await fetch(url, { headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` } });
+        const res = await fetch(url, { headers: getAuthHeaders() });
         regionResults = await res.json();
       }
       if (!Array.isArray(regionResults) || regionResults.length === 0) {
@@ -376,8 +448,8 @@ function StudentDetail({ student, onStatusChange, onNotesSave }) {
       <div className="detail-header">
         <div className="detail-name">{student.full_name || "Estudiante sin nombre"}</div>
         <div className="detail-meta-row">
-          <div className="detail-meta-item">Email: <span>{student.email || "—"}</span></div>
-          <div className="detail-meta-item">País: <span>{student.country_of_origin || "—"}</span></div>
+          <div className="detail-meta-item">Email: <span>{student.email || "‚Äî"}</span></div>
+          <div className="detail-meta-item">Pa√≠s: <span>{student.country_of_origin || "‚Äî"}</span></div>
           <div className="detail-meta-item">Origen: <span>{getOriginLabel(student.student_origin)}</span></div>
           <div className="detail-meta-item">Recibido: <span>{formatDate(student.created_at)}</span></div>
         </div>
@@ -386,20 +458,20 @@ function StudentDetail({ student, onStatusChange, onNotesSave }) {
             {Object.entries(STATUS_CONFIG).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
           </select>
           {(student.desired_program_type || student.education_level) && <div style={{ fontSize: 11, fontFamily: "var(--mono)", color: "var(--muted)" }}>Programa deseado: <span style={{ color: "var(--text)" }}>{student.desired_program_type || student.education_level}</span></div>}
-          {student.base_degree && <div style={{ fontSize: 11, fontFamily: "var(--mono)", color: "var(--muted)" }}>Titulación base: <span style={{ color: "var(--text)" }}>{student.base_degree}</span></div>}
+          {student.base_degree && <div style={{ fontSize: 11, fontFamily: "var(--mono)", color: "var(--muted)" }}>Titulaci√≥n base: <span style={{ color: "var(--text)" }}>{student.base_degree}</span></div>}
           {student.preferred_cities && <div style={{ fontSize: 11, fontFamily: "var(--mono)", color: "var(--muted)" }}>Ciudades: <span style={{ color: "var(--text)" }}>{Array.isArray(student.preferred_cities) ? student.preferred_cities.join(", ") : student.preferred_cities}</span></div>}
-          {student.study_area && <div style={{ fontSize: 11, fontFamily: "var(--mono)", color: "var(--muted)" }}>Área: <span style={{ color: "var(--text)" }}>{student.study_area}</span></div>}
+          {student.study_area && <div style={{ fontSize: 11, fontFamily: "var(--mono)", color: "var(--muted)" }}>√Årea: <span style={{ color: "var(--text)" }}>{student.study_area}</span></div>}
         </div>
       </div>
       <div className="tabs">
-        {[["matches", `Matches (${matches.length})`], ["requisitos", "Requisitos admisión"], ["region", "Costes y plazos"], ["notas", "Notas expediente"]].map(([k, l]) => (
+        {[["matches", `Matches (${matches.length})`], ["requisitos", "Requisitos admisi√≥n"], ["region", "Costes y plazos"], ["notas", "Notas expediente"]].map(([k, l]) => (
           <div key={k} className={`tab ${tab === k ? "active" : ""}`} onClick={() => setTab(k)}>{l}</div>
         ))}
       </div>
       {tab === "matches" && (
         <div className="section">
           {loadingMatches ? <div className="loading"><div className="spinner" /> Cargando programas...</div>
-          : matches.length === 0 ? <div style={{ color: "var(--muted)", fontSize: 13, fontFamily: "var(--mono)", padding: "20px 0" }}>Sin matches aún. N8N los guardará cuando el estudiante complete el formulario.</div>
+          : matches.length === 0 ? <div style={{ color: "var(--muted)", fontSize: 13, fontFamily: "var(--mono)", padding: "20px 0" }}>Sin matches a√∫n. N8N los guardar√° cuando el estudiante complete el formulario.</div>
           : (() => {
               const areas = ["all", ...Array.from(new Set(matches.map(m => m.programas?.familia_area).filter(Boolean))).sort()];
               const filtered = filterArea === "all" ? matches : matches.filter(m => m.programas?.familia_area === filterArea);
@@ -409,7 +481,7 @@ function StudentDetail({ student, onStatusChange, onNotesSave }) {
                     <div style={{ marginBottom: 16, display: "flex", gap: 6, flexWrap: "wrap" }}>
                       {areas.map(a => (
                         <div key={a} className={`filter-chip ${filterArea === a ? "active" : ""}`} onClick={() => setFilterArea(a)}>
-                          {a === "all" ? `Todas las áreas (${matches.length})` : `${a} (${matches.filter(m => m.programas?.familia_area === a).length})`}
+                          {a === "all" ? `Todas las √°reas (${matches.length})` : `${a} (${matches.filter(m => m.programas?.familia_area === a).length})`}
                         </div>
                       ))}
                     </div>
@@ -421,13 +493,13 @@ function StudentDetail({ student, onStatusChange, onNotesSave }) {
                     return (
                     <div key={i} className="program-card">
                       <div className="program-name">{p.nombre || "Programa sin nombre"}</div>
-                      <div className="program-inst">{p.ciudad || "—"}</div>
+                      <div className="program-inst">{p.ciudad || "‚Äî"}</div>
                       <div className="program-tags">
                         {p.tipo && <span className="tag highlight">{p.tipo}</span>}
                         {p.modalidad && <span className="tag">{p.modalidad}</span>}
                         {p.familia_area && <span className="tag">{p.familia_area}</span>}
                         {p.idioma && <span className="tag">{p.idioma}</span>}
-                        {price != null && <span className="tag" style={{ color: "#81C784", borderColor: "#81C78444" }}>{price === 0 ? "Gratuito" : `${price.toLocaleString("es-ES")}€/año`} · {priceLabel}</span>}
+                        {price != null && <span className="tag" style={{ color: "#81C784", borderColor: "#81C78444" }}>{price === 0 ? "Gratuito" : `${price.toLocaleString("es-ES")}‚Ç¨/a√±o`} ¬∑ {priceLabel}</span>}
                       </div>
                       <div className="program-footer">
                         <UrlBtn url={p.url_solicitud} status={p.url_solicitud_status} label="Solicitud" />
@@ -444,23 +516,23 @@ function StudentDetail({ student, onStatusChange, onNotesSave }) {
         <div className="section">
           <div style={{ fontSize: 11, fontFamily: "var(--mono)", color: "var(--muted)", marginBottom: 16 }}>
             Perfil: <span style={{ color: "var(--accent2)" }}>{getOriginLabel(student.student_origin || "extracomunitario")}</span>
-            {" · "}
+            {" ¬∑ "}
             <span style={{ color: "var(--accent2)" }}>
-              {{ "grado": "Grado Universitario", "fp_superior": "FP Grado Superior", "master": "Máster", "doctorado": "Doctorado" }[student.desired_program_type]
-              || { "bachillerato": "Grado Universitario", "fp_superior": "FP Grado Superior", "grado": "Máster", "master": "Máster" }[student.education_level]
+              {{ "grado": "Grado Universitario", "fp_superior": "FP Grado Superior", "master": "M√°ster", "doctorado": "Doctorado" }[student.desired_program_type]
+              || { "bachillerato": "Grado Universitario", "fp_superior": "FP Grado Superior", "grado": "M√°ster", "master": "M√°ster" }[student.education_level]
               || "Programa"}
             </span>
           </div>
           {(student.desired_program_type === "grado" || (!student.desired_program_type && student.education_level === "bachillerato")) && (
             <div style={{ marginBottom: 16, padding: "10px 14px", background: "#1c1500", border: "1px solid #FFB74D44", borderRadius: 8, fontSize: 11, fontFamily: "var(--mono)", color: "#FFB74D", lineHeight: 1.7 }}>
-              ⚠ <strong>PCE (UNED):</strong> Requerida para carreras con nota de corte: Medicina, Enfermería, Psicología, Ingenierías. Excepción: estudiantes colombianos con Saber 11.
+              ‚ö† <strong>PCE (UNED):</strong> Requerida para carreras con nota de corte: Medicina, Enfermer√≠a, Psicolog√≠a, Ingenier√≠as. Excepci√≥n: estudiantes colombianos con Saber 11.
             </div>
           )}
           <RequirementsPanel req={requirements} />
         </div>
       )}
       {tab === "region" && <div className="section"><RegionPanel regionData={regionData} studentOrigin={student.student_origin} /></div>}
-      {tab === "notas" && <div className="section"><div className="section-title">Notas del expediente</div><textarea className="notes-area" value={notes} onChange={e => setNotes(e.target.value)} placeholder="Documentos recibidos, comunicaciones, estado de homologación..." /><button className="save-btn" onClick={saveNotes} disabled={saving}>{saving ? "Guardando..." : saved ? "✓ Guardado" : "Guardar notas"}</button></div>}
+      {tab === "notas" && <div className="section"><div className="section-title">Notas del expediente</div><textarea className="notes-area" value={notes} onChange={e => setNotes(e.target.value)} placeholder="Documentos recibidos, comunicaciones, estado de homologaci√≥n..." /><button className="save-btn" onClick={saveNotes} disabled={saving}>{saving ? "Guardando..." : saved ? "‚úì Guardado" : "Guardar notas"}</button></div>}
     </div>
   );
 }
@@ -473,7 +545,32 @@ export default function App() {
   const [filterStatus, setFilterStatus] = useState("all");
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => { const saved = sessionStorage.getItem("queestudiar_user"); if (saved) setUser(JSON.parse(saved)); }, []);
+  // Restaurar sesi√≥n al cargar
+  useEffect(() => {
+    async function restoreSession() {
+      const session = loadSession();
+      if (!session) return;
+      if (session.needsRefresh && session.refresh_token) {
+        try {
+          const refreshed = await authRefreshToken(session.refresh_token);
+          saveSession(refreshed);
+          setAccessToken(refreshed.access_token);
+          setUser({
+            name: refreshed.user.user_metadata?.name || refreshed.user.email.split("@")[0],
+            email: refreshed.user.email,
+            id: refreshed.user.id,
+            role: refreshed.user.user_metadata?.role || "team",
+          });
+        } catch {
+          clearSession();
+        }
+      } else {
+        setAccessToken(session.access_token);
+        setUser(session.user);
+      }
+    }
+    restoreSession();
+  }, []);
   useEffect(() => { if (user) loadStudents(); }, [user]);
 
   async function loadStudents() {
@@ -488,8 +585,18 @@ export default function App() {
     setLoading(false);
   }
 
-  function handleLogin(u) { sessionStorage.setItem("queestudiar_user", JSON.stringify(u)); setUser(u); }
-  function handleLogout() { sessionStorage.removeItem("queestudiar_user"); setUser(null); setStudents([]); setSelected(null); }
+  function handleLogin(u) { setUser(u); }
+  async function handleLogout() {
+    try {
+      const session = loadSession();
+      if (session?.access_token) await authSignOut(session.access_token);
+    } catch {}
+    clearSession();
+    setAccessToken(null);
+    setUser(null);
+    setStudents([]);
+    setSelected(null);
+  }
   async function handleStatusChange(id, status) {
     await patch("student_leads", id, { status });
     setStudents(prev => prev.map(s => s.id === id ? { ...s, status } : s));
@@ -512,14 +619,14 @@ export default function App() {
     <><style>{css}</style>
     <div className="app">
       <div className="header">
-        <div className="header-left"><div className="logo-mark">▸ QueEstudiar</div><div className="header-title">Panel de Admisiones</div></div>
-        <div className="header-right"><div className="user-badge">{user.name}</div><button className="btn-ghost" onClick={loadStudents}>↻ Actualizar</button><button className="btn-ghost" onClick={handleLogout}>Salir</button></div>
+        <div className="header-left"><div className="logo-mark">‚ñ∏ QueEstudiar</div><div className="header-title">Panel de Admisiones</div></div>
+        <div className="header-right"><div className="user-badge">{user.name}</div><button className="btn-ghost" onClick={loadStudents}>‚Üª Actualizar</button><button className="btn-ghost" onClick={handleLogout}>Salir</button></div>
       </div>
       <div className="main">
         <div className="sidebar">
           <div className="sidebar-header">
-            <div className="sidebar-title">Estudiantes · {filtered.length}</div>
-            <input className="search-input" placeholder="Buscar por nombre, email, país..." value={search} onChange={e => setSearch(e.target.value)} />
+            <div className="sidebar-title">Estudiantes ¬∑ {filtered.length}</div>
+            <input className="search-input" placeholder="Buscar por nombre, email, pa√≠s..." value={search} onChange={e => setSearch(e.target.value)} />
             <div className="filter-row">
               <div className={`filter-chip ${filterStatus === "all" ? "active" : ""}`} onClick={() => setFilterStatus("all")}>Todos ({students.length})</div>
               {Object.entries(STATUS_CONFIG).map(([k, v]) => counts[k] > 0 && <div key={k} className={`filter-chip ${filterStatus === k ? "active" : ""}`} onClick={() => setFilterStatus(k)}>{v.label} ({counts[k]})</div>)}
@@ -527,19 +634,19 @@ export default function App() {
           </div>
           <div className="student-list">
             {loading ? <div className="loading" style={{ height: 200 }}><div className="spinner" /> Cargando...</div>
-            : filtered.length === 0 ? <div className="empty" style={{ height: 200 }}><div className="empty-icon">◌</div><div className="empty-text">Sin estudiantes{search ? " con ese filtro" : " aún"}</div></div>
+            : filtered.length === 0 ? <div className="empty" style={{ height: 200 }}><div className="empty-icon">‚óå</div><div className="empty-text">Sin estudiantes{search ? " con ese filtro" : " a√∫n"}</div></div>
             : filtered.map(s => { const sc = STATUS_CONFIG[s.status || "nuevo"]; return (
               <div key={s.id} className={`student-item ${selected?.id === s.id ? "active" : ""}`} onClick={() => setSelected(s)}>
                 <div className="student-name">{s.full_name || "Sin nombre"}</div>
-                <div className="student-meta">{s.email || "—"} · {s.country_of_origin || "—"}</div>
-                <div className="match-count">{(s.desired_program_type || s.education_level) ? `${s.desired_program_type || s.education_level} · ` : ""}{formatDate(s.created_at)}</div>
+                <div className="student-meta">{s.email || "‚Äî"} ¬∑ {s.country_of_origin || "‚Äî"}</div>
+                <div className="match-count">{(s.desired_program_type || s.education_level) ? `${s.desired_program_type || s.education_level} ¬∑ ` : ""}{formatDate(s.created_at)}</div>
                 <div className="student-status" style={{ color: sc.color, background: sc.bg }}>{sc.label}</div>
               </div>
             );})}
           </div>
         </div>
         {selected ? <StudentDetail key={selected.id} student={selected} onStatusChange={handleStatusChange} onNotesSave={handleNotesSave} />
-        : <div className="detail"><div className="empty"><div className="empty-icon">◎</div><div className="empty-text">Selecciona un estudiante para ver su expediente</div></div></div>}
+        : <div className="detail"><div className="empty"><div className="empty-icon">‚óé</div><div className="empty-text">Selecciona un estudiante para ver su expediente</div></div></div>}
       </div>
     </div></>
   );

@@ -124,6 +124,11 @@ const css = `
   .program-footer { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
   .url-btn { display: inline-flex; align-items: center; gap: 6px; font-size: 11px; padding: 5px 12px; border-radius: 6px; border: 1px solid var(--accent); color: var(--accent); text-decoration: none; font-family: var(--mono); transition: all 0.15s; }
   .url-btn:hover { background: var(--accent); color: #fff; }
+  .url-ok { border-color: #22c55e !important; color: #22c55e !important; }
+  .url-ok:hover { background: #22c55e !important; color: #fff !important; }
+  .url-generica { border-color: #f97316 !important; color: #f97316 !important; }
+  .url-generica:hover { background: #f97316 !important; color: #fff !important; }
+  .url-rota { display: inline-flex; align-items: center; gap: 6px; font-size: 11px; padding: 5px 12px; border-radius: 6px; border: 1px solid #ef444488; color: #ef9a9a; font-family: var(--mono); cursor: default; opacity: 0.8; }
   .req-panel { background: var(--bg); border: 1px solid var(--border); border-radius: 12px; padding: 20px; }
   .req-block { margin-bottom: 18px; }
   .req-block:last-child { margin-bottom: 0; }
@@ -268,6 +273,25 @@ function RegionPanel({ regionData, studentOrigin }) {
   );
 }
 
+function UrlBtn({ url, status, label, style: extraStyle }) {
+  if (!url) return null;
+  if (status === "rota") {
+    return <span className="url-rota" title="URL rota o no disponible">⚠ {label}: no disponible</span>;
+  }
+  if (status === "generica") {
+    return (
+      <a href={url} target="_blank" rel="noreferrer" className="url-btn url-generica" title="URL genérica — redirige a la web principal de la institución" style={extraStyle}>
+        🔗 {label}
+      </a>
+    );
+  }
+  return (
+    <a href={url} target="_blank" rel="noreferrer" className="url-btn url-ok" style={extraStyle}>
+      ↗ {label}
+    </a>
+  );
+}
+
 function StudentDetail({ student, onStatusChange, onNotesSave }) {
   const [tab, setTab] = useState("matches");
   const [notes, setNotes] = useState(student.notes || "");
@@ -285,7 +309,7 @@ function StudentDetail({ student, onStatusChange, onNotesSave }) {
   async function loadMatches() {
     setLoadingMatches(true);
     try {
-      const data = await query("matches", "*, programas(nombre, ciudad, tipo, familia_area, url_solicitud, url_detalle, modalidad, idioma, precio_anual_eur, precio_extracomunitario_eur)", { student_id: student.id });
+      const data = await query("matches", "*, programas(nombre, ciudad, tipo, familia_area, url_solicitud, url_solicitud_status, url_detalle, url_detalle_status, modalidad, idioma, precio_anual_eur, precio_extracomunitario_eur)", { student_id: student.id });
       setMatches(Array.isArray(data) ? data : []);
     } catch { setMatches([]); }
     setLoadingMatches(false);
@@ -406,8 +430,8 @@ function StudentDetail({ student, onStatusChange, onNotesSave }) {
                         {price != null && <span className="tag" style={{ color: "#81C784", borderColor: "#81C78444" }}>{price === 0 ? "Gratuito" : `${price.toLocaleString("es-ES")}€/año`} · {priceLabel}</span>}
                       </div>
                       <div className="program-footer">
-                        {p.url_solicitud && <a href={p.url_solicitud} target="_blank" rel="noreferrer" className="url-btn">↗ URL Solicitud</a>}
-                        {p.url_detalle && <a href={p.url_detalle} target="_blank" rel="noreferrer" className="url-btn" style={{ borderColor: "var(--accent2)", color: "var(--accent2)" }}>↗ Ver programa</a>}
+                        <UrlBtn url={p.url_solicitud} status={p.url_solicitud_status} label="Solicitud" />
+                        <UrlBtn url={p.url_detalle} status={p.url_detalle_status} label="Ver programa" style={{ borderColor: "var(--accent2)", color: "var(--accent2)" }} />
                       </div>
                     </div>
                   );})}</div>

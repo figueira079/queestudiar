@@ -364,6 +364,94 @@ function UrlBtn({ url, status, label, style: extraStyle }) {
   );
 }
 
+function generateExpedienteReport(student, matches, requirements, regionData) {
+  const now = new Date().toLocaleDateString("es-ES", { day: "2-digit", month: "long", year: "numeric" });
+  const originMap = { eu: "UE / EEE", latam_convenio: "LATAM Convenio", extracomunitario: "Extracomunitario" };
+  const typeMap = { grado: "Grado", master: "M√°ster", fp_superior: "FP Superior", doctorado: "Doctorado", bachillerato: "Bachillerato" };
+  const cities = Array.isArray(student.preferred_cities) ? student.preferred_cities.join(", ") : (student.preferred_cities || "‚Äî");
+  const programType = typeMap[student.desired_program_type] || typeMap[student.education_level] || "‚Äî";
+
+  let r = `‚ïê‚ïê‚ïê INFORME DE EXPEDIENTE ‚ïê‚ïê‚ïê\nGenerado: ${now}\n\n`;
+  r += `‚ñ∏ DATOS DEL ESTUDIANTE\n`;
+  r += `  Nombre: ${student.full_name || "‚Äî"}\n`;
+  r += `  Email: ${student.email || "‚Äî"}\n`;
+  r += `  Pa√≠s: ${student.country_of_origin || "‚Äî"}\n`;
+  r += `  Origen: ${originMap[student.student_origin] || student.student_origin || "‚Äî"}\n`;
+  r += `  Nivel educativo: ${typeMap[student.education_level] || student.education_level || "‚Äî"}\n`;
+  r += `  Programa deseado: ${programType}\n`;
+  r += `  √Årea de estudio: ${student.study_area || "‚Äî"}\n`;
+  r += `  Ciudades preferidas: ${cities}\n`;
+  if (student.base_degree) r += `  Titulaci√≥n base: ${student.base_degree}\n`;
+
+  r += `\n‚ñ∏ PROGRAMAS ASIGNADOS (${matches.length})\n`;
+  if (matches.length > 0) {
+    const byArea = {};
+    matches.forEach(m => {
+      const area = m.programas?.familia_area || "Sin √°rea";
+      if (!byArea[area]) byArea[area] = [];
+      byArea[area].push(m);
+    });
+    Object.entries(byArea).sort().forEach(([area, ms]) => {
+      r += `  [${area}] ‚Äî ${ms.length} programa${ms.length > 1 ? "s" : ""}\n`;
+      ms.slice(0, 5).forEach(m => {
+        const p = m.programas || {};
+        const price = student.student_origin === "extracomunitario" && p.precio_extracomunitario_eur != null ? p.precio_extracomunitario_eur : p.precio_anual_eur;
+        r += `    ‚Ä¢ ${p.nombre || "?"} (${p.ciudad || "?"})`;
+        if (price != null) r += ` ‚Äî ${price === 0 ? "Gratuito" : price.toLocaleString("es-ES") + "‚Ç¨/a√±o"}`;
+        r += `\n`;
+      });
+      if (ms.length > 5) r += `    ... y ${ms.length - 5} m√°s\n`;
+    });
+  } else {
+    r += `  Sin programas asignados\n`;
+  }
+
+  if (requirements) {
+    r += `\n‚ñ∏ REQUISITOS DE ADMISI√ìN\n`;
+    const hom = requirements.homologacion || {};
+    if (hom.proceso) r += `  Homologaci√≥n: ${hom.proceso}\n`;
+    if (hom.tasa_eur) r += `  Tasa homologaci√≥n: ${hom.tasa_eur}‚Ç¨\n`;
+    if (hom.plazo_resolucion_meses) r += `  Plazo resoluci√≥n: ${hom.plazo_resolucion_meses} meses\n`;
+    const lang = requirements.language_req || {};
+    if (lang.nivel_minimo) r += `  Idioma m√≠nimo: ${lang.nivel_minimo} (${lang.marco || ""})\n`;
+    if (lang.certificados_aceptados?.length) r += `  Certificados: ${lang.certificados_aceptados.join(", ")}\n`;
+    const tests = requirements.access_tests || {};
+    if (tests.nombre) r += `  Prueba acceso: ${tests.nombre}\n`;
+    const dates = requirements.key_dates || [];
+    if (dates.length > 0) {
+      r += `  Fechas clave:\n`;
+      dates.forEach(d => { r += `    - ${d.hito}: ${d.mes || d.fecha}\n`; });
+    }
+  }
+
+  if (regionData?.length > 0) {
+    r += `\n‚ñ∏ COSTES POR REGI√ìN\n`;
+    regionData.forEach(reg => {
+      r += `  ${reg.region} (${reg.program_type}): `;
+      r += reg.public_cost_eur === 0 ? "Gratuito" : `${reg.public_cost_eur?.toLocaleString("es-ES")}‚Ç¨/a√±o p√∫blico`;
+      if (reg.private_cost_range) r += ` | Privado: ${reg.private_cost_range}‚Ç¨/a√±o`;
+      r += `\n`;
+    });
+  }
+
+  r += `\n‚ñ∏ CHECKLIST DE SEGUIMIENTO\n`;
+  r += `  [ ] Documentaci√≥n acad√©mica recibida\n`;
+  r += `  [ ] Homologaci√≥n del t√≠tulo iniciada\n`;
+  if (requirements?.language_req?.nivel_minimo) r += `  [ ] Certificado de idioma presentado\n`;
+  if (requirements?.access_tests?.nombre) r += `  [ ] Inscripci√≥n en ${requirements.access_tests.nombre}\n`;
+  r += `  [ ] Solicitud de admisi√≥n enviada\n`;
+  r += `  [ ] Confirmaci√≥n de plaza recibida\n`;
+  r += `  [ ] Matr√≠cula formalizada\n`;
+  if (student.student_origin === "extracomunitario") {
+    r += `  [ ] Visado de estudiante solicitado\n`;
+    r += `  [ ] Seguro m√©dico contratado\n`;
+  }
+
+  r += `\n‚ñ∏ OBSERVACIONES\n`;
+  r += `  (A√±adir notas manuales aqu√≠)\n`;
+  return r;
+}
+
 function StudentDetail({ student, onStatusChange, onNotesSave }) {
   const [tab, setTab] = useState("matches");
   const [notes, setNotes] = useState(student.notes || "");
@@ -532,7 +620,15 @@ function StudentDetail({ student, onStatusChange, onNotesSave }) {
         </div>
       )}
       {tab === "region" && <div className="section"><RegionPanel regionData={regionData} studentOrigin={student.student_origin} /></div>}
-      {tab === "notas" && <div className="section"><div className="section-title">Notas del expediente</div><textarea className="notes-area" value={notes} onChange={e => setNotes(e.target.value)} placeholder="Documentos recibidos, comunicaciones, estado de homologaci√≥n..." /><button className="save-btn" onClick={saveNotes} disabled={saving}>{saving ? "Guardando..." : saved ? "‚úì Guardado" : "Guardar notas"}</button></div>}
+      {tab === "notas" && <div className="section">
+        <div className="section-title">Notas del expediente</div>
+        <button className="save-btn" style={{ marginBottom: 12, background: "var(--accent2)" }} onClick={() => {
+          const report = generateExpedienteReport(student, matches, requirements, regionData);
+          setNotes(prev => prev ? prev + "\n\n" + report : report);
+        }}>‚ö° Generar informe autom√°tico</button>
+        <textarea className="notes-area" style={{ minHeight: 200 }} value={notes} onChange={e => setNotes(e.target.value)} placeholder="Documentos recibidos, comunicaciones, estado de homologaci√≥n..." />
+        <button className="save-btn" onClick={saveNotes} disabled={saving}>{saving ? "Guardando..." : saved ? "‚úì Guardado" : "Guardar notas"}</button>
+      </div>}
     </div>
   );
 }

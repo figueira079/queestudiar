@@ -1216,7 +1216,7 @@ function LandingPage() {
     <>
       <div className="pub-hero">
         <h1>Encuentra tu programa ideal en España</h1>
-        <p>Más de 10.000 programas universitarios y de FP para estudiantes internacionales. Te ayudamos a encontrar el tuyo.</p>
+        <p>Más de 10.000 programas universitarios y de FP para todo tipo de estudiantes: españoles, europeos e internacionales. Te ayudamos a encontrar el tuyo.</p>
         <div className="pub-hero-btns">
           <button className="pub-btn pub-btn-primary" onClick={() => location.hash = "#/match"}>No sé qué estudiar</button>
           <button className="pub-btn pub-btn-outline" onClick={() => location.hash = "#/programas"}>Ya sé qué quiero</button>
@@ -1666,7 +1666,7 @@ function PublicApp({ route }) {
       <style>{publicCss}</style>
       <PublicNav route={route} />
       <main style={{ flex: 1 }}>{getPage()}</main>
-      <footer className="pub-footer">© 2026 QueEstudiar · Asesoría educativa para estudiantes internacionales</footer>
+      <footer className="pub-footer">© 2026 QueEstudiar · Asesoría educativa para estudiantes en España</footer>
     </div>
   );
 }

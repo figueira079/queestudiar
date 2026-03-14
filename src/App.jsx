@@ -1205,7 +1205,7 @@ function PublicNav({ route }) {
         <span className={`pub-nav-link ${isActive("#/") ? "active" : ""}`} onClick={() => location.hash = "#/"}>Inicio</span>
         <span className={`pub-nav-link ${route?.startsWith("#/match") ? "active" : ""}`} onClick={() => location.hash = "#/match"}>Test vocacional</span>
         <span className={`pub-nav-link ${route?.startsWith("#/programa") ? "active" : ""}`} onClick={() => location.hash = "#/programas"}>Explorar programas</span>
-        <span className="pub-nav-link admin" onClick={() => location.hash = "#/admin"}>Acceso equipo</span>
+        {!IS_PUBLIC_DOMAIN && <span className="pub-nav-link admin" onClick={() => location.hash = "#/admin"}>Acceso equipo</span>}
       </div>
     </nav>
   );
@@ -1672,11 +1672,20 @@ function PublicApp({ route }) {
 }
 
 // ‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê
+// DOMAIN DETECTION
+// ‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê
+const HOST = window.location.hostname;
+const IS_PUBLIC_DOMAIN = HOST === "queestudiar.es" || HOST === "www.queestudiar.es";
+const IS_ADMIN_DOMAIN = HOST === "app.queestudiar.es";
+
+// ‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê
 // MAIN APP COMPONENT (with hash routing)
 // ‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê
 
 export default function App() {
-  const [route, setRoute] = useState(window.location.hash || "#/");
+  // On admin domain, default to #/admin if no hash is set
+  const defaultRoute = IS_ADMIN_DOMAIN && !window.location.hash ? "#/admin" : (window.location.hash || "#/");
+  const [route, setRoute] = useState(defaultRoute);
   const [user, setUser] = useState(null);
   const [students, setStudents] = useState([]);
   const [selected, setSelected] = useState(null);
@@ -1751,7 +1760,14 @@ export default function App() {
   }
   function handleNotesSave(id, notes) { setStudents(prev => prev.map(s => s.id === id ? { ...s, notes } : s)); }
 
-  // ‚îÄ‚îÄ PUBLIC ROUTES ‚îÄ‚îÄ
+  // ‚îÄ‚îÄ DOMAIN-BASED ROUTING ‚îÄ‚îÄ
+  // On public domain (queestudiar.es): redirect admin attempts to app.queestudiar.es
+  if (IS_PUBLIC_DOMAIN && route.startsWith("#/admin")) {
+    window.location.href = "https://app.queestudiar.es/#/admin";
+    return null;
+  }
+
+  // Public routes
   if (!route.startsWith("#/admin")) {
     return <PublicApp route={route} />;
   }
@@ -1773,7 +1789,7 @@ export default function App() {
     <div className="app">
       <div className="header">
         <div className="header-left"><div className="logo-mark">‚ñ∏ QueEstudiar</div><div className="header-title">Panel de Admisiones</div></div>
-        <div className="header-right"><div className="user-badge">{user.name}</div>{user.role === "admin" && <button className="btn-ghost" onClick={() => setShowUserMgmt(!showUserMgmt)} style={showUserMgmt ? { borderColor: "var(--accent)", color: "var(--accent)" } : {}}>‚öô Usuarios</button>}<button className="btn-ghost" onClick={loadStudents}>‚Üª Actualizar</button><button className="btn-ghost" onClick={() => location.hash = "#/"}>Web p√∫blica</button><button className="btn-ghost" onClick={handleLogout}>Salir</button></div>
+        <div className="header-right"><div className="user-badge">{user.name}</div>{user.role === "admin" && <button className="btn-ghost" onClick={() => setShowUserMgmt(!showUserMgmt)} style={showUserMgmt ? { borderColor: "var(--accent)", color: "var(--accent)" } : {}}>‚öô Usuarios</button>}<button className="btn-ghost" onClick={loadStudents}>‚Üª Actualizar</button><button className="btn-ghost" onClick={() => window.location.href = "https://queestudiar.es"}>Web p√∫blica</button><button className="btn-ghost" onClick={handleLogout}>Salir</button></div>
       </div>
       <div className="main">
         <div className="sidebar">

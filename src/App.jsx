@@ -1,10 +1,10 @@
 import { useState, useEffect, useCallback } from "react";
 
-// ‚îÄ‚îÄ‚îÄ CONFIG ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ
+// ─── CONFIG ────────────────────────────────────────────────────────────────
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_KEY;
 
-// ‚îÄ‚îÄ‚îÄ AUTH HELPERS ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ
+// ─── AUTH HELPERS ───────────────────────────────────────────────────────────
 async function authSignIn(email, password) {
   const res = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=password`, {
     method: "POST",
@@ -12,7 +12,7 @@ async function authSignIn(email, password) {
     body: JSON.stringify({ email, password }),
   });
   const data = await res.json();
-  if (data.error) throw new Error(data.error_description || data.error || "Error de autenticaci√≥n");
+  if (data.error) throw new Error(data.error_description || data.error || "Error de autenticación");
   return data;
 }
 
@@ -34,7 +34,7 @@ async function authSignOut(accessToken) {
   });
 }
 
-// Gesti√≥n de sesi√≥n
+// Gestión de sesión
 function saveSession(session) {
   localStorage.setItem("queestudiar_session", JSON.stringify({
     access_token: session.access_token,
@@ -78,11 +78,11 @@ const STATUS_CONFIG = {
   nuevo:       { label: "Nuevo",        color: "#4FC3F7", bg: "#0d2a38" },
   contactado:  { label: "Contactado",   color: "#FFB74D", bg: "#2d1f0a" },
   en_proceso:  { label: "En proceso",   color: "#CE93D8", bg: "#1e0d2a" },
-  cerrado:     { label: "Cerrado ‚úì",    color: "#81C784", bg: "#0d2213" },
+  cerrado:     { label: "Cerrado ✓",    color: "#81C784", bg: "#0d2213" },
   descartado:  { label: "Descartado",   color: "#EF9A9A", bg: "#2a0d0d" },
 };
 
-// ‚îÄ‚îÄ‚îÄ SUPABASE CLIENT ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ
+// ─── SUPABASE CLIENT ────────────────────────────────────────────────────────
 async function query(table, select = "*", filters = {}) {
   let url = `${SUPABASE_URL}/rest/v1/${table}?select=${encodeURIComponent(select)}`;
   Object.entries(filters).forEach(([k, v]) => {
@@ -101,7 +101,7 @@ async function patch(table, id, data) {
   return res.ok;
 }
 
-// ‚Äî‚Äî‚Äî URL MANAGEMENT & LEARNING ‚Äî‚Äî‚Äî‚Äî‚Äî‚Äî‚Äî‚Äî‚Äî‚Äî‚Äî‚Äî‚Äî‚Äî‚Äî‚Äî‚Äî‚Äî‚Äî‚Äî‚Äî‚Äî‚Äî‚Äî‚Äî‚Äî‚Äî‚Äî‚Äî‚Äî‚Äî
+// ——— URL MANAGEMENT & LEARNING ———————————————————————————————
 async function updateProgramUrl(programId, field, newUrl) {
   const statusField = field + "_status";
   const updates = { [field]: newUrl, [statusField]: "manual_ok" };
@@ -134,7 +134,7 @@ async function bulkUpdateProgramUrls(ids, field, newUrl) {
   }
 }
 
-// ‚Äî‚Äî‚Äî ADMIN: USER MANAGEMENT ‚Äî‚Äî‚Äî‚Äî‚Äî‚Äî‚Äî‚Äî‚Äî‚Äî‚Äî‚Äî‚Äî‚Äî‚Äî‚Äî‚Äî‚Äî‚Äî‚Äî‚Äî‚Äî‚Äî‚Äî‚Äî‚Äî‚Äî‚Äî‚Äî‚Äî‚Äî
+// ——— ADMIN: USER MANAGEMENT ———————————————————————————————
 function getAdminHeaders() {
   return { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}`, "Content-Type": "application/json" };
 }
@@ -168,7 +168,7 @@ async function adminDeleteUser(userId) {
 }
 
 
-// ‚îÄ‚îÄ‚îÄ STYLES ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ
+// ─── STYLES ─────────────────────────────────────────────────────────────────
 const css = `
   @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&display=swap');
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -306,7 +306,7 @@ const css = `
 `;
 
 function formatDate(d) {
-  if (!d) return "‚Äî";
+  if (!d) return "—";
   return new Date(d).toLocaleDateString("es-ES", { day: "2-digit", month: "short", year: "numeric" });
 }
 
@@ -336,21 +336,21 @@ function Login({ onLogin }) {
       });
     } catch (error) {
       setErr(error.message === "Invalid login credentials"
-        ? "Email o contrase√±a incorrectos"
-        : error.message || "Error al iniciar sesi√≥n");
+        ? "Email o contraseña incorrectos"
+        : error.message || "Error al iniciar sesión");
     }
     setLoading(false);
   }
   return (
     <div className="login-wrap">
       <div className="login-card">
-        <div className="login-logo">‚ñ∏ QueEstudiar ¬∑ Admisiones</div>
-        <div className="login-title">Panel de gesti√≥n</div>
+        <div className="login-logo">▸ QueEstudiar · Admisiones</div>
+        <div className="login-title">Panel de gestión</div>
         <div className="login-sub">Acceso restringido al equipo de admisiones</div>
         <form onSubmit={handle}>
           <div className="field"><label>Email</label><input type="email" value={email} onChange={e => { setEmail(e.target.value); setErr(""); }} autoComplete="email" placeholder="tu@queestudiar.es" /></div>
-          <div className="field"><label>Contrase√±a</label><input type="password" value={pass} onChange={e => { setPass(e.target.value); setErr(""); }} autoComplete="current-password" /></div>
-          <button className="btn-primary" type="submit" disabled={loading}>{loading ? "Verificando..." : "Entrar ‚Üí"}</button>
+          <div className="field"><label>Contraseña</label><input type="password" value={pass} onChange={e => { setPass(e.target.value); setErr(""); }} autoComplete="current-password" /></div>
+          <button className="btn-primary" type="submit" disabled={loading}>{loading ? "Verificando..." : "Entrar →"}</button>
           {err && <div className="login-err">{err}</div>}
         </form>
       </div>
@@ -368,35 +368,35 @@ function RequirementsPanel({ req }) {
   return (
     <div className="req-panel">
       <div className="req-block">
-        <div className="req-label">üìã Homologaci√≥n del t√≠tulo</div>
-        <div className="req-value">{hom.proceso || "‚Äî"}</div>
-        {hom.tasa_eur && <div style={{ marginTop: 8 }}><span className="req-pill">Tasa: {hom.tasa_eur}‚Ç¨</span>{hom.modelo_tasa && <span className="req-pill">Modelo {hom.modelo_tasa}</span>}{hom.plazo_resolucion_meses && <span className="req-pill">Plazo: {hom.plazo_resolucion_meses} meses</span>}</div>}
-        {hom.volante_condicional && <div style={{ marginTop: 8, fontSize: 12, color: "#FFB74D", fontFamily: "var(--mono)" }}>‚ö† Volante Condicional disponible</div>}
+        <div className="req-label">📋 Homologación del título</div>
+        <div className="req-value">{hom.proceso || "—"}</div>
+        {hom.tasa_eur && <div style={{ marginTop: 8 }}><span className="req-pill">Tasa: {hom.tasa_eur}€</span>{hom.modelo_tasa && <span className="req-pill">Modelo {hom.modelo_tasa}</span>}{hom.plazo_resolucion_meses && <span className="req-pill">Plazo: {hom.plazo_resolucion_meses} meses</span>}</div>}
+        {hom.volante_condicional && <div style={{ marginTop: 8, fontSize: 12, color: "#FFB74D", fontFamily: "var(--mono)" }}>⚠ Volante Condicional disponible</div>}
       </div>
       <div className="req-block">
-        <div className="req-label">üó£ Requisito ling√º√≠stico</div>
-        <div className="req-value">Nivel m√≠nimo: <strong>{lang.nivel_minimo || "‚Äî"}</strong> ({lang.marco || ""})</div>
+        <div className="req-label">🗣 Requisito lingüístico</div>
+        <div className="req-value">Nivel mínimo: <strong>{lang.nivel_minimo || "—"}</strong> ({lang.marco || ""})</div>
         {lang.certificados_aceptados?.length > 0 && <div style={{ marginTop: 6 }}>{lang.certificados_aceptados.map(c => <span key={c} className="req-pill">{c}</span>)}</div>}
       </div>
       {tests.nombre && (
         <div className="req-block">
-          <div className="req-label">üìù {tests.nombre}</div>
+          <div className="req-label">📝 {tests.nombre}</div>
           {tests.organismo && <div style={{ fontSize: 11, color: "var(--accent2)", fontFamily: "var(--mono)", marginBottom: 6 }}>{tests.organismo}</div>}
           <div className="req-value">{tests.descripcion || ""}</div>
           {tests.formula_nota_base && <div style={{ marginTop: 10, padding: "8px 12px", background: "#0a1020", borderRadius: 6, fontFamily: "var(--mono)", fontSize: 11, color: "var(--accent2)" }}>{tests.formula_nota_base}</div>}
-          {tests.convocatorias?.map((c, i) => <div key={i} style={{ marginTop: 8, fontSize: 12, color: "var(--muted)" }}>üìñ <strong style={{ color: "var(--text)" }}>{c.tipo}:</strong> {c.fechas_espana}{c.fechas_sedes_internacionales && ` ¬∑ Internacional: ${c.fechas_sedes_internacionales}`}</div>)}
+          {tests.convocatorias?.map((c, i) => <div key={i} style={{ marginTop: 8, fontSize: 12, color: "var(--muted)" }}>📖 <strong style={{ color: "var(--text)" }}>{c.tipo}:</strong> {c.fechas_espana}{c.fechas_sedes_internacionales && ` · Internacional: ${c.fechas_sedes_internacionales}`}</div>)}
         </div>
       )}
       {scholarships.length > 0 && (
         <div className="req-block">
-          <div className="req-label">üéí Becas disponibles</div>
+          <div className="req-label">🎒 Becas disponibles</div>
           <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
             {scholarships.map((b, i) => (
               <div key={i} style={{ padding: "8px 12px", background: "#0a1020", borderRadius: 6, borderLeft: "2px solid var(--accent)" }}>
                 <div style={{ fontSize: 12, fontWeight: 700 }}>{b.nombre}</div>
                 {b.organismo && <div style={{ fontSize: 11, color: "var(--muted)", fontFamily: "var(--mono)" }}>{b.organismo}</div>}
-                {(b.cuantia || b.cuantia_eur) && <div style={{ fontSize: 11, color: "var(--accent2)", marginTop: 2 }}>{b.cuantia || `${b.cuantia_eur}‚Ç¨`}</div>}
-                {b.url && <a href={b.url} target="_blank" rel="noreferrer" style={{ fontSize: 10, color: "var(--accent)", fontFamily: "var(--mono)" }}>‚Üí {b.url}</a>}
+                {(b.cuantia || b.cuantia_eur) && <div style={{ fontSize: 11, color: "var(--accent2)", marginTop: 2 }}>{b.cuantia || `${b.cuantia_eur}€`}</div>}
+                {b.url && <a href={b.url} target="_blank" rel="noreferrer" style={{ fontSize: 10, color: "var(--accent)", fontFamily: "var(--mono)" }}>→ {b.url}</a>}
               </div>
             ))}
           </div>
@@ -404,11 +404,11 @@ function RequirementsPanel({ req }) {
       )}
       {dates.length > 0 && (
         <div className="req-block">
-          <div className="req-label">üìú Calendario clave</div>
+          <div className="req-label">📜 Calendario clave</div>
           <div className="dates-list">{dates.map((d, i) => <div key={i} className="date-item"><span className="date-hito">{d.hito}</span><span className="date-mes">{d.mes || d.fecha}</span></div>)}</div>
         </div>
       )}
-      {req.notes && <div className="req-block"><div className="req-label">üìé Notas</div><div className="req-value" style={{ fontSize: 12, color: "var(--muted)", lineHeight: 1.7 }}>{req.notes}</div></div>}
+      {req.notes && <div className="req-block"><div className="req-label">📎 Notas</div><div className="req-value" style={{ fontSize: 12, color: "var(--muted)", lineHeight: 1.7 }}>{req.notes}</div></div>}
     </div>
   );
 }
@@ -416,7 +416,7 @@ function RequirementsPanel({ req }) {
 function RegionPanel({ regionData, studentOrigin }) {
   if (!regionData || regionData.length === 0) return <div style={{ color: "var(--muted)", fontSize: 12, fontFamily: "var(--mono)" }}>Sin datos de costes para las regiones seleccionadas.</div>;
   const isNonEU = studentOrigin === "extracomunitario";
-  const ptypeLabel = { "fp_superior": "FP Grado Superior", "university_bachelor": "Grado Universitario", "university_master": "M√°ster" };
+  const ptypeLabel = { "fp_superior": "FP Grado Superior", "university_bachelor": "Grado Universitario", "university_master": "Máster" };
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
       {regionData.map((r, i) => (
@@ -428,17 +428,17 @@ function RegionPanel({ regionData, studentOrigin }) {
             </div>
             <div style={{ textAlign: "right" }}>
               <div style={{ fontSize: 20, fontWeight: 800, color: r.public_cost_eur === 0 ? "#81C784" : "var(--accent)" }}>
-                {r.public_cost_eur === 0 ? "Gratuito" : `${r.public_cost_eur?.toLocaleString("es-ES")}‚Ç¨`}
+                {r.public_cost_eur === 0 ? "Gratuito" : `${r.public_cost_eur?.toLocaleString("es-ES")}€`}
               </div>
-              <div style={{ fontSize: 10, color: "var(--muted)", fontFamily: "var(--mono)" }}>p√∫blico UE / a√±o</div>
+              <div style={{ fontSize: 10, color: "var(--muted)", fontFamily: "var(--mono)" }}>público UE / año</div>
               {isNonEU && r.non_eu_surcharge && (
-                <div style={{ fontSize: 11, color: "#FFB74D", fontFamily: "var(--mono)", marginTop: 2 }}>‚ö† +recargo no-UE</div>
+                <div style={{ fontSize: 11, color: "#FFB74D", fontFamily: "var(--mono)", marginTop: 2 }}>⚠ +recargo no-UE</div>
               )}
             </div>
           </div>
-          {r.private_cost_range && <div style={{ marginBottom: 8 }}><span className="req-pill">Privado: {r.private_cost_range}‚Ç¨/a√±o</span>{r.non_eu_surcharge && <span className="req-pill" style={{ color: "#FFB74D" }}>‚ö† Recargo no-UE</span>}</div>}
+          {r.private_cost_range && <div style={{ marginBottom: 8 }}><span className="req-pill">Privado: {r.private_cost_range}€/año</span>{r.non_eu_surcharge && <span className="req-pill" style={{ color: "#FFB74D" }}>⚠ Recargo no-UE</span>}</div>}
           {r.key_dates?.length > 0 && <div className="dates-list" style={{ marginBottom: 8 }}>{r.key_dates.map((d, j) => <div key={j} className="date-item"><span className="date-hito">{d.hito}</span><span className="date-mes">{d.fecha || d.mes}</span></div>)}</div>}
-          {r.platform_url && <a href={r.platform_url} target="_blank" rel="noreferrer" className="url-btn" style={{ marginTop: 4 }}>‚Üó Portal de admisi√≥n</a>}
+          {r.platform_url && <a href={r.platform_url} target="_blank" rel="noreferrer" className="url-btn" style={{ marginTop: 4 }}>↗ Portal de admisión</a>}
           {r.notes && <div style={{ marginTop: 10, fontSize: 11, color: "var(--muted)", lineHeight: 1.6, fontFamily: "var(--mono)" }}>{r.notes}</div>}
         </div>
       ))}
@@ -449,25 +449,25 @@ function RegionPanel({ regionData, studentOrigin }) {
 function UrlBtn({ url, status, label, style: extraStyle }) {
   if (!url) return null;
   if (status === "rota") {
-    return <span className="url-rota" title="URL rota o no disponible">‚ö† {label}: no disponible</span>;
+    return <span className="url-rota" title="URL rota o no disponible">⚠ {label}: no disponible</span>;
   }
   if (status === "generica") {
     return (
-      <a href={url} target="_blank" rel="noreferrer" className="url-btn url-generica" title="URL gen√©rica ‚Äî redirige a la web principal de la instituci√≥n" style={extraStyle}>
-        üåê {label}
+      <a href={url} target="_blank" rel="noreferrer" className="url-btn url-generica" title="URL genérica — redirige a la web principal de la institución" style={extraStyle}>
+        🌐 {label}
       </a>
     );
   }
   if (status === "manual_ok") {
     return (
       <a href={url} target="_blank" rel="noreferrer" className="url-btn url-manual-ok" title="URL verificada manualmente por el equipo" style={extraStyle}>
-        ‚úÖ {label}
+        ✅ {label}
       </a>
     );
   }
   return (
     <a href={url} target="_blank" rel="noreferrer" className="url-btn url-ok" style={extraStyle}>
-      ‚Üó {label}
+      ↗ {label}
     </a>
   );
 }
@@ -496,8 +496,8 @@ function EditableUrlBtn({ url, status, label, style: extraStyle, programId, fiel
           placeholder={"URL de " + label.toLowerCase()}
           onKeyDown={e => { if (e.key === "Enter") handleSave(); if (e.key === "Escape") { setEditing(false); setNewUrl(url || ""); } }}
           autoFocus />
-        <button className="url-edit-btn save" onClick={handleSave} disabled={saving}>{saving ? "‚Ä¶" : "‚úì"}</button>
-        <button className="url-edit-btn" onClick={() => { setEditing(false); setNewUrl(url || ""); }}>‚úï</button>
+        <button className="url-edit-btn save" onClick={handleSave} disabled={saving}>{saving ? "…" : "✓"}</button>
+        <button className="url-edit-btn" onClick={() => { setEditing(false); setNewUrl(url || ""); }}>✕</button>
       </div>
     );
   }
@@ -505,7 +505,7 @@ function EditableUrlBtn({ url, status, label, style: extraStyle, programId, fiel
   return (
     <div style={{ display: "flex", alignItems: "center", gap: 2 }}>
       <UrlBtn url={url} status={status} label={label} style={extraStyle} />
-      <button className="url-pencil" onClick={() => setEditing(true)} title="Editar URL">‚úèÔ∏è</button>
+      <button className="url-pencil" onClick={() => setEditing(true)} title="Editar URL">✏️</button>
     </div>
   );
 }
@@ -513,53 +513,53 @@ function EditableUrlBtn({ url, status, label, style: extraStyle, programId, fiel
 function generateExpedienteReport(student, matches, requirements, regionData) {
   const now = new Date().toLocaleDateString("es-ES", { day: "2-digit", month: "long", year: "numeric" });
   const originMap = { eu: "UE / EEE", latam_convenio: "LATAM Convenio", extracomunitario: "Extracomunitario" };
-  const typeMap = { grado: "Grado", master: "M√°ster", fp_superior: "FP Superior", doctorado: "Doctorado", bachillerato: "Bachillerato" };
-  const cities = Array.isArray(student.preferred_cities) ? student.preferred_cities.join(", ") : (student.preferred_cities || "‚Äî");
-  const programType = typeMap[student.desired_program_type] || typeMap[student.education_level] || "‚Äî";
+  const typeMap = { grado: "Grado", master: "Máster", fp_superior: "FP Superior", doctorado: "Doctorado", bachillerato: "Bachillerato" };
+  const cities = Array.isArray(student.preferred_cities) ? student.preferred_cities.join(", ") : (student.preferred_cities || "—");
+  const programType = typeMap[student.desired_program_type] || typeMap[student.education_level] || "—";
 
-  let r = `‚ïê‚ïê‚ïê INFORME DE EXPEDIENTE ‚ïê‚ïê‚ïê\nGenerado: ${now}\n\n`;
-  r += `‚ñ∏ DATOS DEL ESTUDIANTE\n`;
-  r += `  Nombre: ${student.full_name || "‚Äî"}\n`;
-  r += `  Email: ${student.email || "‚Äî"}\n`;
-  r += `  Pa√≠s: ${student.country_of_origin || "‚Äî"}\n`;
-  r += `  Origen: ${originMap[student.student_origin] || student.student_origin || "‚Äî"}\n`;
-  r += `  Nivel educativo: ${typeMap[student.education_level] || student.education_level || "‚Äî"}\n`;
+  let r = `═══ INFORME DE EXPEDIENTE ═══\nGenerado: ${now}\n\n`;
+  r += `▸ DATOS DEL ESTUDIANTE\n`;
+  r += `  Nombre: ${student.full_name || "—"}\n`;
+  r += `  Email: ${student.email || "—"}\n`;
+  r += `  País: ${student.country_of_origin || "—"}\n`;
+  r += `  Origen: ${originMap[student.student_origin] || student.student_origin || "—"}\n`;
+  r += `  Nivel educativo: ${typeMap[student.education_level] || student.education_level || "—"}\n`;
   r += `  Programa deseado: ${programType}\n`;
-  r += `  √Årea de estudio: ${student.study_area || "‚Äî"}\n`;
+  r += `  Área de estudio: ${student.study_area || "—"}\n`;
   r += `  Ciudades preferidas: ${cities}\n`;
-  if (student.base_degree) r += `  Titulaci√≥n base: ${student.base_degree}\n`;
+  if (student.base_degree) r += `  Titulación base: ${student.base_degree}\n`;
 
-  r += `\n‚ñ∏ PROGRAMAS ASIGNADOS (${matches.length})\n`;
+  r += `\n▸ PROGRAMAS ASIGNADOS (${matches.length})\n`;
   if (matches.length > 0) {
     const byArea = {};
     matches.forEach(m => {
-      const area = m.programas?.familia_area || "Sin √°rea";
+      const area = m.programas?.familia_area || "Sin área";
       if (!byArea[area]) byArea[area] = [];
       byArea[area].push(m);
     });
     Object.entries(byArea).sort().forEach(([area, ms]) => {
-      r += `  [${area}] ‚Äî ${ms.length} programa${ms.length > 1 ? "s" : ""}\n`;
+      r += `  [${area}] — ${ms.length} programa${ms.length > 1 ? "s" : ""}\n`;
       ms.slice(0, 5).forEach(m => {
         const p = m.programas || {};
         const price = student.student_origin === "extracomunitario" && p.precio_extracomunitario_eur != null ? p.precio_extracomunitario_eur : p.precio_anual_eur;
-        r += `    ‚Ä¢ ${p.nombre || "?"} (${p.ciudad || "?"})`;
-        if (price != null) r += ` ‚Äî ${price === 0 ? "Gratuito" : price.toLocaleString("es-ES") + "‚Ç¨/a√±o"}`;
+        r += `    • ${p.nombre || "?"} (${p.ciudad || "?"})`;
+        if (price != null) r += ` — ${price === 0 ? "Gratuito" : price.toLocaleString("es-ES") + "€/año"}`;
         r += `\n`;
       });
-      if (ms.length > 5) r += `    ... y ${ms.length - 5} m√°s\n`;
+      if (ms.length > 5) r += `    ... y ${ms.length - 5} más\n`;
     });
   } else {
     r += `  Sin programas asignados\n`;
   }
 
   if (requirements) {
-    r += `\n‚ñ∏ REQUISITOS DE ADMISI√ìN\n`;
+    r += `\n▸ REQUISITOS DE ADMISIÓN\n`;
     const hom = requirements.homologacion || {};
-    if (hom.proceso) r += `  Homologaci√≥n: ${hom.proceso}\n`;
-    if (hom.tasa_eur) r += `  Tasa homologaci√≥n: ${hom.tasa_eur}‚Ç¨\n`;
-    if (hom.plazo_resolucion_meses) r += `  Plazo resoluci√≥n: ${hom.plazo_resolucion_meses} meses\n`;
+    if (hom.proceso) r += `  Homologación: ${hom.proceso}\n`;
+    if (hom.tasa_eur) r += `  Tasa homologación: ${hom.tasa_eur}€\n`;
+    if (hom.plazo_resolucion_meses) r += `  Plazo resolución: ${hom.plazo_resolucion_meses} meses\n`;
     const lang = requirements.language_req || {};
-    if (lang.nivel_minimo) r += `  Idioma m√≠nimo: ${lang.nivel_minimo} (${lang.marco || ""})\n`;
+    if (lang.nivel_minimo) r += `  Idioma mínimo: ${lang.nivel_minimo} (${lang.marco || ""})\n`;
     if (lang.certificados_aceptados?.length) r += `  Certificados: ${lang.certificados_aceptados.join(", ")}\n`;
     const tests = requirements.access_tests || {};
     if (tests.nombre) r += `  Prueba acceso: ${tests.nombre}\n`;
@@ -571,30 +571,30 @@ function generateExpedienteReport(student, matches, requirements, regionData) {
   }
 
   if (regionData?.length > 0) {
-    r += `\n‚ñ∏ COSTES POR REGI√ìN\n`;
+    r += `\n▸ COSTES POR REGIÓN\n`;
     regionData.forEach(reg => {
       r += `  ${reg.region} (${reg.program_type}): `;
-      r += reg.public_cost_eur === 0 ? "Gratuito" : `${reg.public_cost_eur?.toLocaleString("es-ES")}‚Ç¨/a√±o p√∫blico`;
-      if (reg.private_cost_range) r += ` | Privado: ${reg.private_cost_range}‚Ç¨/a√±o`;
+      r += reg.public_cost_eur === 0 ? "Gratuito" : `${reg.public_cost_eur?.toLocaleString("es-ES")}€/año público`;
+      if (reg.private_cost_range) r += ` | Privado: ${reg.private_cost_range}€/año`;
       r += `\n`;
     });
   }
 
-  r += `\n‚ñ∏ CHECKLIST DE SEGUIMIENTO\n`;
-  r += `  [ ] Documentaci√≥n acad√©mica recibida\n`;
-  r += `  [ ] Homologaci√≥n del t√≠tulo iniciada\n`;
+  r += `\n▸ CHECKLIST DE SEGUIMIENTO\n`;
+  r += `  [ ] Documentación académica recibida\n`;
+  r += `  [ ] Homologación del título iniciada\n`;
   if (requirements?.language_req?.nivel_minimo) r += `  [ ] Certificado de idioma presentado\n`;
-  if (requirements?.access_tests?.nombre) r += `  [ ] Inscripci√≥n en ${requirements.access_tests.nombre}\n`;
-  r += `  [ ] Solicitud de admisi√≥n enviada\n`;
-  r += `  [ ] Confirmaci√≥n de plaza recibida\n`;
-  r += `  [ ] Matr√≠cula formalizada\n`;
+  if (requirements?.access_tests?.nombre) r += `  [ ] Inscripción en ${requirements.access_tests.nombre}\n`;
+  r += `  [ ] Solicitud de admisión enviada\n`;
+  r += `  [ ] Confirmación de plaza recibida\n`;
+  r += `  [ ] Matrícula formalizada\n`;
   if (student.student_origin === "extracomunitario") {
     r += `  [ ] Visado de estudiante solicitado\n`;
-    r += `  [ ] Seguro m√©dico contratado\n`;
+    r += `  [ ] Seguro médico contratado\n`;
   }
 
-  r += `\n‚ñ∏ OBSERVACIONES\n`;
-  r += `  (A√±adir notas manuales aqu√≠)\n`;
+  r += `\n▸ OBSERVACIONES\n`;
+  r += `  (Añadir notas manuales aquí)\n`;
   return r;
 }
 
@@ -744,16 +744,16 @@ function StudentDetail({ student, onStatusChange, onNotesSave }) {
       const reqs = await query("admission_requirements", "*", { program_type: ptype, student_origin: origin });
       if (Array.isArray(reqs) && reqs.length > 0) setRequirements(reqs[0]);
       const cityToRegion = {
-        "Madrid": "Madrid", "Barcelona": "Catalu√±a", "Valencia": "Comunidad Valenciana",
-        "Sevilla": "Andaluc√≠a", "M√°laga": "Andaluc√≠a", "Granada": "Andaluc√≠a",
-        "Bilbao": "Pa√≠s Vasco", "San Sebasti√°n": "Pa√≠s Vasco", "Vitoria": "Pa√≠s Vasco",
-        "Zaragoza": "Arag√≥n", "Pamplona": "Navarra", "Santander": "Cantabria",
-        "A Coru√±a": "Galicia", "Santiago de Compostela": "Galicia", "Vigo": "Galicia",
-        "Murcia": "Murcia", "Alicante": "Comunidad Valenciana", "Castell√≥n": "Comunidad Valenciana",
-        "Valladolid": "Castilla y Le√≥n", "Salamanca": "Castilla y Le√≥n",
+        "Madrid": "Madrid", "Barcelona": "Cataluña", "Valencia": "Comunidad Valenciana",
+        "Sevilla": "Andalucía", "Málaga": "Andalucía", "Granada": "Andalucía",
+        "Bilbao": "País Vasco", "San Sebastián": "País Vasco", "Vitoria": "País Vasco",
+        "Zaragoza": "Aragón", "Pamplona": "Navarra", "Santander": "Cantabria",
+        "A Coruña": "Galicia", "Santiago de Compostela": "Galicia", "Vigo": "Galicia",
+        "Murcia": "Murcia", "Alicante": "Comunidad Valenciana", "Castellón": "Comunidad Valenciana",
+        "Valladolid": "Castilla y León", "Salamanca": "Castilla y León",
         "Toledo": "Castilla-La Mancha", "Albacete": "Castilla-La Mancha",
         "Palma de Mallorca": "Islas Baleares", "Las Palmas": "Canarias", "Santa Cruz de Tenerife": "Canarias",
-        "Oviedo": "Asturias", "Logro√±o": "La Rioja", "M√©rida": "Extremadura",
+        "Oviedo": "Asturias", "Logroño": "La Rioja", "Mérida": "Extremadura",
       };
       const studentCities = Array.isArray(student.preferred_cities) ? student.preferred_cities : [];
       const regions = [...new Set(studentCities.map(c => cityToRegion[c]).filter(Boolean))];
@@ -823,8 +823,8 @@ function StudentDetail({ student, onStatusChange, onNotesSave }) {
       <div className="detail-header">
         <div className="detail-name">{student.full_name || "Estudiante sin nombre"}</div>
         <div className="detail-meta-row">
-          <div className="detail-meta-item">Email: <span>{student.email || "‚Äî"}</span></div>
-          <div className="detail-meta-item">Pa√≠s: <span>{student.country_of_origin || "‚Äî"}</span></div>
+          <div className="detail-meta-item">Email: <span>{student.email || "—"}</span></div>
+          <div className="detail-meta-item">País: <span>{student.country_of_origin || "—"}</span></div>
           <div className="detail-meta-item">Origen: <span>{getOriginLabel(student.student_origin)}</span></div>
           <div className="detail-meta-item">Recibido: <span>{formatDate(student.created_at)}</span></div>
         </div>
@@ -833,20 +833,20 @@ function StudentDetail({ student, onStatusChange, onNotesSave }) {
             {Object.entries(STATUS_CONFIG).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
           </select>
           {(student.desired_program_type || student.education_level) && <div style={{ fontSize: 11, fontFamily: "var(--mono)", color: "var(--muted)" }}>Programa deseado: <span style={{ color: "var(--text)" }}>{student.desired_program_type || student.education_level}</span></div>}
-          {student.base_degree && <div style={{ fontSize: 11, fontFamily: "var(--mono)", color: "var(--muted)" }}>Titulaci√≥n base: <span style={{ color: "var(--text)" }}>{student.base_degree}</span></div>}
+          {student.base_degree && <div style={{ fontSize: 11, fontFamily: "var(--mono)", color: "var(--muted)" }}>Titulación base: <span style={{ color: "var(--text)" }}>{student.base_degree}</span></div>}
           {student.preferred_cities && <div style={{ fontSize: 11, fontFamily: "var(--mono)", color: "var(--muted)" }}>Ciudades: <span style={{ color: "var(--text)" }}>{Array.isArray(student.preferred_cities) ? student.preferred_cities.join(", ") : student.preferred_cities}</span></div>}
-          {student.study_area && <div style={{ fontSize: 11, fontFamily: "var(--mono)", color: "var(--muted)" }}>√Årea: <span style={{ color: "var(--text)" }}>{student.study_area}</span></div>}
+          {student.study_area && <div style={{ fontSize: 11, fontFamily: "var(--mono)", color: "var(--muted)" }}>Área: <span style={{ color: "var(--text)" }}>{student.study_area}</span></div>}
         </div>
       </div>
       <div className="tabs">
-        {[["matches", `Matches (${matches.length})`], ["requisitos", "Requisitos admisi√≥n"], ["region", "Costes y plazos"], ["notas", "Notas expediente"]].map(([k, l]) => (
+        {[["matches", `Matches (${matches.length})`], ["requisitos", "Requisitos admisión"], ["region", "Costes y plazos"], ["notas", "Notas expediente"]].map(([k, l]) => (
           <div key={k} className={`tab ${tab === k ? "active" : ""}`} onClick={() => setTab(k)}>{l}</div>
         ))}
       </div>
       {tab === "matches" && (
         <div className="section">
           {loadingMatches ? <div className="loading"><div className="spinner" /> Cargando programas...</div>
-          : matches.length === 0 ? <div style={{ color: "var(--muted)", fontSize: 13, fontFamily: "var(--mono)", padding: "20px 0" }}>Sin matches a√∫n. N8N los guardar√° cuando el estudiante complete el formulario.</div>
+          : matches.length === 0 ? <div style={{ color: "var(--muted)", fontSize: 13, fontFamily: "var(--mono)", padding: "20px 0" }}>Sin matches aún. N8N los guardará cuando el estudiante complete el formulario.</div>
           : (() => {
               const areas = ["all", ...Array.from(new Set(matches.map(m => m.programas?.familia_area).filter(Boolean))).sort()];
               const filtered = filterArea === "all" ? matches : matches.filter(m => m.programas?.familia_area === filterArea);
@@ -856,16 +856,16 @@ function StudentDetail({ student, onStatusChange, onNotesSave }) {
                     <div style={{ marginBottom: 16, display: "flex", gap: 6, flexWrap: "wrap" }}>
                       {areas.map(a => (
                         <div key={a} className={`filter-chip ${filterArea === a ? "active" : ""}`} onClick={() => setFilterArea(a)}>
-                          {a === "all" ? `Todas las √°reas (${matches.length})` : `${a} (${matches.filter(m => m.programas?.familia_area === a).length})`}
+                          {a === "all" ? `Todas las áreas (${matches.length})` : `${a} (${matches.filter(m => m.programas?.familia_area === a).length})`}
                         </div>
                       ))}
                     </div>
                   )}
                   {urlLearning && (
                     <div className="learning-banner">
-                      <span>üß†</span>
-                      <span><span className="learning-count">{urlLearning.appliedCount > 0 ? `‚úÖ ${urlLearning.appliedCount}` : urlLearning.programs.length}</span>{urlLearning.appliedCount > 0 ? " programas corregidos" : ` programa${urlLearning.programs.length > 1 ? "s" : ""} m√°s ten√≠an esta misma URL gen√©rica`}</span>
-                      {!urlLearning.appliedCount && <button className="learning-btn apply" onClick={applyLearning} disabled={applyingLearning}>{applyingLearning ? "Aplicando..." : "‚úì Corregir todos"}</button>}
+                      <span>🧠</span>
+                      <span><span className="learning-count">{urlLearning.appliedCount > 0 ? `✅ ${urlLearning.appliedCount}` : urlLearning.programs.length}</span>{urlLearning.appliedCount > 0 ? " programas corregidos" : ` programa${urlLearning.programs.length > 1 ? "s" : ""} más tenían esta misma URL genérica`}</span>
+                      {!urlLearning.appliedCount && <button className="learning-btn apply" onClick={applyLearning} disabled={applyingLearning}>{applyingLearning ? "Aplicando..." : "✓ Corregir todos"}</button>}
                       <button className="learning-btn dismiss" onClick={() => setUrlLearning(null)}>{urlLearning.appliedCount > 0 ? "Cerrar" : "Ignorar"}</button>
                     </div>
                   )}
@@ -876,13 +876,13 @@ function StudentDetail({ student, onStatusChange, onNotesSave }) {
                     return (
                     <div key={i} className="program-card">
                       <div className="program-name">{p.nombre || "Programa sin nombre"}</div>
-                      <div className="program-inst">{p.ciudad || "‚Äî"}</div>
+                      <div className="program-inst">{p.ciudad || "—"}</div>
                       <div className="program-tags">
                         {p.tipo && <span className="tag highlight">{p.tipo}</span>}
                         {p.modalidad && <span className="tag">{p.modalidad}</span>}
                         {p.familia_area && <span className="tag">{p.familia_area}</span>}
                         {p.idioma && <span className="tag">{p.idioma}</span>}
-                        {price != null && <span className="tag" style={{ color: "#81C784", borderColor: "#81C78444" }}>{price === 0 ? "Gratuito" : `${price.toLocaleString("es-ES")}‚Ç¨/a√±o`} ¬∑ {priceLabel}</span>}
+                        {price != null && <span className="tag" style={{ color: "#81C784", borderColor: "#81C78444" }}>{price === 0 ? "Gratuito" : `${price.toLocaleString("es-ES")}€/año`} · {priceLabel}</span>}
                       </div>
                       <div className="program-footer">
                         <EditableUrlBtn url={p.url_solicitud} status={p.url_solicitud_status} label="Solicitud" programId={m.programa_id} field="url_solicitud" onUrlUpdated={handleUrlUpdated} />
@@ -899,16 +899,16 @@ function StudentDetail({ student, onStatusChange, onNotesSave }) {
         <div className="section">
           <div style={{ fontSize: 11, fontFamily: "var(--mono)", color: "var(--muted)", marginBottom: 16 }}>
             Perfil: <span style={{ color: "var(--accent2)" }}>{getOriginLabel(student.student_origin || "extracomunitario")}</span>
-            {" ¬∑ "}
+            {" · "}
             <span style={{ color: "var(--accent2)" }}>
-              {{ "grado": "Grado Universitario", "fp_superior": "FP Grado Superior", "master": "M√°ster", "doctorado": "Doctorado" }[student.desired_program_type]
-              || { "bachillerato": "Grado Universitario", "fp_superior": "FP Grado Superior", "grado": "M√°ster", "master": "M√°ster" }[student.education_level]
+              {{ "grado": "Grado Universitario", "fp_superior": "FP Grado Superior", "master": "Máster", "doctorado": "Doctorado" }[student.desired_program_type]
+              || { "bachillerato": "Grado Universitario", "fp_superior": "FP Grado Superior", "grado": "Máster", "master": "Máster" }[student.education_level]
               || "Programa"}
             </span>
           </div>
           {(student.desired_program_type === "grado" || (!student.desired_program_type && student.education_level === "bachillerato")) && (
             <div style={{ marginBottom: 16, padding: "10px 14px", background: "#1c1500", border: "1px solid #FFB74D44", borderRadius: 8, fontSize: 11, fontFamily: "var(--mono)", color: "#FFB74D", lineHeight: 1.7 }}>
-              ‚ö† <strong>PCE (UNED):</strong> Requerida para carreras con nota de corte: Medicina, Enfermer√≠a, Psicolog√≠a, Ingenier√≠as. Excepci√≥n: estudiantes colombianos con Saber 11.
+              ⚠ <strong>PCE (UNED):</strong> Requerida para carreras con nota de corte: Medicina, Enfermería, Psicología, Ingenierías. Excepción: estudiantes colombianos con Saber 11.
             </div>
           )}
           <RequirementsPanel req={requirements} />
@@ -920,19 +920,19 @@ function StudentDetail({ student, onStatusChange, onNotesSave }) {
         <button className="save-btn" style={{ marginBottom: 12, background: "var(--accent2)" }} onClick={() => {
           const report = generateExpedienteReport(student, matches, requirements, regionData);
           setNotes(prev => prev ? prev + "\n\n" + report : report);
-        }}>‚ö° Generar informe autom√°tico</button>
-        <textarea className="notes-area" style={{ minHeight: 200 }} value={notes} onChange={e => setNotes(e.target.value)} placeholder="Documentos recibidos, comunicaciones, estado de homologaci√≥n..." />
-        <button className="save-btn" onClick={saveNotes} disabled={saving}>{saving ? "Guardando..." : saved ? "‚úì Guardado" : "Guardar notas"}</button>
+        }}>⚡ Generar informe automático</button>
+        <textarea className="notes-area" style={{ minHeight: 200 }} value={notes} onChange={e => setNotes(e.target.value)} placeholder="Documentos recibidos, comunicaciones, estado de homologación..." />
+        <button className="save-btn" onClick={saveNotes} disabled={saving}>{saving ? "Guardando..." : saved ? "✓ Guardado" : "Guardar notas"}</button>
       </div>}
     </div>
   );
 }
 
-// ‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê
+// ═══════════════════════════════════════════════════════════════════════════
 // PUBLIC WEBSITE - Lead Capture & Program Browser
-// ‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê
+// ═══════════════════════════════════════════════════════════════════════════
 
-// ‚îÄ‚îÄ‚îÄ PUBLIC API HELPERS ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ
+// ─── PUBLIC API HELPERS ──────────────────────────────────────────────────
 function getPublicHeaders() {
   return { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` };
 }
@@ -951,47 +951,47 @@ async function publicInsert(table, data) {
   return res.json();
 }
 
-// ‚îÄ‚îÄ‚îÄ MATCH ALGORITHM ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ
+// ─── MATCH ALGORITHM ─────────────────────────────────────────────────────
 const STUDY_AREA_TO_FAMILIA = {
-  "Administraci√≥n, Econom√≠a y Empresa": [
-    "Administraci√≥n y Direcci√≥n de Empresas","Comercio Internacional y Log√≠stica",
-    "Finanzas y Contabilidad","Fiscalidad y Tributaci√≥n",
-    "Marketing y Comunicaci√≥n Empresarial","Recursos Humanos",
-    "Turismo y Hosteler√≠a","Gastronom√≠a y Artes Culinarias",
+  "Administración, Economía y Empresa": [
+    "Administración y Dirección de Empresas","Comercio Internacional y Logística",
+    "Finanzas y Contabilidad","Fiscalidad y Tributación",
+    "Marketing y Comunicación Empresarial","Recursos Humanos",
+    "Turismo y Hostelería","Gastronomía y Artes Culinarias",
   ],
-  "Arte, Dise√±o y Comunicaci√≥n": [
-    "Arquitectura y Dise√±o de Interiores","Artes Visuales y Dise√±o",
-    "Cine y Producci√≥n Audiovisual","Fotograf√≠a y Medios Digitales",
-    "Gesti√≥n Cultural y Eventos","Moda y Dise√±o Textil",
-    "M√∫sica y Artes Esc√©nicas","Periodismo y Comunicaci√≥n",
-    "Publicidad y Relaciones P√∫blicas",
+  "Arte, Diseño y Comunicación": [
+    "Arquitectura y Diseño de Interiores","Artes Visuales y Diseño",
+    "Cine y Producción Audiovisual","Fotografía y Medios Digitales",
+    "Gestión Cultural y Eventos","Moda y Diseño Textil",
+    "Música y Artes Escénicas","Periodismo y Comunicación",
+    "Publicidad y Relaciones Públicas",
   ],
-  "Derecho y Ciencias Pol√≠ticas": [
+  "Derecho y Ciencias Políticas": [
     "Derecho Civil y Privado","Derecho Internacional",
-    "Derecho P√∫blico y Administrativo",
+    "Derecho Público y Administrativo",
   ],
-  "Educaci√≥n y Ciencias Sociales": [
-    "Educaci√≥n y Pedagog√≠a","Filosof√≠a y √âtica",
-    "Geograf√≠a y Urbanismo","Historia y Patrimonio",
-    "Ling√º√≠stica y Traducci√≥n","Psicolog√≠a y Salud Mental",
-    "Sociolog√≠a y Antropolog√≠a","Trabajo Social y Servicios Sociales",
+  "Educación y Ciencias Sociales": [
+    "Educación y Pedagogía","Filosofía y Ética",
+    "Geografía y Urbanismo","Historia y Patrimonio",
+    "Lingüística y Traducción","Psicología y Salud Mental",
+    "Sociología y Antropología","Trabajo Social y Servicios Sociales",
   ],
-  "Ingenier√≠a y Tecnolog√≠a": [
-    "Astronom√≠a y Astrof√≠sica","Ciberseguridad e Inteligencia Digital",
-    "Energ√≠a y Medioambiente","Inform√°tica y Desarrollo de Software",
-    "Ingenier√≠a Civil y Construcci√≥n","Ingenier√≠a El√©ctrica y Electr√≥nica",
-    "Ingenier√≠a Industrial y Manufactura","Ingenier√≠a Qu√≠mica y de Materiales",
-    "Inteligencia Artificial y Datos","Matem√°ticas y Estad√≠stica",
-    "Qu√≠mica y F√≠sica","Telecomunicaciones y Redes",
+  "Ingeniería y Tecnología": [
+    "Astronomía y Astrofísica","Ciberseguridad e Inteligencia Digital",
+    "Energía y Medioambiente","Informática y Desarrollo de Software",
+    "Ingeniería Civil y Construcción","Ingeniería Eléctrica y Electrónica",
+    "Ingeniería Industrial y Manufactura","Ingeniería Química y de Materiales",
+    "Inteligencia Artificial y Datos","Matemáticas y Estadística",
+    "Química y Física","Telecomunicaciones y Redes",
   ],
   "Salud y Ciencias de la Vida": [
-    "Agricultura y Ciencias Agrarias","Biolog√≠a y Ciencias Naturales",
-    "Biotecnolog√≠a y Biomedicina","Ciencias del Mar y Acuicultura",
-    "Deporte y Ciencias del Ejercicio","Enfermer√≠a y Cuidados",
-    "Farmacia y Nutrici√≥n","Fisioterapia y Rehabilitaci√≥n",
-    "Geolog√≠a y Ciencias de la Tierra","Medicina y Ciencias Cl√≠nicas",
-    "Medioambiente y Sostenibilidad","Odontolog√≠a",
-    "Salud P√∫blica y Epidemiolog√≠a","Veterinaria y Ciencias Animales",
+    "Agricultura y Ciencias Agrarias","Biología y Ciencias Naturales",
+    "Biotecnología y Biomedicina","Ciencias del Mar y Acuicultura",
+    "Deporte y Ciencias del Ejercicio","Enfermería y Cuidados",
+    "Farmacia y Nutrición","Fisioterapia y Rehabilitación",
+    "Geología y Ciencias de la Tierra","Medicina y Ciencias Clínicas",
+    "Medioambiente y Sostenibilidad","Odontología",
+    "Salud Pública y Epidemiología","Veterinaria y Ciencias Animales",
   ],
 };
 const EDUCATION_TO_TIPO = {
@@ -1001,20 +1001,20 @@ const EDUCATION_TO_TIPO = {
   master: ["doctorado"],
 };
 const STUDY_AREA_ICONS = {
-  "Administraci√≥n, Econom√≠a y Empresa": "üíº",
-  "Arte, Dise√±o y Comunicaci√≥n": "üé®",
-  "Derecho y Ciencias Pol√≠ticas": "‚öñÔ∏è",
-  "Educaci√≥n y Ciencias Sociales": "üìö",
-  "Ingenier√≠a y Tecnolog√≠a": "‚öôÔ∏è",
-  "Salud y Ciencias de la Vida": "üß¨",
+  "Administración, Economía y Empresa": "💼",
+  "Arte, Diseño y Comunicación": "🎨",
+  "Derecho y Ciencias Políticas": "⚖️",
+  "Educación y Ciencias Sociales": "📚",
+  "Ingeniería y Tecnología": "⚙️",
+  "Salud y Ciencias de la Vida": "🧬",
 };
 const CITIES_LIST = [
-  "Madrid","Barcelona","Valencia","Sevilla","M√°laga","Granada",
-  "Bilbao","San Sebasti√°n","Zaragoza","Salamanca","A Coru√±a",
+  "Madrid","Barcelona","Valencia","Sevilla","Málaga","Granada",
+  "Bilbao","San Sebastián","Zaragoza","Salamanca","A Coruña",
   "Murcia","Alicante","Valladolid","Pamplona","Santander",
   "Oviedo","Palma de Mallorca","Vigo","Santiago de Compostela",
 ];
-const TIPO_LABELS = { grado: "Grado", fp_superior: "FP Superior", master: "M√°ster", doctorado: "Doctorado" };
+const TIPO_LABELS = { grado: "Grado", fp_superior: "FP Superior", master: "Máster", doctorado: "Doctorado" };
 
 function computeMatches(programs, profile) {
   const familias = STUDY_AREA_TO_FAMILIA[profile.study_area] || [];
@@ -1026,7 +1026,7 @@ function computeMatches(programs, profile) {
   return scored.slice(0, 50);
 }
 
-// ‚îÄ‚îÄ‚îÄ PUBLIC CSS ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ
+// ─── PUBLIC CSS ──────────────────────────────────────────────────────────
 const publicCss = `
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
 :root {
@@ -1194,7 +1194,7 @@ const publicCss = `
 }
 `;
 
-// ‚îÄ‚îÄ‚îÄ PUBLIC COMPONENTS ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ
+// ─── PUBLIC COMPONENTS ───────────────────────────────────────────────────
 
 function PublicNav({ route }) {
   const isActive = (r) => route === r || (r === "#/" && (!route || route === "#" || route === "#/"));
@@ -1205,7 +1205,7 @@ function PublicNav({ route }) {
         <span className={`pub-nav-link ${isActive("#/") ? "active" : ""}`} onClick={() => location.hash = "#/"}>Inicio</span>
         <span className={`pub-nav-link ${route?.startsWith("#/match") ? "active" : ""}`} onClick={() => location.hash = "#/match"}>Test vocacional</span>
         <span className={`pub-nav-link ${route?.startsWith("#/programa") ? "active" : ""}`} onClick={() => location.hash = "#/programas"}>Explorar programas</span>
-        <span className="pub-nav-link admin" onClick={() => location.hash = "#/admin"}>Acceso equipo</span>
+        {!IS_PUBLIC_DOMAIN && <span className="pub-nav-link admin" onClick={() => location.hash = "#/admin"}>Acceso equipo</span>}
       </div>
     </nav>
   );
@@ -1215,29 +1215,29 @@ function LandingPage() {
   return (
     <>
       <div className="pub-hero">
-        <h1>Encuentra tu programa ideal en Espa√±a</h1>
-        <p>M√°s de 10.000 programas universitarios y de FP para estudiantes internacionales. Te ayudamos a encontrar el tuyo.</p>
+        <h1>Encuentra tu programa ideal en España</h1>
+        <p>Más de 10.000 programas universitarios y de FP para estudiantes internacionales. Te ayudamos a encontrar el tuyo.</p>
         <div className="pub-hero-btns">
-          <button className="pub-btn pub-btn-primary" onClick={() => location.hash = "#/match"}>No s√© qu√© estudiar</button>
-          <button className="pub-btn pub-btn-outline" onClick={() => location.hash = "#/programas"}>Ya s√© qu√© quiero</button>
+          <button className="pub-btn pub-btn-primary" onClick={() => location.hash = "#/match"}>No sé qué estudiar</button>
+          <button className="pub-btn pub-btn-outline" onClick={() => location.hash = "#/programas"}>Ya sé qué quiero</button>
         </div>
       </div>
       <div className="pub-features">
-        <div className="pub-feature"><div className="pub-feature-icon">üéØ</div><h3>Match personalizado</h3><p>Nuestro algoritmo analiza tu perfil y te recomienda los programas que mejor encajan contigo.</p></div>
-        <div className="pub-feature"><div className="pub-feature-icon">üîç</div><h3>B√∫squeda avanzada</h3><p>Filtra por ciudad, tipo de estudio, precio y modalidad entre miles de programas.</p></div>
-        <div className="pub-feature"><div className="pub-feature-icon">üìã</div><h3>Revisi√≥n de expediente</h3><p>Un asesor experto revisa tu documentaci√≥n y te gu√≠a en el proceso de admisi√≥n.</p></div>
+        <div className="pub-feature"><div className="pub-feature-icon">🎯</div><h3>Match personalizado</h3><p>Nuestro algoritmo analiza tu perfil y te recomienda los programas que mejor encajan contigo.</p></div>
+        <div className="pub-feature"><div className="pub-feature-icon">🔍</div><h3>Búsqueda avanzada</h3><p>Filtra por ciudad, tipo de estudio, precio y modalidad entre miles de programas.</p></div>
+        <div className="pub-feature"><div className="pub-feature-icon">📋</div><h3>Revisión de expediente</h3><p>Un asesor experto revisa tu documentación y te guía en el proceso de admisión.</p></div>
       </div>
       <div className="pub-stats">
         <div className="pub-stat"><div className="pub-stat-num">10.135</div><div className="pub-stat-label">Programas disponibles</div></div>
-        <div className="pub-stat"><div className="pub-stat-num">28</div><div className="pub-stat-label">Ciudades en Espa√±a</div></div>
-        <div className="pub-stat"><div className="pub-stat-num">100%</div><div className="pub-stat-label">Asesor√≠a gratuita</div></div>
+        <div className="pub-stat"><div className="pub-stat-num">28</div><div className="pub-stat-label">Ciudades en España</div></div>
+        <div className="pub-stat"><div className="pub-stat-num">100%</div><div className="pub-stat-label">Asesoría gratuita</div></div>
       </div>
     </>
   );
 }
 
 function ProgramCard({ program: p, onSelect, selected }) {
-  const precio = p.precio_anual_eur ? `${Number(p.precio_anual_eur).toLocaleString("es-ES")} ‚Ç¨/a√±o` : "Consultar precio";
+  const precio = p.precio_anual_eur ? `${Number(p.precio_anual_eur).toLocaleString("es-ES")} €/año` : "Consultar precio";
   return (
     <div className={`pub-program ${selected ? "selected" : ""}`}>
       <div className="pub-program-name">{p.nombre}</div>
@@ -1248,7 +1248,7 @@ function ProgramCard({ program: p, onSelect, selected }) {
       </div>
       <div className="pub-program-price">{precio}</div>
       <div className="pub-program-area">{p.familia_area}</div>
-      {onSelect && <button className={`pub-program-btn ${selected ? "selected" : ""}`} onClick={() => onSelect(p.id)}>{selected ? "‚úì Seleccionado" : "Seleccionar"}</button>}
+      {onSelect && <button className={`pub-program-btn ${selected ? "selected" : ""}`} onClick={() => onSelect(p.id)}>{selected ? "✓ Seleccionado" : "Seleccionar"}</button>}
     </div>
   );
 }
@@ -1277,15 +1277,15 @@ function MatchForm() {
   };
 
   const origins = [
-    { value: "eu", label: "Uni√≥n Europea / EEE", desc: "Ciudadano de un pa√≠s de la UE o Espacio Econ√≥mico Europeo" },
-    { value: "latam_convenio", label: "Latinoam√©rica (con convenio)", desc: "Pa√≠s con convenio de reconocimiento de t√≠tulos" },
-    { value: "extracomunitario", label: "Extracomunitario", desc: "Resto de pa√≠ses fuera de la UE" },
+    { value: "eu", label: "Unión Europea / EEE", desc: "Ciudadano de un país de la UE o Espacio Económico Europeo" },
+    { value: "latam_convenio", label: "Latinoamérica (con convenio)", desc: "País con convenio de reconocimiento de títulos" },
+    { value: "extracomunitario", label: "Extracomunitario", desc: "Resto de países fuera de la UE" },
   ];
   const eduOptions = [
-    { value: "bachillerato", label: "Bachillerato / Secundaria", desc: "He completado la educaci√≥n secundaria" },
-    { value: "fp_superior", label: "FP Superior / T√©cnico", desc: "Tengo un t√≠tulo de formaci√≥n profesional" },
-    { value: "grado", label: "Grado / Licenciatura", desc: "Tengo un t√≠tulo universitario de grado" },
-    { value: "master", label: "M√°ster", desc: "Tengo un m√°ster universitario" },
+    { value: "bachillerato", label: "Bachillerato / Secundaria", desc: "He completado la educación secundaria" },
+    { value: "fp_superior", label: "FP Superior / Técnico", desc: "Tengo un título de formación profesional" },
+    { value: "grado", label: "Grado / Licenciatura", desc: "Tengo un título universitario de grado" },
+    { value: "master", label: "Máster", desc: "Tengo un máster universitario" },
   ];
 
   return (
@@ -1296,8 +1296,8 @@ function MatchForm() {
         </div>
 
         {step === 1 && <>
-          <h2>¬øDe d√≥nde eres?</h2>
-          <p className="pub-card-sub">Tu origen determina los requisitos de admisi√≥n y precios</p>
+          <h2>¿De dónde eres?</h2>
+          <p className="pub-card-sub">Tu origen determina los requisitos de admisión y precios</p>
           <div className="pub-options">
             {origins.map(o => (
               <div key={o.value} className={`pub-option ${origin === o.value ? "selected" : ""}`} onClick={() => setOrigin(o.value)}>
@@ -1306,14 +1306,14 @@ function MatchForm() {
             ))}
           </div>
           <div className="pub-field" style={{ marginTop: 20 }}>
-            <label className="pub-label">Pa√≠s de origen</label>
-            <input className="pub-input" placeholder="Ej: Colombia, M√©xico, Francia..." value={country} onChange={e => setCountry(e.target.value)} />
+            <label className="pub-label">País de origen</label>
+            <input className="pub-input" placeholder="Ej: Colombia, México, Francia..." value={country} onChange={e => setCountry(e.target.value)} />
           </div>
         </>}
 
         {step === 2 && <>
-          <h2>¬øCu√°l es tu nivel educativo actual?</h2>
-          <p className="pub-card-sub">Esto determina qu√© tipo de programas puedes cursar</p>
+          <h2>¿Cuál es tu nivel educativo actual?</h2>
+          <p className="pub-card-sub">Esto determina qué tipo de programas puedes cursar</p>
           <div className="pub-options">
             {eduOptions.map(o => (
               <div key={o.value} className={`pub-option ${eduLevel === o.value ? "selected" : ""}`} onClick={() => setEduLevel(o.value)}>
@@ -1324,8 +1324,8 @@ function MatchForm() {
         </>}
 
         {step === 3 && <>
-          <h2>¬øQu√© √°rea te interesa?</h2>
-          <p className="pub-card-sub">Selecciona el campo de estudio que m√°s te atraiga</p>
+          <h2>¿Qué área te interesa?</h2>
+          <p className="pub-card-sub">Selecciona el campo de estudio que más te atraiga</p>
           <div className="pub-area-grid">
             {Object.keys(STUDY_AREA_TO_FAMILIA).map(area => (
               <div key={area} className={`pub-area-card ${studyArea === area ? "selected" : ""}`} onClick={() => setStudyArea(area)}>
@@ -1337,22 +1337,22 @@ function MatchForm() {
         </>}
 
         {step === 4 && <>
-          <h2>¬øD√≥nde te gustar√≠a estudiar?</h2>
-          <p className="pub-card-sub">Selecciona una o m√°s ciudades (puedes elegir varias)</p>
+          <h2>¿Dónde te gustaría estudiar?</h2>
+          <p className="pub-card-sub">Selecciona una o más ciudades (puedes elegir varias)</p>
           <div className="pub-city-grid">
             {CITIES_LIST.map(c => (
               <div key={c} className={`pub-city ${cities.includes(c) ? "selected" : ""}`} onClick={() => toggleCity(c)}>
-                <div className="pub-city-check">{cities.includes(c) ? "‚úì" : ""}</div>{c}
+                <div className="pub-city-check">{cities.includes(c) ? "✓" : ""}</div>{c}
               </div>
             ))}
           </div>
         </>}
 
         <div className="pub-form-nav">
-          {step > 1 ? <button className="pub-btn pub-btn-outline pub-btn-sm" onClick={() => setStep(s => s - 1)}>‚Üê Anterior</button> : <div />}
+          {step > 1 ? <button className="pub-btn pub-btn-outline pub-btn-sm" onClick={() => setStep(s => s - 1)}>← Anterior</button> : <div />}
           {step < 4
-            ? <button className="pub-btn pub-btn-primary pub-btn-sm" disabled={!canNext()} onClick={() => setStep(s => s + 1)}>Siguiente ‚Üí</button>
-            : <button className="pub-btn pub-btn-primary pub-btn-sm" disabled={!canNext()} onClick={handleFinish}>Ver resultados ‚Üí</button>
+            ? <button className="pub-btn pub-btn-primary pub-btn-sm" disabled={!canNext()} onClick={() => setStep(s => s + 1)}>Siguiente →</button>
+            : <button className="pub-btn pub-btn-primary pub-btn-sm" disabled={!canNext()} onClick={handleFinish}>Ver resultados →</button>
           }
         </div>
       </div>
@@ -1387,15 +1387,15 @@ function MatchResults() {
   if (submitted) return (
     <div className="pub-container">
       <div className="pub-success">
-        <div className="pub-success-icon">üéâ</div>
-        <h2>¬°Solicitud enviada!</h2>
-        <p>Un asesor de QueEstudiar se pondr√° en contacto contigo pronto para guiarte en el proceso de admisi√≥n.</p>
+        <div className="pub-success-icon">🎉</div>
+        <h2>¡Solicitud enviada!</h2>
+        <p>Un asesor de QueEstudiar se pondrá en contacto contigo pronto para guiarte en el proceso de admisión.</p>
         <button className="pub-btn pub-btn-primary" onClick={() => location.hash = "#/"}>Volver al inicio</button>
       </div>
     </div>
   );
 
-  if (loading) return <div className="pub-container"><div className="pub-card" style={{ textAlign: "center", padding: 60 }}><div style={{ fontSize: 36, marginBottom: 12 }}>üîç</div><p>Analizando programas...</p></div></div>;
+  if (loading) return <div className="pub-container"><div className="pub-card" style={{ textAlign: "center", padding: 60 }}><div style={{ fontSize: 36, marginBottom: 12 }}>🔍</div><p>Analizando programas...</p></div></div>;
 
   return (
     <div className="pub-container-wide">
@@ -1445,11 +1445,11 @@ function LeadCaptureModal({ profile, onClose, onSuccess }) {
   return (
     <div className="pub-overlay" onClick={onClose}>
       <div className="pub-modal" onClick={e => e.stopPropagation()}>
-        <h2>Solicitar asesor√≠a gratuita</h2>
-        <p className="pub-card-sub">Un asesor te contactar√° para ayudarte con la admisi√≥n</p>
+        <h2>Solicitar asesoría gratuita</h2>
+        <p className="pub-card-sub">Un asesor te contactará para ayudarte con la admisión</p>
         <div className="pub-field"><label className="pub-label">Nombre completo *</label><input className="pub-input" value={name} onChange={e => setName(e.target.value)} placeholder="Tu nombre" /></div>
         <div className="pub-field"><label className="pub-label">Email *</label><input className="pub-input" type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="tu@email.com" /></div>
-        <div className="pub-field"><label className="pub-label">Tel√©fono (con prefijo)</label><input className="pub-input" value={phone} onChange={e => setPhone(e.target.value)} placeholder="+34 600 000 000" /></div>
+        <div className="pub-field"><label className="pub-label">Teléfono (con prefijo)</label><input className="pub-input" value={phone} onChange={e => setPhone(e.target.value)} placeholder="+34 600 000 000" /></div>
         <div style={{ display: "flex", gap: 12 }}>
           <button className="pub-btn pub-btn-outline pub-btn-sm" onClick={onClose} style={{ flex: 1 }}>Cancelar</button>
           <button className="pub-btn pub-btn-primary pub-btn-sm" onClick={handleSubmit} disabled={!name || !email || sending} style={{ flex: 1 }}>{sending ? "Enviando..." : "Enviar solicitud"}</button>
@@ -1507,7 +1507,7 @@ function ProgramBrowser() {
     location.hash = "#/solicitud";
   };
 
-  if (loading) return <div className="pub-container"><div className="pub-card" style={{ textAlign: "center", padding: 60 }}><div style={{ fontSize: 36, marginBottom: 12 }}>üìö</div><p>Cargando programas...</p></div></div>;
+  if (loading) return <div className="pub-container"><div className="pub-card" style={{ textAlign: "center", padding: 60 }}><div style={{ fontSize: 36, marginBottom: 12 }}>📚</div><p>Cargando programas...</p></div></div>;
 
   return (
     <div className="pub-container-wide">
@@ -1525,7 +1525,7 @@ function ProgramBrowser() {
           {Object.entries(TIPO_LABELS).map(([k,v]) => <option key={k} value={k}>{v}</option>)}
         </select>
         <select className="pub-select" value={filterArea} onChange={e => { setFilterArea(e.target.value); setPage(0); }}>
-          <option value="">Todas las √°reas</option>
+          <option value="">Todas las áreas</option>
           {areas.map(a => <option key={a} value={a}>{a}</option>)}
         </select>
         <select className="pub-select" value={filterMod} onChange={e => { setFilterMod(e.target.value); setPage(0); }}>
@@ -1537,7 +1537,7 @@ function ProgramBrowser() {
       {selected.size > 0 && (
         <div className="pub-selected-bar">
           <span>{selected.size} programa{selected.size > 1 ? "s" : ""} seleccionado{selected.size > 1 ? "s" : ""}</span>
-          <button className="pub-btn pub-btn-primary pub-btn-sm" onClick={handleSolicitar}>Solicitar revisi√≥n de expediente ‚Üí</button>
+          <button className="pub-btn pub-btn-primary pub-btn-sm" onClick={handleSolicitar}>Solicitar revisión de expediente →</button>
         </div>
       )}
 
@@ -1549,12 +1549,12 @@ function ProgramBrowser() {
 
       {totalPages > 1 && (
         <div className="pub-pagination">
-          {page > 0 && <button className="pub-page-btn" onClick={() => setPage(p => p - 1)}>‚Üê Anterior</button>}
+          {page > 0 && <button className="pub-page-btn" onClick={() => setPage(p => p - 1)}>← Anterior</button>}
           {Array.from({ length: Math.min(totalPages, 7) }, (_, i) => {
             const p = totalPages <= 7 ? i : page <= 3 ? i : page >= totalPages - 4 ? totalPages - 7 + i : page - 3 + i;
             return <button key={p} className={`pub-page-btn ${p === page ? "active" : ""}`} onClick={() => setPage(p)}>{p + 1}</button>;
           })}
-          {page < totalPages - 1 && <button className="pub-page-btn" onClick={() => setPage(p => p + 1)}>Siguiente ‚Üí</button>}
+          {page < totalPages - 1 && <button className="pub-page-btn" onClick={() => setPage(p => p + 1)}>Siguiente →</button>}
         </div>
       )}
     </div>
@@ -1597,9 +1597,9 @@ function SolicitudForm() {
   if (submitted) return (
     <div className="pub-container">
       <div className="pub-success">
-        <div className="pub-success-icon">üéâ</div>
-        <h2>¬°Solicitud enviada!</h2>
-        <p>Hemos recibido tu solicitud de revisi√≥n de expediente. Un asesor te contactar√° pronto para revisar tu documentaci√≥n.</p>
+        <div className="pub-success-icon">🎉</div>
+        <h2>¡Solicitud enviada!</h2>
+        <p>Hemos recibido tu solicitud de revisión de expediente. Un asesor te contactará pronto para revisar tu documentación.</p>
         <button className="pub-btn pub-btn-primary" onClick={() => location.hash = "#/"}>Volver al inicio</button>
       </div>
     </div>
@@ -1608,33 +1608,33 @@ function SolicitudForm() {
   return (
     <div className="pub-container">
       <div className="pub-card">
-        <h2>Solicitar revisi√≥n de expediente</h2>
+        <h2>Solicitar revisión de expediente</h2>
         <p className="pub-card-sub">{selectedPrograms.length} programa{selectedPrograms.length > 1 ? "s" : ""} seleccionado{selectedPrograms.length > 1 ? "s" : ""}</p>
 
         <div style={{ marginBottom: 24, padding: 16, background: "var(--pub-surface)", borderRadius: 8 }}>
           {selectedPrograms.map(p => (
             <div key={p.id} style={{ padding: "6px 0", borderBottom: "1px solid var(--pub-border)", fontSize: 14 }}>
-              <strong>{p.nombre}</strong> <span style={{ color: "var(--pub-muted)" }}>¬∑ {p.ciudad} ¬∑ {TIPO_LABELS[p.tipo] || p.tipo}</span>
+              <strong>{p.nombre}</strong> <span style={{ color: "var(--pub-muted)" }}>· {p.ciudad} · {TIPO_LABELS[p.tipo] || p.tipo}</span>
             </div>
           ))}
         </div>
 
         <div className="pub-field"><label className="pub-label">Nombre completo *</label><input className="pub-input" value={name} onChange={e => setName(e.target.value)} /></div>
         <div className="pub-field"><label className="pub-label">Email *</label><input className="pub-input" type="email" value={email} onChange={e => setEmail(e.target.value)} /></div>
-        <div className="pub-field"><label className="pub-label">Tel√©fono (con prefijo)</label><input className="pub-input" value={phone} onChange={e => setPhone(e.target.value)} placeholder="+34 600 000 000" /></div>
-        <div className="pub-field"><label className="pub-label">Pa√≠s de origen</label><input className="pub-input" value={country} onChange={e => setCountry(e.target.value)} /></div>
+        <div className="pub-field"><label className="pub-label">Teléfono (con prefijo)</label><input className="pub-input" value={phone} onChange={e => setPhone(e.target.value)} placeholder="+34 600 000 000" /></div>
+        <div className="pub-field"><label className="pub-label">País de origen</label><input className="pub-input" value={country} onChange={e => setCountry(e.target.value)} /></div>
         <div className="pub-field">
           <label className="pub-label">Presupuesto anual</label>
           <select className="pub-select" value={budget} onChange={e => setBudget(e.target.value)}>
             <option value="">Selecciona un rango</option>
-            <option value="<3000">Menos de 3.000 ‚Ç¨</option>
-            <option value="3000-6000">3.000 ‚Ç¨ - 6.000 ‚Ç¨</option>
-            <option value="6000-10000">6.000 ‚Ç¨ - 10.000 ‚Ç¨</option>
-            <option value=">10000">M√°s de 10.000 ‚Ç¨</option>
+            <option value="<3000">Menos de 3.000 €</option>
+            <option value="3000-6000">3.000 € - 6.000 €</option>
+            <option value="6000-10000">6.000 € - 10.000 €</option>
+            <option value=">10000">Más de 10.000 €</option>
           </select>
         </div>
         <div className="pub-field">
-          <label className="pub-label">¬øCu√°ndo quieres empezar?</label>
+          <label className="pub-label">¿Cuándo quieres empezar?</label>
           <select className="pub-select" value={startDate} onChange={e => setStartDate(e.target.value)}>
             <option value="">Selecciona una fecha</option>
             <option value="sept-2026">Septiembre 2026</option>
@@ -1645,7 +1645,7 @@ function SolicitudForm() {
         </div>
 
         <div style={{ display: "flex", gap: 12, marginTop: 24 }}>
-          <button className="pub-btn pub-btn-outline pub-btn-sm" onClick={() => location.hash = "#/programas"} style={{ flex: 1 }}>‚Üê Volver</button>
+          <button className="pub-btn pub-btn-outline pub-btn-sm" onClick={() => location.hash = "#/programas"} style={{ flex: 1 }}>← Volver</button>
           <button className="pub-btn pub-btn-primary pub-btn-sm" onClick={handleSubmit} disabled={!name || !email || sending} style={{ flex: 1 }}>{sending ? "Enviando..." : "Enviar solicitud"}</button>
         </div>
       </div>
@@ -1666,17 +1666,26 @@ function PublicApp({ route }) {
       <style>{publicCss}</style>
       <PublicNav route={route} />
       <main style={{ flex: 1 }}>{getPage()}</main>
-      <footer className="pub-footer">¬© 2026 QueEstudiar ¬∑ Asesor√≠a educativa para estudiantes internacionales</footer>
+      <footer className="pub-footer">© 2026 QueEstudiar · Asesoría educativa para estudiantes internacionales</footer>
     </div>
   );
 }
 
-// ‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê
+// ═══════════════════════════════════════════════════════════════════════════
+// DOMAIN DETECTION
+// ═══════════════════════════════════════════════════════════════════════════
+const HOST = window.location.hostname;
+const IS_PUBLIC_DOMAIN = HOST === "queestudiar.es" || HOST === "www.queestudiar.es";
+const IS_ADMIN_DOMAIN = HOST === "app.queestudiar.es";
+
+// ═══════════════════════════════════════════════════════════════════════════
 // MAIN APP COMPONENT (with hash routing)
-// ‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê‚ïê
+// ═══════════════════════════════════════════════════════════════════════════
 
 export default function App() {
-  const [route, setRoute] = useState(window.location.hash || "#/");
+  // On admin domain, default to #/admin if no hash is set
+  const defaultRoute = IS_ADMIN_DOMAIN && !window.location.hash ? "#/admin" : (window.location.hash || "#/");
+  const [route, setRoute] = useState(defaultRoute);
   const [user, setUser] = useState(null);
   const [students, setStudents] = useState([]);
   const [selected, setSelected] = useState(null);
@@ -1692,7 +1701,7 @@ export default function App() {
     return () => window.removeEventListener("hashchange", onHash);
   }, []);
 
-  // Restaurar sesi√≥n al cargar
+  // Restaurar sesión al cargar
   useEffect(() => {
     async function restoreSession() {
       const session = loadSession();
@@ -1751,12 +1760,19 @@ export default function App() {
   }
   function handleNotesSave(id, notes) { setStudents(prev => prev.map(s => s.id === id ? { ...s, notes } : s)); }
 
-  // ‚îÄ‚îÄ PUBLIC ROUTES ‚îÄ‚îÄ
+  // ── DOMAIN-BASED ROUTING ──
+  // On public domain (queestudiar.es): redirect admin attempts to app.queestudiar.es
+  if (IS_PUBLIC_DOMAIN && route.startsWith("#/admin")) {
+    window.location.href = "https://app.queestudiar.es/#/admin";
+    return null;
+  }
+
+  // Public routes
   if (!route.startsWith("#/admin")) {
     return <PublicApp route={route} />;
   }
 
-  // ‚îÄ‚îÄ ADMIN ROUTES ‚îÄ‚îÄ
+  // ── ADMIN ROUTES ──
   if (!user) return <><style>{css}</style><Login onLogin={handleLogin} /></>;
 
   const filtered = students.filter(s => {
@@ -1772,14 +1788,14 @@ export default function App() {
     <><style>{css}</style>
     <div className="app">
       <div className="header">
-        <div className="header-left"><div className="logo-mark">‚ñ∏ QueEstudiar</div><div className="header-title">Panel de Admisiones</div></div>
-        <div className="header-right"><div className="user-badge">{user.name}</div>{user.role === "admin" && <button className="btn-ghost" onClick={() => setShowUserMgmt(!showUserMgmt)} style={showUserMgmt ? { borderColor: "var(--accent)", color: "var(--accent)" } : {}}>‚öô Usuarios</button>}<button className="btn-ghost" onClick={loadStudents}>‚Üª Actualizar</button><button className="btn-ghost" onClick={() => location.hash = "#/"}>Web p√∫blica</button><button className="btn-ghost" onClick={handleLogout}>Salir</button></div>
+        <div className="header-left"><div className="logo-mark">▸ QueEstudiar</div><div className="header-title">Panel de Admisiones</div></div>
+        <div className="header-right"><div className="user-badge">{user.name}</div>{user.role === "admin" && <button className="btn-ghost" onClick={() => setShowUserMgmt(!showUserMgmt)} style={showUserMgmt ? { borderColor: "var(--accent)", color: "var(--accent)" } : {}}>⚙ Usuarios</button>}<button className="btn-ghost" onClick={loadStudents}>↻ Actualizar</button><button className="btn-ghost" onClick={() => window.location.href = "https://queestudiar.es"}>Web pública</button><button className="btn-ghost" onClick={handleLogout}>Salir</button></div>
       </div>
       <div className="main">
         <div className="sidebar">
           <div className="sidebar-header">
-            <div className="sidebar-title">Estudiantes ¬∑ {filtered.length}</div>
-            <input className="search-input" placeholder="Buscar por nombre, email, pa√≠s..." value={search} onChange={e => setSearch(e.target.value)} />
+            <div className="sidebar-title">Estudiantes · {filtered.length}</div>
+            <input className="search-input" placeholder="Buscar por nombre, email, país..." value={search} onChange={e => setSearch(e.target.value)} />
             <div className="filter-row">
               <div className={`filter-chip ${filterStatus === "all" ? "active" : ""}`} onClick={() => setFilterStatus("all")}>Todos ({students.length})</div>
               {Object.entries(STATUS_CONFIG).map(([k, v]) => counts[k] > 0 && <div key={k} className={`filter-chip ${filterStatus === k ? "active" : ""}`} onClick={() => setFilterStatus(k)}>{v.label} ({counts[k]})</div>)}
@@ -1787,12 +1803,12 @@ export default function App() {
           </div>
           <div className="student-list">
             {loading ? <div className="loading" style={{ height: 200 }}><div className="spinner" /> Cargando...</div>
-            : filtered.length === 0 ? <div className="empty" style={{ height: 200 }}><div className="empty-icon">‚óÜ</div><div className="empty-text">Sin estudiantes{search ? " con ese filtro" : " a√∫n"}</div></div>
+            : filtered.length === 0 ? <div className="empty" style={{ height: 200 }}><div className="empty-icon">◆</div><div className="empty-text">Sin estudiantes{search ? " con ese filtro" : " aún"}</div></div>
             : filtered.map(s => { const sc = STATUS_CONFIG[s.status || "nuevo"]; return (
               <div key={s.id} className={`student-item ${selected?.id === s.id ? "active" : ""}`} onClick={() => setSelected(s)}>
                 <div className="student-name">{s.full_name || "Sin nombre"}</div>
-                <div className="student-meta">{s.email || "‚Äî"} ¬∑ {s.country_of_origin || "‚Äî"}</div>
-                <div className="match-count">{(s.desired_program_type || s.education_level) ? `${s.desired_program_type || s.education_level} ¬∑ ` : ""}{formatDate(s.created_at)}</div>
+                <div className="student-meta">{s.email || "—"} · {s.country_of_origin || "—"}</div>
+                <div className="match-count">{(s.desired_program_type || s.education_level) ? `${s.desired_program_type || s.education_level} · ` : ""}{formatDate(s.created_at)}</div>
                 <div className="student-status" style={{ color: sc.color, background: sc.bg }}>{sc.label}</div>
               </div>
             );})}
@@ -1800,7 +1816,7 @@ export default function App() {
         </div>
         {showUserMgmt ? <UserManagement onClose={() => setShowUserMgmt(false)} />
         : selected ? <StudentDetail key={selected.id} student={selected} onStatusChange={handleStatusChange} onNotesSave={handleNotesSave} />
-        : <div className="detail"><div className="empty"><div className="empty-icon">‚óâ</div><div className="empty-text">Selecciona un estudiante para ver su expediente</div></div></div>}
+        : <div className="detail"><div className="empty"><div className="empty-icon">◉</div><div className="empty-text">Selecciona un estudiante para ver su expediente</div></div></div>}
       </div>
     </div></>
   );

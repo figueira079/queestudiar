@@ -892,7 +892,7 @@ function UserManagement({ onClose }) {
 }
 
 
-function StudentDetail({ student, onStatusChange, onNotesSave, currentUser, onAssign }) {
+function StudentDetail({ student, onStatusChange, onNotesSave, currentUser, onAssign, teamMembers = [] }) {
   const [tab, setTab] = useState("matches");
   const [notes, setNotes] = useState(student.notes || "");
   const [saving, setSaving] = useState(false);
@@ -904,18 +904,8 @@ function StudentDetail({ student, onStatusChange, onNotesSave, currentUser, onAs
   const [filterArea, setFilterArea] = useState("all");
   const [urlLearning, setUrlLearning] = useState(null);
   const [applyingLearning, setApplyingLearning] = useState(false);
-  const [teamMembers, setTeamMembers] = useState([]);
 
   useEffect(() => { setNotes(student.notes || ""); setTab("matches"); setFilterArea("all"); setUrlLearning(null); }, [student.id]);
-
-  // Load team members for assignment dropdown (admin only)
-  useEffect(() => {
-    if (currentUser?.role === "admin") {
-      adminListUsers().then(users => {
-        setTeamMembers(users.filter(u => u.user_metadata?.role === "team").map(u => ({ email: u.email, name: u.user_metadata?.name || u.email.split("@")[0] })));
-      }).catch(() => {});
-    }
-  }, [currentUser]);
   useEffect(() => { loadMatches(); loadRequirements(); }, [student.id]);
 
   async function loadMatches() {
@@ -1922,6 +1912,7 @@ export default function App() {
   const [showUserMgmt, setShowUserMgmt] = useState(false);
   const [showFeedbackReview, setShowFeedbackReview] = useState(false);
   const [feedbackPrompt, setFeedbackPrompt] = useState(null);
+  const [teamMembers, setTeamMembers] = useState([]);
 
   // Hash routing
   useEffect(() => {
@@ -1956,7 +1947,16 @@ export default function App() {
     }
     restoreSession();
   }, []);
-  useEffect(() => { if (user) loadStudents(); }, [user]);
+  useEffect(() => {
+    if (user) {
+      loadStudents();
+      if (user.role === "admin") {
+        adminListUsers().then(users => {
+          setTeamMembers(users.filter(u => u.user_metadata?.role === "team").map(u => ({ email: u.email, name: u.user_metadata?.name || u.email.split("@")[0] })));
+        }).catch(() => {});
+      }
+    }
+  }, [user]);
 
   async function loadStudents() {
     setLoading(true);
@@ -2059,7 +2059,7 @@ export default function App() {
         </div>
         {showFeedbackReview ? <FeedbackReview onClose={() => setShowFeedbackReview(false)} />
         : showUserMgmt ? <UserManagement onClose={() => setShowUserMgmt(false)} />
-        : selected ? <StudentDetail key={selected.id} student={selected} onStatusChange={handleStatusChange} onNotesSave={handleNotesSave} currentUser={user} onAssign={handleAssign} />
+        : selected ? <StudentDetail key={selected.id} student={selected} onStatusChange={handleStatusChange} onNotesSave={handleNotesSave} currentUser={user} onAssign={handleAssign} teamMembers={teamMembers} />
         : <div className="detail"><div className="empty"><div className="empty-icon">◉</div><div className="empty-text">Selecciona un estudiante para ver su expediente</div></div></div>}
       </div>
     </div>

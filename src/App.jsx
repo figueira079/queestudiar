@@ -134,6 +134,16 @@ async function bulkUpdateProgramUrls(ids, field, newUrl) {
   }
 }
 
+// ——— FEEDBACK HELPER ——————————————————————————————————————
+async function insertFeedback(data) {
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/feedback`, {
+    method: "POST",
+    headers: { ...getAuthHeaders(), "Content-Type": "application/json", Prefer: "return=minimal" },
+    body: JSON.stringify(data),
+  });
+  return res.ok;
+}
+
 // ——— ADMIN: USER MANAGEMENT ———————————————————————————————
 function getAdminHeaders() {
   return { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}`, "Content-Type": "application/json" };
@@ -303,6 +313,28 @@ const css = `
   .success-msg { padding: 10px 16px; background: #0d2213; border: 1px solid #81C78444; border-radius: 8px; color: #81C784; font-size: 12px; font-family: var(--mono); margin-bottom: 16px; }
   .user-delete-btn { padding: 4px 8px; background: none; border: 1px solid transparent; color: var(--muted); cursor: pointer; border-radius: 4px; opacity: 0.4; transition: all 0.15s; font-size: 12px; }
   .user-delete-btn:hover { opacity: 1; border-color: #ef444488; color: #ef9a9a; }
+  .visa-badge { display: inline-flex; align-items: center; gap: 4px; font-size: 10px; padding: 3px 9px; border-radius: 4px; font-family: var(--mono); }
+  .visa-ok { color: #22c55e; border: 1px solid #22c55e44; }
+  .visa-no { color: #ef4444; border: 1px solid #ef444444; }
+  .visa-warn { color: #f97316; border: 1px solid #f9731644; }
+  .assign-row { display: flex; align-items: center; gap: 8px; margin-top: 8px; }
+  .assign-select { padding: 4px 10px; border-radius: 6px; font-family: var(--mono); font-size: 11px; border: 1px solid var(--border); background: var(--bg); color: var(--text); cursor: pointer; outline: none; }
+  .feedback-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.6); z-index: 300; display: flex; align-items: center; justify-content: center; padding: 24px; }
+  .feedback-popup { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 28px 32px; max-width: 380px; width: 100%; box-shadow: 0 20px 60px rgba(0,0,0,.4); }
+  .feedback-title { font-size: 16px; font-weight: 700; margin-bottom: 4px; }
+  .feedback-desc { font-size: 12px; color: var(--muted); font-family: var(--mono); margin-bottom: 20px; }
+  .feedback-stars { display: flex; gap: 8px; margin-bottom: 16px; }
+  .feedback-star { font-size: 28px; cursor: pointer; color: var(--border); transition: color 0.15s, transform 0.1s; }
+  .feedback-star:hover { transform: scale(1.15); }
+  .feedback-star.active { color: #FBBF24; }
+  .feedback-comment { width: 100%; padding: 10px 14px; background: var(--bg); border: 1px solid var(--border); border-radius: 8px; color: var(--text); font-family: var(--mono); font-size: 12px; resize: vertical; outline: none; min-height: 60px; }
+  .feedback-comment:focus { border-color: var(--accent); }
+  .feedback-btns { display: flex; gap: 8px; margin-top: 16px; }
+  .feedback-skip { flex: 1; padding: 9px; border-radius: 8px; border: 1px solid var(--border); background: none; color: var(--muted); font-family: var(--font); font-size: 13px; cursor: pointer; transition: all 0.15s; }
+  .feedback-skip:hover { border-color: var(--text); color: var(--text); }
+  .feedback-send { flex: 1; padding: 9px; border-radius: 8px; border: none; background: var(--accent); color: #fff; font-family: var(--font); font-weight: 700; font-size: 13px; cursor: pointer; transition: opacity 0.15s; }
+  .feedback-send:hover { opacity: 0.9; }
+  .feedback-send:disabled { opacity: 0.4; cursor: default; }
 `;
 
 function formatDate(d) {
@@ -510,6 +542,166 @@ function EditableUrlBtn({ url, status, label, style: extraStyle, programId, fiel
   );
 }
 
+function EditableHours({ horas, programId, onUpdated }) {
+  const [editing, setEditing] = useState(false);
+  const [value, setValue] = useState(horas ?? "");
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => { setValue(horas ?? ""); setEditing(false); }, [horas]);
+
+  async function handleSave() {
+    const num = value === "" ? null : parseInt(value, 10);
+    if (num === horas) { setEditing(false); return; }
+    setSaving(true);
+    await patch("programas", programId, { horas_semanales: num });
+    setSaving(false);
+    setEditing(false);
+    if (onUpdated) onUpdated(programId, num);
+  }
+
+  const badge = horas != null && horas >= 20
+    ? { icon: "✅", text: `Apto visado (${horas}h/sem)`, cls: "visa-ok" }
+    : horas != null && horas < 20
+    ? { icon: "❌", text: `No apto visado (${horas}h/sem)`, cls: "visa-no" }
+    : { icon: "⚠", text: "Verificar horas", cls: "visa-warn" };
+
+  if (editing) {
+    return (
+      <div className="url-edit-row">
+        <input className="url-edit-input" type="number" min="0" max="60" value={value} onChange={e => setValue(e.target.value)}
+          placeholder="h/sem" style={{ maxWidth: 70 }}
+          onKeyDown={e => { if (e.key === "Enter") handleSave(); if (e.key === "Escape") { setEditing(false); setValue(horas ?? ""); } }}
+          autoFocus />
+        <span style={{ fontSize: 10, color: "var(--muted)", fontFamily: "var(--mono)" }}>h/sem</span>
+        <button className="url-edit-btn save" onClick={handleSave} disabled={saving}>{saving ? "…" : "✓"}</button>
+        <button className="url-edit-btn" onClick={() => { setEditing(false); setValue(horas ?? ""); }}>✕</button>
+      </div>
+    );
+  }
+
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: 2 }}>
+      <span className={`visa-badge ${badge.cls}`}>{badge.icon} {badge.text}</span>
+      <button className="url-pencil" onClick={() => setEditing(true)} title="Editar horas semanales">✏️</button>
+    </div>
+  );
+}
+
+function VisaBadge({ horas }) {
+  if (horas != null && horas >= 20) return <span className="pub-badge" style={{ background: "#f0fdf4", color: "#16a34a" }}>✅ Apto visado ({horas}h/sem)</span>;
+  if (horas != null && horas < 20) return <span className="pub-badge" style={{ background: "#fef2f2", color: "#dc2626" }}>❌ No apto visado ({horas}h/sem)</span>;
+  return <span className="pub-badge" style={{ background: "#fffbeb", color: "#d97706" }}>⚠ Verificar horas</span>;
+}
+
+function FeedbackPopup({ actionType, userName, userEmail, onClose }) {
+  const [rating, setRating] = useState(0);
+  const [comment, setComment] = useState("");
+  const [sending, setSending] = useState(false);
+
+  async function handleSubmit() {
+    if (rating === 0) { onClose(); return; }
+    setSending(true);
+    await insertFeedback({
+      user_email: userEmail,
+      user_name: userName,
+      action_type: actionType,
+      rating,
+      comment: comment.trim() || null,
+    });
+    setSending(false);
+    onClose();
+  }
+
+  return (
+    <div className="feedback-overlay" onClick={onClose}>
+      <div className="feedback-popup" onClick={e => e.stopPropagation()}>
+        <div className="feedback-title">¿Cómo fue esta acción?</div>
+        <div className="feedback-desc">Tu feedback nos ayuda a mejorar la herramienta</div>
+        <div className="feedback-stars">
+          {[1,2,3,4,5].map(s => (
+            <span key={s} className={`feedback-star ${s <= rating ? "active" : ""}`} onClick={() => setRating(s)}>★</span>
+          ))}
+        </div>
+        <textarea className="feedback-comment" value={comment} onChange={e => setComment(e.target.value)} placeholder="Comentario opcional..." rows={3} />
+        <div className="feedback-btns">
+          <button className="feedback-skip" onClick={onClose}>Omitir</button>
+          <button className="feedback-send" onClick={handleSubmit} disabled={sending}>{sending ? "Enviando..." : "Enviar"}</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function FeedbackReview({ onClose }) {
+  const [feedbacks, setFeedbacks] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => { loadFeedback(); }, []);
+
+  async function loadFeedback() {
+    setLoading(true);
+    const url = `${SUPABASE_URL}/rest/v1/feedback?select=*&order=created_at.desc&limit=200`;
+    const res = await fetch(url, { headers: getAuthHeaders() });
+    const data = await res.json();
+    setFeedbacks(Array.isArray(data) ? data : []);
+    setLoading(false);
+  }
+
+  async function markReviewed(id) {
+    await patch("feedback", id, { reviewed: true });
+    setFeedbacks(prev => prev.map(f => f.id === id ? { ...f, reviewed: true } : f));
+  }
+
+  const withRating = feedbacks.filter(f => f.rating);
+  const avgRating = withRating.length > 0 ? (withRating.reduce((s, f) => s + f.rating, 0) / withRating.length).toFixed(1) : "—";
+  const unreviewed = feedbacks.filter(f => !f.reviewed).length;
+
+  const byDay = {};
+  feedbacks.forEach(f => {
+    const day = new Date(f.created_at).toLocaleDateString("es-ES", { day: "2-digit", month: "short", year: "numeric" });
+    if (!byDay[day]) byDay[day] = [];
+    byDay[day].push(f);
+  });
+
+  return (
+    <div className="detail">
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 28 }}>
+        <div>
+          <div className="detail-name">Feedback del equipo</div>
+          <div style={{ fontSize: 12, color: "var(--muted)", fontFamily: "var(--mono)", marginTop: 4 }}>
+            Rating promedio: <span style={{ color: "var(--accent)" }}>{avgRating}</span> · Sin revisar: <span style={{ color: "#FFB74D" }}>{unreviewed}</span>
+          </div>
+        </div>
+        <button className="btn-ghost" onClick={onClose}>← Volver</button>
+      </div>
+      {loading ? <div className="loading" style={{ height: 200 }}><div className="spinner" /> Cargando feedback...</div>
+      : feedbacks.length === 0 ? <div className="empty" style={{ height: 200 }}><div className="empty-icon">◎</div><div className="empty-text">Sin feedback aún</div></div>
+      : Object.entries(byDay).map(([day, items]) => (
+        <div key={day} style={{ marginBottom: 24 }}>
+          <div className="section-title">{day}</div>
+          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            {items.map(f => (
+              <div key={f.id} className="program-card" style={{ opacity: f.reviewed ? 0.5 : 1 }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+                  <div>
+                    <div style={{ fontSize: 13, fontWeight: 600 }}>{f.user_name} <span style={{ fontWeight: 400, color: "var(--muted)", fontFamily: "var(--mono)", fontSize: 11 }}>· {f.action_type}</span></div>
+                    <div style={{ fontSize: 16, marginTop: 4, color: "#FBBF24" }}>{"★".repeat(f.rating || 0)}<span style={{ color: "var(--border)" }}>{"★".repeat(5 - (f.rating || 0))}</span></div>
+                    {f.comment && <div style={{ fontSize: 12, color: "var(--text)", marginTop: 6, lineHeight: 1.5 }}>{f.comment}</div>}
+                  </div>
+                  <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 6 }}>
+                    <span style={{ fontSize: 10, color: "var(--muted)", fontFamily: "var(--mono)" }}>{new Date(f.created_at).toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" })}</span>
+                    {!f.reviewed && <button className="url-edit-btn save" onClick={() => markReviewed(f.id)} style={{ fontSize: 10 }}>✓ Revisado</button>}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 function generateExpedienteReport(student, matches, requirements, regionData) {
   const now = new Date().toLocaleDateString("es-ES", { day: "2-digit", month: "long", year: "numeric" });
   const originMap = { eu: "UE / EEE", latam_convenio: "LATAM Convenio", extracomunitario: "Extracomunitario" };
@@ -700,7 +892,7 @@ function UserManagement({ onClose }) {
 }
 
 
-function StudentDetail({ student, onStatusChange, onNotesSave }) {
+function StudentDetail({ student, onStatusChange, onNotesSave, currentUser, onAssign }) {
   const [tab, setTab] = useState("matches");
   const [notes, setNotes] = useState(student.notes || "");
   const [saving, setSaving] = useState(false);
@@ -712,14 +904,24 @@ function StudentDetail({ student, onStatusChange, onNotesSave }) {
   const [filterArea, setFilterArea] = useState("all");
   const [urlLearning, setUrlLearning] = useState(null);
   const [applyingLearning, setApplyingLearning] = useState(false);
+  const [teamMembers, setTeamMembers] = useState([]);
 
   useEffect(() => { setNotes(student.notes || ""); setTab("matches"); setFilterArea("all"); setUrlLearning(null); }, [student.id]);
+
+  // Load team members for assignment dropdown (admin only)
+  useEffect(() => {
+    if (currentUser?.role === "admin") {
+      adminListUsers().then(users => {
+        setTeamMembers(users.filter(u => u.user_metadata?.role === "team").map(u => ({ email: u.email, name: u.user_metadata?.name || u.email.split("@")[0] })));
+      }).catch(() => {});
+    }
+  }, [currentUser]);
   useEffect(() => { loadMatches(); loadRequirements(); }, [student.id]);
 
   async function loadMatches() {
     setLoadingMatches(true);
     try {
-      const data = await query("matches", "*, programas(nombre, ciudad, tipo, familia_area, url_solicitud, url_solicitud_status, url_detalle, url_detalle_status, modalidad, idioma, precio_anual_eur, precio_extracomunitario_eur)", { student_id: student.id });
+      const data = await query("matches", "*, programas(nombre, ciudad, tipo, familia_area, url_solicitud, url_solicitud_status, url_detalle, url_detalle_status, modalidad, idioma, precio_anual_eur, precio_extracomunitario_eur, horas_semanales)", { student_id: student.id });
       setMatches(Array.isArray(data) ? data : []);
     } catch { setMatches([]); }
     setLoadingMatches(false);
@@ -780,6 +982,15 @@ function StudentDetail({ student, onStatusChange, onNotesSave }) {
     setTimeout(() => setSaved(false), 2000);
   }
 
+  function handleHoursUpdated(programId, newHours) {
+    setMatches(prev => prev.map(m => {
+      if (m.programa_id === programId) {
+        return { ...m, programas: { ...m.programas, horas_semanales: newHours } };
+      }
+      return m;
+    }));
+  }
+
   async function handleUrlUpdated(programId, field, newUrl, oldUrl) {
     // Update local matches state
     setMatches(prev => prev.map(m => {
@@ -837,6 +1048,18 @@ function StudentDetail({ student, onStatusChange, onNotesSave }) {
           {student.preferred_cities && <div style={{ fontSize: 11, fontFamily: "var(--mono)", color: "var(--muted)" }}>Ciudades: <span style={{ color: "var(--text)" }}>{Array.isArray(student.preferred_cities) ? student.preferred_cities.join(", ") : student.preferred_cities}</span></div>}
           {student.study_area && <div style={{ fontSize: 11, fontFamily: "var(--mono)", color: "var(--muted)" }}>Área: <span style={{ color: "var(--text)" }}>{student.study_area}</span></div>}
         </div>
+        {currentUser?.role === "admin" && (
+          <div className="assign-row">
+            <span style={{ fontSize: 11, fontFamily: "var(--mono)", color: "var(--muted)" }}>Asignado a:</span>
+            <select className="assign-select" value={student.assigned_to || ""} onChange={e => onAssign && onAssign(student.id, e.target.value)}>
+              <option value="">Sin asignar</option>
+              {teamMembers.map(m => <option key={m.email} value={m.email}>{m.name}</option>)}
+            </select>
+          </div>
+        )}
+        {currentUser?.role !== "admin" && student.assigned_to && (
+          <div style={{ fontSize: 11, fontFamily: "var(--mono)", color: "var(--muted)", marginTop: 8 }}>Asignado a ti</div>
+        )}
       </div>
       <div className="tabs">
         {[["matches", `Matches (${matches.length})`], ["requisitos", "Requisitos admisión"], ["region", "Costes y plazos"], ["notas", "Notas expediente"]].map(([k, l]) => (
@@ -883,6 +1106,9 @@ function StudentDetail({ student, onStatusChange, onNotesSave }) {
                         {p.familia_area && <span className="tag">{p.familia_area}</span>}
                         {p.idioma && <span className="tag">{p.idioma}</span>}
                         {price != null && <span className="tag" style={{ color: "#81C784", borderColor: "#81C78444" }}>{price === 0 ? "Gratuito" : `${price.toLocaleString("es-ES")}€/año`} · {priceLabel}</span>}
+                      </div>
+                      <div style={{ marginBottom: 10 }}>
+                        <EditableHours horas={p.horas_semanales} programId={m.programa_id} onUpdated={handleHoursUpdated} />
                       </div>
                       <div className="program-footer">
                         <EditableUrlBtn url={p.url_solicitud} status={p.url_solicitud_status} label="Solicitud" programId={m.programa_id} field="url_solicitud" onUrlUpdated={handleUrlUpdated} />
@@ -1245,6 +1471,7 @@ function ProgramCard({ program: p, onSelect, selected }) {
         <span className="pub-badge pub-badge-tipo">{TIPO_LABELS[p.tipo] || p.tipo}</span>
         {p.ciudad && <span className="pub-badge pub-badge-city">{p.ciudad}</span>}
         {p.modalidad && <span className="pub-badge pub-badge-mod">{p.modalidad}</span>}
+        <VisaBadge horas={p.horas_semanales} />
       </div>
       <div className="pub-program-price">{precio}</div>
       <div className="pub-program-area">{p.familia_area}</div>
@@ -1373,7 +1600,7 @@ function MatchResults() {
   useEffect(() => {
     if (!profile.study_area) { location.hash = "#/match"; return; }
     (async () => {
-      const data = await publicQuery("programas", "id,nombre,ciudad,tipo,familia_area,modalidad,precio_anual_eur,precio_extracomunitario_eur,activo", "activo=eq.true&limit=5000");
+      const data = await publicQuery("programas", "id,nombre,ciudad,tipo,familia_area,modalidad,precio_anual_eur,precio_extracomunitario_eur,horas_semanales,activo", "activo=eq.true&limit=5000");
       setPrograms(data);
       const m = computeMatches(data, profile);
       setMatches(m);
@@ -1473,7 +1700,7 @@ function ProgramBrowser() {
 
   useEffect(() => {
     (async () => {
-      const data = await publicQuery("programas", "id,nombre,ciudad,tipo,familia_area,modalidad,precio_anual_eur,precio_extracomunitario_eur", "activo=eq.true&order=nombre.asc&limit=10000");
+      const data = await publicQuery("programas", "id,nombre,ciudad,tipo,familia_area,modalidad,precio_anual_eur,precio_extracomunitario_eur,horas_semanales", "activo=eq.true&order=nombre.asc&limit=10000");
       setPrograms(data);
       setLoading(false);
     })();
@@ -1693,6 +1920,8 @@ export default function App() {
   const [filterStatus, setFilterStatus] = useState("all");
   const [loading, setLoading] = useState(true);
   const [showUserMgmt, setShowUserMgmt] = useState(false);
+  const [showFeedbackReview, setShowFeedbackReview] = useState(false);
+  const [feedbackPrompt, setFeedbackPrompt] = useState(null);
 
   // Hash routing
   useEffect(() => {
@@ -1732,9 +1961,13 @@ export default function App() {
   async function loadStudents() {
     setLoading(true);
     try {
-      const data = await query("student_leads", "*");
+      let url = `${SUPABASE_URL}/rest/v1/student_leads?select=*&order=created_at.desc`;
+      if (user.role === "team") {
+        url += `&assigned_to=eq.${encodeURIComponent(user.email)}`;
+      }
+      const res = await fetch(url, { headers: getAuthHeaders() });
+      const data = await res.json();
       const list = Array.isArray(data) ? data : [];
-      list.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
       setStudents(list);
       if (list.length > 0 && !selected) setSelected(list[0]);
     } catch { setStudents([]); }
@@ -1757,8 +1990,18 @@ export default function App() {
     await patch("student_leads", id, { status });
     setStudents(prev => prev.map(s => s.id === id ? { ...s, status } : s));
     if (selected?.id === id) setSelected(prev => ({ ...prev, status }));
+    setFeedbackPrompt("cambio_estado");
   }
-  function handleNotesSave(id, notes) { setStudents(prev => prev.map(s => s.id === id ? { ...s, notes } : s)); }
+  function handleNotesSave(id, notes) {
+    setStudents(prev => prev.map(s => s.id === id ? { ...s, notes } : s));
+    setFeedbackPrompt("guardar_notas");
+  }
+  async function handleAssign(id, email) {
+    const val = email || null;
+    await patch("student_leads", id, { assigned_to: val });
+    setStudents(prev => prev.map(s => s.id === id ? { ...s, assigned_to: val } : s));
+    if (selected?.id === id) setSelected(prev => ({ ...prev, assigned_to: val }));
+  }
 
   // ── DOMAIN-BASED ROUTING ──
   // On public domain (queestudiar.es): redirect admin attempts to app.queestudiar.es
@@ -1789,7 +2032,7 @@ export default function App() {
     <div className="app">
       <div className="header">
         <div className="header-left"><div className="logo-mark">▸ QueEstudiar</div><div className="header-title">Panel de Admisiones</div></div>
-        <div className="header-right"><div className="user-badge">{user.name}</div>{user.role === "admin" && <button className="btn-ghost" onClick={() => setShowUserMgmt(!showUserMgmt)} style={showUserMgmt ? { borderColor: "var(--accent)", color: "var(--accent)" } : {}}>⚙ Usuarios</button>}<button className="btn-ghost" onClick={loadStudents}>↻ Actualizar</button><button className="btn-ghost" onClick={() => window.location.href = "https://queestudiar.es"}>Web pública</button><button className="btn-ghost" onClick={handleLogout}>Salir</button></div>
+        <div className="header-right"><div className="user-badge">{user.name}</div>{user.role === "admin" && <button className="btn-ghost" onClick={() => { setShowFeedbackReview(!showFeedbackReview); setShowUserMgmt(false); }} style={showFeedbackReview ? { borderColor: "var(--accent)", color: "var(--accent)" } : {}}>📊 Feedback</button>}{user.role === "admin" && <button className="btn-ghost" onClick={() => { setShowUserMgmt(!showUserMgmt); setShowFeedbackReview(false); }} style={showUserMgmt ? { borderColor: "var(--accent)", color: "var(--accent)" } : {}}>⚙ Usuarios</button>}<button className="btn-ghost" onClick={loadStudents}>↻ Actualizar</button><button className="btn-ghost" onClick={() => window.location.href = "https://queestudiar.es"}>Web pública</button><button className="btn-ghost" onClick={handleLogout}>Salir</button></div>
       </div>
       <div className="main">
         <div className="sidebar">
@@ -1814,10 +2057,13 @@ export default function App() {
             );})}
           </div>
         </div>
-        {showUserMgmt ? <UserManagement onClose={() => setShowUserMgmt(false)} />
-        : selected ? <StudentDetail key={selected.id} student={selected} onStatusChange={handleStatusChange} onNotesSave={handleNotesSave} />
+        {showFeedbackReview ? <FeedbackReview onClose={() => setShowFeedbackReview(false)} />
+        : showUserMgmt ? <UserManagement onClose={() => setShowUserMgmt(false)} />
+        : selected ? <StudentDetail key={selected.id} student={selected} onStatusChange={handleStatusChange} onNotesSave={handleNotesSave} currentUser={user} onAssign={handleAssign} />
         : <div className="detail"><div className="empty"><div className="empty-icon">◉</div><div className="empty-text">Selecciona un estudiante para ver su expediente</div></div></div>}
       </div>
-    </div></>
+    </div>
+    {feedbackPrompt && <FeedbackPopup actionType={feedbackPrompt} userName={user.name} userEmail={user.email} onClose={() => setFeedbackPrompt(null)} />}
+    </>
   );
 }

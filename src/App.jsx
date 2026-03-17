@@ -1919,7 +1919,7 @@ export default function App() {
   const [showUserMgmt, setShowUserMgmt] = useState(false);
   const [showFeedbackReview, setShowFeedbackReview] = useState(false);
   const [feedbackPrompt, setFeedbackPrompt] = useState(null);
-  const [teamMembers, setTeamMembers] = useState([]);
+  const [teamMembers, setTeamMembers] = useState(TEAM_FALLBACK);
 
   // Hash routing
   useEffect(() => {

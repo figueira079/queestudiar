@@ -1033,7 +1033,8 @@ function StudentDetail({ student, onStatusChange, onNotesSave, currentUser, onAs
           <select className="status-select" value={student.status || "nuevo"} onChange={e => onStatusChange(student.id, e.target.value)} style={{ color: sc.color, borderColor: sc.color, background: sc.bg }}>
             {Object.entries(STATUS_CONFIG).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
           </select>
-          {(student.desired_program_type || student.education_level) && <div style={{ fontSize: 11, fontFamily: "var(--mono)", color: "var(--muted)" }}>Programa deseado: <span style={{ color: "var(--text)" }}>{student.desired_program_type || student.education_level}</span></div>}
+          {student.education_level && <div style={{ fontSize: 11, fontFamily: "var(--mono)", color: "var(--muted)" }}>Nivel educativo: <span style={{ color: "var(--text)" }}>{student.education_level}</span></div>}
+          {(student.desired_program_type || student.education_level) && <div style={{ fontSize: 11, fontFamily: "var(--mono)", color: "var(--muted)" }}>Programa deseado: <span style={{ color: "var(--text)" }}>{student.desired_program_type || (EDUCATION_TO_TIPO[student.education_level] || [])[0] || "—"}</span></div>}
           {student.base_degree && <div style={{ fontSize: 11, fontFamily: "var(--mono)", color: "var(--muted)" }}>Titulación base: <span style={{ color: "var(--text)" }}>{student.base_degree}</span></div>}
           {student.preferred_cities && <div style={{ fontSize: 11, fontFamily: "var(--mono)", color: "var(--muted)" }}>Ciudades: <span style={{ color: "var(--text)" }}>{Array.isArray(student.preferred_cities) ? student.preferred_cities.join(", ") : student.preferred_cities}</span></div>}
           {student.study_area && <div style={{ fontSize: 11, fontFamily: "var(--mono)", color: "var(--muted)" }}>Área: <span style={{ color: "var(--text)" }}>{student.study_area}</span></div>}
@@ -1899,6 +1900,12 @@ const IS_ADMIN_DOMAIN = HOST === "app.queestudiar.es";
 // MAIN APP COMPONENT (with hash routing)
 // ═══════════════════════════════════════════════════════════════════════════
 
+const TEAM_FALLBACK = [
+  { email: "alejandro.suarez@estuvisa.es", name: "Alejandro Suárez" },
+  { email: "kenny.alvarez@estuvisa.es", name: "Kenny Álvarez" },
+  { email: "luis.solanas@estuvisa.es", name: "Luis Solanas" },
+];
+
 export default function App() {
   // On admin domain, default to #/admin if no hash is set
   const defaultRoute = IS_ADMIN_DOMAIN && !window.location.hash ? "#/admin" : (window.location.hash || "#/");
@@ -1951,9 +1958,11 @@ export default function App() {
     if (user) {
       loadStudents();
       if (user.role === "admin") {
+        // Cargar miembros del equipo para asignación
         adminListUsers().then(users => {
-          setTeamMembers(users.filter(u => u.user_metadata?.role === "team").map(u => ({ email: u.email, name: u.user_metadata?.name || u.email.split("@")[0] })));
-        }).catch(() => {});
+          const team = users.filter(u => u.user_metadata?.role === "team").map(u => ({ email: u.email, name: u.user_metadata?.name || u.email.split("@")[0] }));
+          setTeamMembers(team.length > 0 ? team : TEAM_FALLBACK);
+        }).catch(() => { setTeamMembers(TEAM_FALLBACK); });
       }
     }
   }, [user]);

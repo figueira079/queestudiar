@@ -1085,8 +1085,9 @@ function StudentDetail({ student, onStatusChange, onNotesSave, currentUser, onAs
                   )}
                   <div className="program-grid">{filtered.map((m, i) => { const p = m.programas || {};
                     const isNonEU = student.student_origin === "extracomunitario";
+                    const isConvenio = student.student_origin === "latam_convenio";
                     const price = isNonEU && p.precio_extracomunitario_eur != null ? p.precio_extracomunitario_eur : p.precio_anual_eur;
-                    const priceLabel = isNonEU && p.precio_extracomunitario_eur !== p.precio_anual_eur ? "no-UE" : "UE/residente";
+                    const priceLabel = isNonEU && p.precio_extracomunitario_eur !== p.precio_anual_eur ? "no-UE" : isConvenio ? "convenio" : "UE/residente";
                     return (
                     <div key={i} className="program-card">
                       <div className="program-name">{p.nombre || "Programa sin nombre"}</div>

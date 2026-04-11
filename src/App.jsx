@@ -3,6 +3,7 @@ import { useState, useEffect, useCallback } from "react";
 // ─── CONFIG ────────────────────────────────────────────────────────────────
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_KEY;
+const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || SUPABASE_KEY;
 
 // ─── AUTH HELPERS ───────────────────────────────────────────────────────────
 async function authSignIn(email, password) {
@@ -1152,7 +1153,7 @@ function StudentDetail({ student, onStatusChange, onNotesSave, currentUser, onAs
 
 // ─── PUBLIC API HELPERS ──────────────────────────────────────────────────
 function getPublicHeaders() {
-  return { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` };
+  return { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}` };
 }
 async function publicQuery(table, select = "*", filters = "") {
   let url = `${SUPABASE_URL}/rest/v1/${table}?select=${encodeURIComponent(select)}`;

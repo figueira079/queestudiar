@@ -78,7 +78,7 @@ Relación: `student_leads.id → matches.student_id → programas.id`
 Si se borra un programa → verificar que no queden matches huérfanos
 
 ### `public_leads` (tabla de captación pública)
-Columnas: `full_name, email, phone, country_of_origin, flow_type, student_origin, education_level, study_area, preferred_cities, selected_programa_ids`
+Columnas: `full_name, email, phone, country_of_origin, flow_type, student_origin, education_level, study_area, preferred_cities, selected_programa_ids, budget_range, planned_start_date, status, notes`
 
 Valores de `flow_type`: `"indeciso"` (viene del test vocacional / MatchResults) · `"decidido"` (viene del explorador / SolicitudForm)
 RLS: debe permitir INSERT anónimo (sin autenticación). No leer desde el CRM — estos leads los procesa n8n.

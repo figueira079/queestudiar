@@ -1903,6 +1903,7 @@ const IS_ADMIN_DOMAIN = HOST === "app.queestudiar.es";
 // ═══════════════════════════════════════════════════════════════════════════
 
 const TEAM_FALLBACK = [
+  { email: "maria@queestudiar.es", name: "María" },
   { email: "alejandro.suarez@estuvisa.es", name: "Alejandro Suárez" },
   { email: "kenny.alvarez@estuvisa.es", name: "Kenny Álvarez" },
   { email: "luis.solanas@estuvisa.es", name: "Luis Solanas" },

@@ -13,7 +13,7 @@ async function authSignIn(email, password) {
     body: JSON.stringify({ email, password }),
   });
   const data = await res.json();
-  if (data.error) throw new Error(data.error_description || data.error || "Error de autenticación");
+  if (!data.access_token) throw new Error(data.error_description || data.msg || data.error || "Error de autenticación");
   return data;
 }
 
@@ -588,10 +588,12 @@ function EditableHours({ horas, programId, onUpdated }) {
   );
 }
 
-function VisaBadge({ horas }) {
-  if (horas != null && horas >= 20) return <span className="pub-badge" style={{ background: "#f0fdf4", color: "#16a34a" }}>✅ Apto visado ({horas}h/sem)</span>;
-  if (horas != null && horas < 20) return <span className="pub-badge" style={{ background: "#fef2f2", color: "#dc2626" }}>❌ No apto visado ({horas}h/sem)</span>;
-  return <span className="pub-badge" style={{ background: "#fffbeb", color: "#d97706" }}>⚠ Verificar horas</span>;
+function VisaBadge({ visaEligible, horas }) {
+  if (visaEligible === 'elegible') return <span className="pub-badge" style={{ background: "var(--success-bg,#f0fdf4)", color: "var(--success,#16a34a)" }}>✅ Apto visado</span>;
+  if (visaEligible === 'no_elegible') return <span className="pub-badge" style={{ background: "var(--danger-bg,#fef2f2)", color: "var(--danger,#dc2626)" }}>❌ No apto visado</span>;
+  if (visaEligible === 'no_aplica') return <span className="pub-badge" style={{ background: "var(--bg,#1a1a2e)", color: "var(--muted,#888)", border: "1px solid var(--border,#333)" }}>⚫ Vía investigador</span>;
+  if (horas != null && horas >= 20) return <span className="pub-badge" style={{ background: "#fffbeb", color: "#d97706" }}>⏳ Por verificar ({horas}h/sem)</span>;
+  return <span className="pub-badge" style={{ background: "#fffbeb", color: "#d97706" }}>⏳ Por verificar</span>;
 }
 
 function FeedbackPopup({ actionType, userName, userEmail, onClose }) {
@@ -912,7 +914,7 @@ function StudentDetail({ student, onStatusChange, onNotesSave, currentUser, onAs
   async function loadMatches() {
     setLoadingMatches(true);
     try {
-      const data = await query("matches", "*, programas(nombre, ciudad, tipo, familia_area, url_solicitud, url_solicitud_status, url_detalle, url_detalle_status, modalidad, idioma, precio_anual_eur, precio_extracomunitario_eur, horas_semanales)", { student_id: student.id });
+      const data = await query("matches", "*, programas(nombre, ciudad, tipo, familia_area, url_solicitud, url_solicitud_status, url_detalle, url_detalle_status, modalidad, idioma, precio_anual_eur, precio_extracomunitario_eur, horas_semanales, visa_eligible)", { student_id: student.id });
       setMatches(Array.isArray(data) ? data : []);
     } catch { setMatches([]); }
     setLoadingMatches(false);
@@ -1064,7 +1066,15 @@ function StudentDetail({ student, onStatusChange, onNotesSave, currentUser, onAs
           : matches.length === 0 ? <div style={{ color: "var(--muted)", fontSize: 13, fontFamily: "var(--mono)", padding: "20px 0" }}>Sin matches aún. N8N los guardará cuando el estudiante complete el formulario.</div>
           : (() => {
               const areas = ["all", ...Array.from(new Set(matches.map(m => m.programas?.familia_area).filter(Boolean))).sort()];
-              const filtered = filterArea === "all" ? matches : matches.filter(m => m.programas?.familia_area === filterArea);
+              const isNonEUStudent = student.student_origin === "extracomunitario" || student.student_origin === "latam_convenio";
+              const baseFiltered = filterArea === "all" ? matches : matches.filter(m => m.programas?.familia_area === filterArea);
+              const filtered = isNonEUStudent
+                ? [...baseFiltered].sort((a, b) => {
+                    const aNoEleg = a.programas?.visa_eligible === 'no_elegible' ? 1 : 0;
+                    const bNoEleg = b.programas?.visa_eligible === 'no_elegible' ? 1 : 0;
+                    return aNoEleg - bNoEleg;
+                  })
+                : baseFiltered;
               return (
                 <>
                   {areas.length > 2 && (
@@ -1090,7 +1100,7 @@ function StudentDetail({ student, onStatusChange, onNotesSave, currentUser, onAs
                     const price = isNonEU && p.precio_extracomunitario_eur != null ? p.precio_extracomunitario_eur : p.precio_anual_eur;
                     const priceLabel = isNonEU && p.precio_extracomunitario_eur !== p.precio_anual_eur ? "no-UE" : isConvenio ? "convenio" : "UE/residente";
                     return (
-                    <div key={i} className="program-card">
+                    <div key={i} className="program-card" style={isNonEUStudent && p.visa_eligible === 'no_elegible' ? { opacity: 0.5 } : undefined}>
                       <div className="program-name">{p.nombre || "Programa sin nombre"}</div>
                       <div className="program-inst">{p.ciudad || "—"}</div>
                       <div className="program-tags">
@@ -1102,6 +1112,19 @@ function StudentDetail({ student, onStatusChange, onNotesSave, currentUser, onAs
                       </div>
                       <div style={{ marginBottom: 10 }}>
                         <EditableHours horas={p.horas_semanales} programId={m.programa_id} onUpdated={handleHoursUpdated} />
+                      </div>
+                      <div style={{ marginBottom: 10, display: "flex", alignItems: "center", gap: 8 }}>
+                        <VisaBadge visaEligible={p.visa_eligible} horas={p.horas_semanales} />
+                        <select
+                          value={p.visa_eligible || 'pendiente'}
+                          onChange={e => patch('programas', m.programa_id, { visa_eligible: e.target.value }).then(loadMatches)}
+                          style={{ fontSize: 11, fontFamily: "var(--mono)", background: "var(--bg)", color: "var(--text)", border: "1px solid var(--border)", borderRadius: 4, padding: "2px 6px", cursor: "pointer" }}
+                        >
+                          <option value="elegible">✅ Elegible</option>
+                          <option value="no_elegible">❌ No elegible</option>
+                          <option value="no_aplica">⚫ No aplica</option>
+                          <option value="pendiente">⏳ Pendiente</option>
+                        </select>
                       </div>
                       <div className="program-footer">
                         <EditableUrlBtn url={p.url_solicitud} status={p.url_solicitud_status} label="Solicitud" programId={m.programa_id} field="url_solicitud" onUrlUpdated={handleUrlUpdated} />
@@ -1239,8 +1262,14 @@ function computeMatches(programs, profile) {
   const familias = STUDY_AREA_TO_FAMILIA[profile.study_area] || [];
   const tipos = EDUCATION_TO_TIPO[profile.education_level] || ["grado","master","doctorado","fp_superior"];
   const cities = profile.preferred_cities || [];
-  let candidates = programs.filter(p => familias.includes(p.familia_area) && tipos.includes(p.tipo));
-  const scored = candidates.map(p => ({ ...p, score: 10 + (cities.includes(p.ciudad) ? 30 : 5) + (p.activo ? 2 : 0) }));
+  const isNonEU = ['extracomunitario', 'latam_convenio'].includes(profile.student_origin);
+  let candidates = programs.filter(p => {
+    const areaMatch = familias.includes(p.familia_area);
+    const tipoMatch = tipos.includes(p.tipo);
+    const visaOk = !isNonEU || p.visa_eligible !== 'no_elegible';
+    return areaMatch && tipoMatch && visaOk;
+  });
+  const scored = candidates.map(p => ({ ...p, score: 10 + (cities.includes(p.ciudad) ? 30 : 5) + (p.activo ? 2 : 0) + (p.visa_eligible === 'elegible' ? 10 : 0) }));
   scored.sort((a, b) => b.score - a.score);
   return scored.slice(0, 50);
 }

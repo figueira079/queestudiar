@@ -9,29 +9,29 @@ const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || SUPABASE_KEY
 async function authSignIn(email, password) {
   const res = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=password`, {
     method: "POST",
-    headers: { apikey: SUPABASE_KEY, "Content-Type": "application/json" },
+    headers: { apikey: SUPABASE_ANON_KEY, "Content-Type": "application/json" },
     body: JSON.stringify({ email, password }),
   });
   const data = await res.json();
-  if (!data.access_token) throw new Error(data.error_description || data.message || data.msg || data.error || "Error de autenticación");
+  if (!data.access_token) throw new Error(data.error_description || data.message || data.msg || data.error || "Email o contraseña incorrectos");
   return data;
 }
 
 async function authRefreshToken(refreshToken) {
   const res = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=refresh_token`, {
     method: "POST",
-    headers: { apikey: SUPABASE_KEY, "Content-Type": "application/json" },
+    headers: { apikey: SUPABASE_ANON_KEY, "Content-Type": "application/json" },
     body: JSON.stringify({ refresh_token: refreshToken }),
   });
   const data = await res.json();
-  if (data.error) throw new Error(data.error_description || data.error);
+  if (!data.access_token) throw new Error(data.error_description || data.message || data.error);
   return data;
 }
 
 async function authSignOut(accessToken) {
   await fetch(`${SUPABASE_URL}/auth/v1/logout`, {
     method: "POST",
-    headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${accessToken}` },
+    headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${accessToken}` },
   });
 }
 

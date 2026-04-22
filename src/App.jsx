@@ -83,6 +83,27 @@ const STATUS_CONFIG = {
   descartado:  { label: "Descartado",   color: "#EF9A9A", bg: "#2a0d0d" },
 };
 
+const DOCUMENT_TYPES = [
+  "Pasaporte",
+  "Título académico",
+  "Expediente académico / notas",
+  "Carta de motivación",
+  "Carta de recomendación",
+  "CV / Currículum",
+  "Certificado de idioma",
+  "Solvencia económica",
+  "Formulario de solicitud universidad",
+  "Otros",
+];
+
+const DOC_STATUS_CONFIG = {
+  pendiente:           { label: "Pendiente",          color: "#90A4AE", emoji: "⏳" },
+  recibido:            { label: "Recibido",            color: "#FFB74D", emoji: "📥" },
+  en_revision:         { label: "En revisión",         color: "#CE93D8", emoji: "🔍" },
+  aprobado:            { label: "Aprobado ✓",          color: "#81C784", emoji: "✅" },
+  necesita_correccion: { label: "Necesita corrección", color: "#EF9A9A", emoji: "✏️" },
+};
+
 // ─── SUPABASE CLIENT ────────────────────────────────────────────────────────
 async function query(table, select = "*", filters = {}) {
   let url = `${SUPABASE_URL}/rest/v1/${table}?select=${encodeURIComponent(select)}`;
@@ -166,6 +187,17 @@ async function adminCreateUser(email, password, name, role) {
   });
   const data = await res.json();
   if (data.error || data.msg || !data.id) throw new Error(data.msg || data.error_description || data.error || "Error al crear usuario");
+  return data;
+}
+
+async function adminInviteStudent(email, studentId) {
+  const res = await fetch(`${SUPABASE_URL}/auth/v1/admin/users`, {
+    method: "POST",
+    headers: getAdminHeaders(),
+    body: JSON.stringify({ email, email_confirm: true, user_metadata: { role: 'cliente', student_id: studentId } }),
+  });
+  const data = await res.json();
+  if (data.error || data.msg || !data.id) throw new Error(data.msg || data.error_description || data.error || "Error al invitar");
   return data;
 }
 
@@ -336,6 +368,12 @@ const css = `
   .feedback-send { flex: 1; padding: 9px; border-radius: 8px; border: none; background: var(--accent); color: #fff; font-family: var(--font); font-weight: 700; font-size: 13px; cursor: pointer; transition: opacity 0.15s; }
   .feedback-send:hover { opacity: 0.9; }
   .feedback-send:disabled { opacity: 0.4; cursor: default; }
+  .doc-list { display: flex; flex-direction: column; gap: 6px; }
+  .doc-row { display: flex; align-items: center; gap: 8px; padding: 8px 10px; background: var(--surface); border: 1px solid var(--border); border-radius: 6px; }
+  .doc-type { flex: 0 0 220px; font-size: 12px; font-family: var(--mono); color: var(--text); }
+  .doc-status-select { flex: 0 0 auto; font-size: 11px; font-family: var(--mono); background: var(--bg); color: var(--text); border: 1px solid var(--border); border-radius: 4px; padding: 3px 6px; cursor: pointer; }
+  .doc-notes-input { flex: 1; font-size: 11px; font-family: var(--mono); background: var(--bg); color: var(--muted); border: 1px solid var(--border); border-radius: 4px; padding: 3px 8px; outline: none; }
+  .doc-notes-input:focus { border-color: var(--accent); color: var(--text); }
 `;
 
 function formatDate(d) {
@@ -505,12 +543,20 @@ function UrlBtn({ url, status, label, style: extraStyle }) {
   );
 }
 
-function EditableUrlBtn({ url, status, label, style: extraStyle, programId, field, onUrlUpdated }) {
+function EditableUrlBtn({ url, status, label, style: extraStyle, programId, field, onUrlUpdated, extranjeroUrl, extranjeroNotas }) {
   const [editing, setEditing] = useState(false);
   const [newUrl, setNewUrl] = useState(url || "");
   const [saving, setSaving] = useState(false);
+  const [showExtranjero, setShowExtranjero] = useState(false);
+  const [editingExtranjero, setEditingExtranjero] = useState(false);
+  const [extranjeroUrlVal, setExtranjeroUrlVal] = useState(extranjeroUrl || "");
+  const [extranjeroNotasVal, setExtranjeroNotasVal] = useState(extranjeroNotas || "");
+  const [savingExtranjero, setSavingExtranjero] = useState(false);
+
+  const supportsExtranjero = extranjeroUrl !== undefined;
 
   useEffect(() => { setNewUrl(url || ""); setEditing(false); }, [url]);
+  useEffect(() => { setExtranjeroUrlVal(extranjeroUrl || ""); setExtranjeroNotasVal(extranjeroNotas || ""); }, [extranjeroUrl, extranjeroNotas]);
 
   async function handleSave() {
     const trimmed = newUrl.trim();
@@ -520,6 +566,15 @@ function EditableUrlBtn({ url, status, label, style: extraStyle, programId, fiel
     setSaving(false);
     setEditing(false);
     if (onUrlUpdated) onUrlUpdated(programId, field, trimmed, url);
+  }
+
+  async function handleSaveExtranjero() {
+    const trimmedUrl = extranjeroUrlVal.trim();
+    const trimmedNotas = extranjeroNotasVal.trim();
+    setSavingExtranjero(true);
+    await patch("programas", programId, { url_solicitud_extranjero: trimmedUrl || null, url_solicitud_extranjero_notas: trimmedNotas || null });
+    setSavingExtranjero(false);
+    setEditingExtranjero(false);
   }
 
   if (editing) {
@@ -536,9 +591,38 @@ function EditableUrlBtn({ url, status, label, style: extraStyle, programId, fiel
   }
 
   return (
-    <div style={{ display: "flex", alignItems: "center", gap: 2 }}>
-      <UrlBtn url={url} status={status} label={label} style={extraStyle} />
-      <button className="url-pencil" onClick={() => setEditing(true)} title="Editar URL">✏️</button>
+    <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 2 }}>
+        <UrlBtn url={url} status={status} label={label} style={extraStyle} />
+        <button className="url-pencil" onClick={() => setEditing(true)} title="Editar URL">✏️</button>
+        {supportsExtranjero && (
+          <button className="url-pencil" onClick={() => setShowExtranjero(v => !v)} title="URL extranjero" style={{ opacity: extranjeroUrl ? 1 : 0.5 }}>🌍</button>
+        )}
+      </div>
+      {supportsExtranjero && showExtranjero && (
+        <div style={{ marginLeft: 4, padding: "8px 10px", background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 6 }}>
+          {editingExtranjero ? (
+            <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+              <input className="url-edit-input" value={extranjeroUrlVal} onChange={e => setExtranjeroUrlVal(e.target.value)} placeholder="URL solicitud extranjero (https://...)" />
+              <input className="url-edit-input" value={extranjeroNotasVal} onChange={e => setExtranjeroNotasVal(e.target.value)} placeholder="Notas (requiere NIE, formulario en español...)" />
+              <div style={{ display: "flex", gap: 4 }}>
+                <button className="url-edit-btn save" onClick={handleSaveExtranjero} disabled={savingExtranjero}>{savingExtranjero ? "…" : "✓ Guardar"}</button>
+                <button className="url-edit-btn" onClick={() => { setEditingExtranjero(false); setExtranjeroUrlVal(extranjeroUrl || ""); setExtranjeroNotasVal(extranjeroNotas || ""); }}>✕</button>
+              </div>
+            </div>
+          ) : (
+            <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                {extranjeroUrl
+                  ? <a href={extranjeroUrl} target="_blank" rel="noreferrer" className="url-btn url-ok" style={{ fontSize: 11 }}>↗ Extranjero 🌍</a>
+                  : <span style={{ fontSize: 11, color: "var(--muted)", fontFamily: "var(--mono)" }}>Sin URL extranjero aún</span>}
+                <button className="url-pencil" onClick={() => setEditingExtranjero(true)} title="Editar URL extranjero">✏️</button>
+              </div>
+              {extranjeroNotas && <div style={{ fontSize: 10, color: "#FFB74D", fontFamily: "var(--mono)" }}>ℹ {extranjeroNotas}</div>}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }
@@ -846,24 +930,24 @@ function UserManagement({ onClose }) {
     <div className="detail">
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 28 }}>
         <div>
-          <div className="detail-name">Gesti\u00f3n de usuarios</div>
+          <div className="detail-name">Gestión de usuarios</div>
           <div style={{ fontSize: 12, color: "var(--muted)", fontFamily: "var(--mono)", marginTop: 4 }}>Crear y gestionar cuentas del equipo de admisiones</div>
         </div>
         <div style={{ display: "flex", gap: 8 }}>
           <button className="save-btn" style={{ marginTop: 0 }} onClick={() => { setShowForm(!showForm); setError(""); }}>{showForm ? "\u2715 Cancelar" : "+ Nuevo usuario"}</button>
-          <button className="btn-ghost" onClick={onClose}>\u2190 Volver</button>
+          <button className="btn-ghost" onClick={onClose}>← Volver</button>
         </div>
       </div>
 
-      {success && <div className="success-msg">\u2705 {success}</div>}
+      {success && <div className="success-msg">✅ {success}</div>}
 
       {showForm && (
         <form onSubmit={handleCreate} className="user-form">
           <div style={{ fontSize: 10, fontFamily: "var(--mono)", letterSpacing: "0.15em", textTransform: "uppercase", color: "var(--muted)", marginBottom: 16 }}>Nuevo usuario</div>
           <div className="user-form-grid">
-            <div className="field"><label>Nombre completo</label><input value={formData.name} onChange={e => setFormData(p => ({...p, name: e.target.value}))} required placeholder="Mar\u00eda Garc\u00eda" /></div>
+            <div className="field"><label>Nombre completo</label><input value={formData.name} onChange={e => setFormData(p => ({...p, name: e.target.value}))} required placeholder="María García" /></div>
             <div className="field"><label>Email</label><input type="email" value={formData.email} onChange={e => setFormData(p => ({...p, email: e.target.value}))} required placeholder="maria@queestudiar.es" /></div>
-            <div className="field"><label>Contrase\u00f1a</label><input type="password" value={formData.password} onChange={e => setFormData(p => ({...p, password: e.target.value}))} required minLength={6} placeholder="M\u00edn. 6 caracteres" /></div>
+            <div className="field"><label>Contraseña</label><input type="password" value={formData.password} onChange={e => setFormData(p => ({...p, password: e.target.value}))} required minLength={6} placeholder="Mín. 6 caracteres" /></div>
             <div className="field"><label>Rol</label><select className="user-form" value={formData.role} onChange={e => setFormData(p => ({...p, role: e.target.value}))}><option value="team">Equipo</option><option value="admin">Administrador</option></select></div>
           </div>
           {error && <div className="login-err" style={{ textAlign: "left", marginTop: 8 }}>{error}</div>}
@@ -872,7 +956,7 @@ function UserManagement({ onClose }) {
       )}
 
       {loading ? <div className="loading" style={{ height: 200 }}><div className="spinner" /> Cargando usuarios...</div>
-      : users.length === 0 ? <div className="empty" style={{ height: 200 }}><div className="empty-icon">\u25cb</div><div className="empty-text">No hay usuarios registrados</div></div>
+      : users.length === 0 ? <div className="empty" style={{ height: 200 }}><div className="empty-icon">○</div><div className="empty-text">No hay usuarios registrados</div></div>
       : (
         <div className="user-mgmt-grid">
           {users.map(u => (
@@ -884,7 +968,7 @@ function UserManagement({ onClose }) {
               <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
                 <span className={`user-role ${u.user_metadata?.role === "admin" ? "admin" : "team"}`}>{u.user_metadata?.role === "admin" ? "Admin" : "Equipo"}</span>
                 <span style={{ fontSize: 10, color: "var(--muted)", fontFamily: "var(--mono)" }}>{new Date(u.created_at).toLocaleDateString("es-ES", { day: "2-digit", month: "short", year: "numeric" })}</span>
-                <button className="user-delete-btn" onClick={() => handleDelete(u)} title="Eliminar usuario">\ud83d\uddd1</button>
+                <button className="user-delete-btn" onClick={() => handleDelete(u)} title="Eliminar usuario">🗑</button>
               </div>
             </div>
           ))}
@@ -905,16 +989,21 @@ function StudentDetail({ student, onStatusChange, onNotesSave, currentUser, onAs
   const [regionData, setRegionData] = useState([]);
   const [loadingMatches, setLoadingMatches] = useState(true);
   const [filterArea, setFilterArea] = useState("all");
+  const [filterStage, setFilterStage] = useState("all");
   const [urlLearning, setUrlLearning] = useState(null);
   const [applyingLearning, setApplyingLearning] = useState(false);
+  const [documents, setDocuments] = useState([]);
+  const [loadingDocs, setLoadingDocs] = useState(false);
+  const [driveUrl, setDriveUrl] = useState(student.drive_folder_url || "");
+  const [savingDrive, setSavingDrive] = useState(false);
 
-  useEffect(() => { setNotes(student.notes || ""); setTab("matches"); setFilterArea("all"); setUrlLearning(null); }, [student.id]);
+  useEffect(() => { setNotes(student.notes || ""); setTab("matches"); setFilterArea("all"); setFilterStage("all"); setUrlLearning(null); setDriveUrl(student.drive_folder_url || ""); loadDocuments(); }, [student.id]);
   useEffect(() => { loadMatches(); loadRequirements(); }, [student.id]);
 
   async function loadMatches() {
     setLoadingMatches(true);
     try {
-      const data = await query("matches", "*, programas(nombre, ciudad, tipo, familia_area, url_solicitud, url_solicitud_status, url_detalle, url_detalle_status, modalidad, idioma, precio_anual_eur, precio_extracomunitario_eur, horas_semanales, visa_eligible)", { student_id: student.id });
+      const data = await query("matches", "*, programas(nombre, ciudad, tipo, familia_area, url_solicitud, url_solicitud_status, url_solicitud_extranjero, url_solicitud_extranjero_notas, url_detalle, url_detalle_status, modalidad, idioma, precio_anual_eur, precio_extracomunitario_eur, horas_semanales, visa_eligible)", { student_id: student.id });
       setMatches(Array.isArray(data) ? data : []);
     } catch { setMatches([]); }
     setLoadingMatches(false);
@@ -984,6 +1073,67 @@ function StudentDetail({ student, onStatusChange, onNotesSave, currentUser, onAs
     }));
   }
 
+  async function patchMatchStage(matchId, stage) {
+    if (stage === 'solicitud') {
+      const solicitudCount = matches.filter(m => m.match_stage === 'solicitud' && m.id !== matchId).length;
+      if (solicitudCount >= 2) {
+        alert('⚠ Máximo 2 programas pueden estar en fase "Solicitud activa"');
+        return;
+      }
+    }
+    await patch("matches", matchId, { match_stage: stage });
+    setMatches(prev => prev.map(m => m.id === matchId ? { ...m, match_stage: stage } : m));
+  }
+
+  async function loadDocuments() {
+    setLoadingDocs(true);
+    try {
+      const data = await query("student_documents", "*", { student_id: student.id });
+      setDocuments(Array.isArray(data) ? data : []);
+    } catch { setDocuments([]); }
+    setLoadingDocs(false);
+  }
+
+  async function initializeDocuments() {
+    const existing = new Set(documents.map(d => d.document_type));
+    const toCreate = DOCUMENT_TYPES.filter(dt => !existing.has(dt)).map(dt => ({ student_id: student.id, document_type: dt, status: 'pendiente' }));
+    if (toCreate.length === 0) return;
+    await fetch(`${SUPABASE_URL}/rest/v1/student_documents`, {
+      method: "POST",
+      headers: { ...getAuthHeaders(), "Content-Type": "application/json", "Prefer": "resolution=ignore-duplicates,return=minimal" },
+      body: JSON.stringify(toCreate),
+    });
+    await loadDocuments();
+  }
+
+  async function patchDocument(docId, data) {
+    await patch("student_documents", docId, { ...data, updated_at: new Date().toISOString() });
+    setDocuments(prev => prev.map(d => d.id === docId ? { ...d, ...data } : d));
+  }
+
+  async function saveDriveUrl() {
+    setSavingDrive(true);
+    await patch("student_leads", student.id, { drive_folder_url: driveUrl.trim() || null });
+    setSavingDrive(false);
+  }
+
+  const [inviting, setInviting] = useState(false);
+  const [clientUserId, setClientUserId] = useState(student.client_user_id || null);
+
+  async function handleInvite() {
+    if (!student.email) { alert("El estudiante no tiene email registrado."); return; }
+    setInviting(true);
+    try {
+      const newUser = await adminInviteStudent(student.email, student.id);
+      await patch("student_leads", student.id, { client_user_id: newUser.id });
+      setClientUserId(newUser.id);
+      alert(`✅ Invitación enviada a ${student.email}`);
+    } catch (e) {
+      alert(`Error al invitar: ${e.message}`);
+    }
+    setInviting(false);
+  }
+
   async function handleUrlUpdated(programId, field, newUrl, oldUrl) {
     // Update local matches state
     setMatches(prev => prev.map(m => {
@@ -1051,12 +1201,20 @@ function StudentDetail({ student, onStatusChange, onNotesSave, currentUser, onAs
             </select>
           </div>
         )}
+        {currentUser?.role === "admin" && (
+          <div style={{ marginTop: 8 }}>
+            <button className="btn-ghost" onClick={handleInvite} disabled={inviting} style={{ fontSize: 11 }}>
+              {inviting ? "Enviando..." : clientUserId ? "↺ Reenviar invitación portal" : "✉ Invitar a portal"}
+            </button>
+            {clientUserId && <span style={{ fontSize: 10, color: "#81C784", fontFamily: "var(--mono)", marginLeft: 8 }}>✓ Portal activado</span>}
+          </div>
+        )}
         {currentUser?.role !== "admin" && student.assigned_to && (
           <div style={{ fontSize: 11, fontFamily: "var(--mono)", color: "var(--muted)", marginTop: 8 }}>Asignado a ti</div>
         )}
       </div>
       <div className="tabs">
-        {[["matches", `Matches (${matches.length})`], ["requisitos", "Requisitos admisión"], ["region", "Costes y plazos"], ["notas", "Notas expediente"]].map(([k, l]) => (
+        {[["matches", `Matches (${matches.length})`], ["requisitos", "Requisitos admisión"], ["region", "Costes y plazos"], ["notas", "Notas expediente"], ["documentacion", "Documentación"]].map(([k, l]) => (
           <div key={k} className={`tab ${tab === k ? "active" : ""}`} onClick={() => setTab(k)}>{l}</div>
         ))}
       </div>
@@ -1067,18 +1225,25 @@ function StudentDetail({ student, onStatusChange, onNotesSave, currentUser, onAs
           : (() => {
               const areas = ["all", ...Array.from(new Set(matches.map(m => m.programas?.familia_area).filter(Boolean))).sort()];
               const isNonEUStudent = student.student_origin === "extracomunitario" || student.student_origin === "latam_convenio";
-              const baseFiltered = filterArea === "all" ? matches : matches.filter(m => m.programas?.familia_area === filterArea);
+              const areaFiltered = filterArea === "all" ? matches : matches.filter(m => m.programas?.familia_area === filterArea);
+              const stageFiltered = filterStage === "all" ? areaFiltered : areaFiltered.filter(m => (m.match_stage || 'informe') === filterStage);
               const filtered = isNonEUStudent
-                ? [...baseFiltered].sort((a, b) => {
+                ? [...stageFiltered].sort((a, b) => {
                     const aNoEleg = a.programas?.visa_eligible === 'no_elegible' ? 1 : 0;
                     const bNoEleg = b.programas?.visa_eligible === 'no_elegible' ? 1 : 0;
                     return aNoEleg - bNoEleg;
                   })
-                : baseFiltered;
+                : stageFiltered;
+              const STAGE_OPTS = [
+                { k: "all", icon: "📋", label: `Todos (${matches.length})` },
+                { k: "informe", icon: "📋", label: `Informe (${matches.filter(m => (m.match_stage || 'informe') === 'informe').length})` },
+                { k: "seleccionado", icon: "⭐", label: `Seleccionado (${matches.filter(m => m.match_stage === 'seleccionado').length})` },
+                { k: "solicitud", icon: "📨", label: `Solicitud (${matches.filter(m => m.match_stage === 'solicitud').length})` },
+              ];
               return (
                 <>
                   {areas.length > 2 && (
-                    <div style={{ marginBottom: 16, display: "flex", gap: 6, flexWrap: "wrap" }}>
+                    <div style={{ marginBottom: 8, display: "flex", gap: 6, flexWrap: "wrap" }}>
                       {areas.map(a => (
                         <div key={a} className={`filter-chip ${filterArea === a ? "active" : ""}`} onClick={() => setFilterArea(a)}>
                           {a === "all" ? `Todas las áreas (${matches.length})` : `${a} (${matches.filter(m => m.programas?.familia_area === a).length})`}
@@ -1086,6 +1251,13 @@ function StudentDetail({ student, onStatusChange, onNotesSave, currentUser, onAs
                       ))}
                     </div>
                   )}
+                  <div style={{ marginBottom: 16, display: "flex", gap: 6, flexWrap: "wrap" }}>
+                    {STAGE_OPTS.map(({ k, icon, label }) => (
+                      <div key={k} className={`filter-chip ${filterStage === k ? "active" : ""}`} onClick={() => setFilterStage(k)} style={{ borderColor: k === "solicitud" ? "var(--accent)" : undefined }}>
+                        {k !== "all" && `${icon} `}{label}
+                      </div>
+                    ))}
+                  </div>
                   {urlLearning && (
                     <div className="learning-banner">
                       <span>🧠</span>
@@ -1126,8 +1298,18 @@ function StudentDetail({ student, onStatusChange, onNotesSave, currentUser, onAs
                           <option value="pendiente">⏳ Pendiente</option>
                         </select>
                       </div>
+                      <div style={{ marginBottom: 10, display: "flex", gap: 6, alignItems: "center" }}>
+                        {[["informe","📋"],["seleccionado","⭐"],["solicitud","📨"]].map(([stage, icon]) => (
+                          <button key={stage} onClick={() => patchMatchStage(m.id, stage)} style={{
+                            fontSize: 11, fontFamily: "var(--mono)", padding: "3px 8px", borderRadius: 4, cursor: "pointer",
+                            border: `1px solid ${(m.match_stage || 'informe') === stage ? "var(--accent)" : "var(--border)"}`,
+                            background: (m.match_stage || 'informe') === stage ? "var(--accent)" : "var(--bg)",
+                            color: (m.match_stage || 'informe') === stage ? "#fff" : "var(--muted)",
+                          }}>{icon} {stage}</button>
+                        ))}
+                      </div>
                       <div className="program-footer">
-                        <EditableUrlBtn url={p.url_solicitud} status={p.url_solicitud_status} label="Solicitud" programId={m.programa_id} field="url_solicitud" onUrlUpdated={handleUrlUpdated} />
+                        <EditableUrlBtn url={p.url_solicitud} status={p.url_solicitud_status} label="Solicitud" programId={m.programa_id} field="url_solicitud" onUrlUpdated={handleUrlUpdated} extranjeroUrl={p.url_solicitud_extranjero} extranjeroNotas={p.url_solicitud_extranjero_notas} />
                         <EditableUrlBtn url={p.url_detalle} status={p.url_detalle_status} label="Ver programa" programId={m.programa_id} field="url_detalle" onUrlUpdated={handleUrlUpdated} style={{ borderColor: "var(--accent2)", color: "var(--accent2)" }} />
                       </div>
                     </div>
@@ -1166,6 +1348,79 @@ function StudentDetail({ student, onStatusChange, onNotesSave, currentUser, onAs
         <textarea className="notes-area" style={{ minHeight: 200 }} value={notes} onChange={e => setNotes(e.target.value)} placeholder="Documentos recibidos, comunicaciones, estado de homologación..." />
         <button className="save-btn" onClick={saveNotes} disabled={saving}>{saving ? "Guardando..." : saved ? "✓ Guardado" : "Guardar notas"}</button>
       </div>}
+      {tab === "documentacion" && (
+        <div className="section">
+          <div className="section-title">Documentación del expediente</div>
+          <div style={{ marginBottom: 16, display: "flex", alignItems: "center", gap: 8 }}>
+            <input
+              className="url-edit-input"
+              style={{ flex: 1 }}
+              value={driveUrl}
+              onChange={e => setDriveUrl(e.target.value)}
+              placeholder="URL carpeta Drive del estudiante"
+            />
+            <button className="url-edit-btn save" onClick={saveDriveUrl} disabled={savingDrive}>{savingDrive ? "…" : "✓"}</button>
+            {driveUrl && driveUrl.startsWith("http") && (
+              <a href={driveUrl} target="_blank" rel="noreferrer" className="url-btn url-ok" style={{ fontSize: 11 }}>↗ Abrir Drive</a>
+            )}
+          </div>
+          {loadingDocs ? (
+            <div className="loading"><div className="spinner" /> Cargando...</div>
+          ) : documents.length === 0 ? (
+            <div style={{ textAlign: "center", padding: "24px 0" }}>
+              <div style={{ color: "var(--muted)", fontSize: 13, fontFamily: "var(--mono)", marginBottom: 16 }}>Sin documentos registrados aún.</div>
+              <button className="save-btn" onClick={initializeDocuments}>📋 Inicializar checklist</button>
+            </div>
+          ) : (
+            <>
+              <div style={{ display: "flex", gap: 16, marginBottom: 16, fontSize: 12, fontFamily: "var(--mono)" }}>
+                <span style={{ color: DOC_STATUS_CONFIG.aprobado.color }}>✅ {documents.filter(d => d.status === 'aprobado').length} / {documents.length} aprobados</span>
+                <span style={{ color: DOC_STATUS_CONFIG.necesita_correccion.color }}>✏️ {documents.filter(d => d.status === 'necesita_correccion').length} necesitan corrección</span>
+              </div>
+              <div className="doc-list">
+                {DOCUMENT_TYPES.map(dt => {
+                  const doc = documents.find(d => d.document_type === dt);
+                  if (!doc) return null;
+                  const dsc = DOC_STATUS_CONFIG[doc.status] || DOC_STATUS_CONFIG.pendiente;
+                  return (
+                    <div key={dt} className="doc-row">
+                      <div className="doc-type">{dt}</div>
+                      <select
+                        className="doc-status-select"
+                        value={doc.status}
+                        onChange={e => patchDocument(doc.id, { status: e.target.value })}
+                        style={{ color: dsc.color, borderColor: dsc.color + "66" }}
+                      >
+                        {Object.entries(DOC_STATUS_CONFIG).map(([k, v]) => (
+                          <option key={k} value={k}>{v.emoji} {v.label}</option>
+                        ))}
+                      </select>
+                      <input
+                        className="doc-notes-input"
+                        value={doc.notes || ""}
+                        onChange={e => patchDocument(doc.id, { notes: e.target.value })}
+                        placeholder="Notas..."
+                      />
+                    </div>
+                  );
+                })}
+                {documents.filter(d => !DOCUMENT_TYPES.includes(d.document_type)).map(doc => {
+                  const dsc = DOC_STATUS_CONFIG[doc.status] || DOC_STATUS_CONFIG.pendiente;
+                  return (
+                    <div key={doc.id} className="doc-row">
+                      <div className="doc-type">{doc.document_type}</div>
+                      <select className="doc-status-select" value={doc.status} onChange={e => patchDocument(doc.id, { status: e.target.value })} style={{ color: dsc.color, borderColor: dsc.color + "66" }}>
+                        {Object.entries(DOC_STATUS_CONFIG).map(([k, v]) => <option key={k} value={k}>{v.emoji} {v.label}</option>)}
+                      </select>
+                      <input className="doc-notes-input" value={doc.notes || ""} onChange={e => patchDocument(doc.id, { notes: e.target.value })} placeholder="Notas..." />
+                    </div>
+                  );
+                })}
+              </div>
+            </>
+          )}
+        </div>
+      )}
     </div>
   );
 }
@@ -1902,6 +2157,281 @@ function SolicitudForm() {
   );
 }
 
+// ═══════════════════════════════════════════════════════════════════════════
+// PORTAL DEL CLIENTE
+// ═══════════════════════════════════════════════════════════════════════════
+
+function PortalCliente({ currentUser, onLogout }) {
+  const [lead, setLead] = useState(null);
+  const [matches, setMatches] = useState([]);
+  const [documents, setDocuments] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [activeDocId, setActiveDocId] = useState(null);
+  const [comments, setComments] = useState({});
+  const [editContent, setEditContent] = useState({});
+  const [savingDoc, setSavingDoc] = useState(null);
+  const [newComment, setNewComment] = useState({});
+
+  useEffect(() => { loadPortalData(); }, []);
+
+  async function loadPortalData() {
+    setLoading(true);
+    try {
+      const leads = await query("student_leads", "*", { client_user_id: currentUser.id });
+      if (!Array.isArray(leads) || leads.length === 0) { setLoading(false); return; }
+      const sl = leads[0];
+      setLead(sl);
+      const [matchData, docData] = await Promise.all([
+        query("matches", "*, programas(nombre, ciudad, tipo, visa_eligible, url_solicitud, url_solicitud_status, precio_anual_eur, precio_extracomunitario_eur)", { student_id: sl.id }),
+        query("student_documents", "*", { student_id: sl.id }),
+      ]);
+      setMatches(Array.isArray(matchData) ? matchData.filter(m => m.programas?.visa_eligible !== 'no_elegible') : []);
+      const docs = Array.isArray(docData) ? docData : [];
+      setDocuments(docs);
+      const contentMap = {};
+      docs.forEach(d => { contentMap[d.id] = d.content || ""; });
+      setEditContent(contentMap);
+    } catch {}
+    setLoading(false);
+  }
+
+  async function toggleFavorito(matchId, current) {
+    const next = current === true ? null : true;
+    await patch("matches", matchId, { cliente_favorito: next });
+    setMatches(prev => prev.map(m => m.id === matchId ? { ...m, cliente_favorito: next } : m));
+  }
+
+  async function saveDocContent(docId) {
+    setSavingDoc(docId);
+    const content = editContent[docId] || "";
+    await patch("student_documents", docId, { content, status: 'en_revision', updated_at: new Date().toISOString() });
+    setDocuments(prev => prev.map(d => d.id === docId ? { ...d, content, status: 'en_revision' } : d));
+    setSavingDoc(null);
+  }
+
+  async function loadComments(docId) {
+    const data = await query("document_comments", "*", { student_document_id: docId });
+    setComments(prev => ({ ...prev, [docId]: Array.isArray(data) ? data.sort((a, b) => new Date(a.created_at) - new Date(b.created_at)) : [] }));
+  }
+
+  async function sendComment(docId) {
+    const msg = (newComment[docId] || "").trim();
+    if (!msg) return;
+    await fetch(`${SUPABASE_URL}/rest/v1/document_comments`, {
+      method: "POST",
+      headers: { ...getAuthHeaders(), "Content-Type": "application/json", Prefer: "return=minimal" },
+      body: JSON.stringify({ student_document_id: docId, author_id: currentUser.id, author_type: 'cliente', message: msg }),
+    });
+    setNewComment(prev => ({ ...prev, [docId]: "" }));
+    await loadComments(docId);
+  }
+
+  const toggleDoc = async (docId) => {
+    if (activeDocId === docId) { setActiveDocId(null); return; }
+    setActiveDocId(docId);
+    if (!comments[docId]) await loadComments(docId);
+  };
+
+  if (loading) return (
+    <div style={{ minHeight: "100vh", background: "var(--bg)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+      <style>{css}</style>
+      <div className="loading"><div className="spinner" /> Cargando tu portal...</div>
+    </div>
+  );
+
+  if (!lead) return (
+    <div style={{ minHeight: "100vh", background: "var(--bg)", display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column", gap: 16 }}>
+      <style>{css}</style>
+      <div style={{ color: "var(--muted)", fontFamily: "var(--mono)", textAlign: "center" }}>
+        <div style={{ fontSize: 32, marginBottom: 12 }}>◉</div>
+        <div>Tu expediente aún no está listo.</div>
+        <div style={{ fontSize: 12, marginTop: 8 }}>Contacta con tu asesor para que lo active.</div>
+      </div>
+      <button className="btn-ghost" onClick={onLogout}>Cerrar sesión</button>
+    </div>
+  );
+
+  const favoritos = matches.filter(m => m.match_stage === 'seleccionado' || m.match_stage === 'solicitud');
+  const docsAprobados = documents.filter(d => d.status === 'aprobado').length;
+
+  return (
+    <div style={{ minHeight: "100vh", background: "var(--bg)", color: "var(--text)" }}>
+      <style>{css}</style>
+      <div className="header">
+        <div className="header-left"><div className="logo-mark">▸ QueEstudiar</div><div className="header-title">Mi Portal</div></div>
+        <div className="header-right">
+          <div className="user-badge">{lead.full_name || currentUser.email}</div>
+          <button className="btn-ghost" onClick={onLogout}>Salir</button>
+        </div>
+      </div>
+      <div style={{ maxWidth: 900, margin: "0 auto", padding: "24px 16px" }}>
+        <div style={{ display: "flex", gap: 12, marginBottom: 24, flexWrap: "wrap" }}>
+          {[
+            { label: "Programas seleccionados", value: favoritos.length, color: "var(--accent2)" },
+            { label: "Documentos aprobados", value: `${docsAprobados} / ${documents.length}`, color: "#81C784" },
+          ].map(({ label, value, color }) => (
+            <div key={label} style={{ flex: "1 1 180px", background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 8, padding: "12px 16px" }}>
+              <div style={{ fontSize: 22, fontWeight: 700, color, fontFamily: "var(--mono)" }}>{value}</div>
+              <div style={{ fontSize: 11, color: "var(--muted)", marginTop: 4 }}>{label}</div>
+            </div>
+          ))}
+        </div>
+
+        <div className="section-title" style={{ marginBottom: 12 }}>Tus programas</div>
+        {matches.length === 0 ? (
+          <div style={{ color: "var(--muted)", fontSize: 13, fontFamily: "var(--mono)", marginBottom: 24 }}>Aún no tienes programas asignados.</div>
+        ) : (
+          <div className="program-grid" style={{ marginBottom: 24 }}>
+            {matches.map(m => {
+              const p = m.programas || {};
+              const isFav = m.cliente_favorito === true;
+              return (
+                <div key={m.id} className="program-card" style={{ border: isFav ? "1px solid var(--accent)" : undefined }}>
+                  <div className="program-name">{p.nombre || "Programa"}</div>
+                  <div className="program-inst">{p.ciudad || "—"}</div>
+                  <div className="program-tags">
+                    {p.tipo && <span className="tag highlight">{p.tipo}</span>}
+                    {m.match_stage && m.match_stage !== 'informe' && <span className="tag" style={{ color: "var(--accent)" }}>{m.match_stage === 'seleccionado' ? '⭐ Seleccionado' : '📨 En solicitud'}</span>}
+                  </div>
+                  <div style={{ marginTop: 8, display: "flex", gap: 8 }}>
+                    {p.url_solicitud && <a href={p.url_solicitud} target="_blank" rel="noreferrer" className="url-btn url-ok" style={{ fontSize: 11 }}>↗ Solicitud</a>}
+                    <button onClick={() => toggleFavorito(m.id, m.cliente_favorito)} style={{ fontSize: 11, padding: "3px 10px", borderRadius: 4, cursor: "pointer", border: `1px solid ${isFav ? "var(--accent)" : "var(--border)"}`, background: isFav ? "var(--accent)" : "var(--bg)", color: isFav ? "#fff" : "var(--muted)" }}>
+                      {isFav ? "👍 Me interesa" : "👍 Marcar interés"}
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        <div className="section-title" style={{ marginBottom: 12 }}>Mi documentación</div>
+        {documents.length === 0 ? (
+          <div style={{ color: "var(--muted)", fontSize: 13, fontFamily: "var(--mono)" }}>Tu asesor preparará el checklist de documentos pronto.</div>
+        ) : (
+          <div className="doc-list">
+            {documents.map(doc => {
+              const dsc = DOC_STATUS_CONFIG[doc.status] || DOC_STATUS_CONFIG.pendiente;
+              const isOpen = activeDocId === doc.id;
+              const docComments = comments[doc.id] || [];
+              return (
+                <div key={doc.id} style={{ background: "var(--surface)", border: `1px solid ${isOpen ? "var(--accent)" : "var(--border)"}`, borderRadius: 8, overflow: "hidden" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 14px", cursor: "pointer" }} onClick={() => toggleDoc(doc.id)}>
+                    <span style={{ fontSize: 16 }}>{dsc.emoji}</span>
+                    <span style={{ flex: 1, fontFamily: "var(--mono)", fontSize: 13 }}>{doc.document_type}</span>
+                    <span style={{ fontSize: 11, color: dsc.color, fontFamily: "var(--mono)" }}>{dsc.label}</span>
+                    <span style={{ fontSize: 11, color: "var(--muted)" }}>{isOpen ? "▲" : "▼"}</span>
+                  </div>
+                  {isOpen && (
+                    <div style={{ padding: "0 14px 14px", borderTop: "1px solid var(--border)" }}>
+                      {doc.notes && <div style={{ fontSize: 11, color: "#FFB74D", fontFamily: "var(--mono)", margin: "10px 0 6px" }}>ℹ {doc.notes}</div>}
+                      <textarea
+                        style={{ width: "100%", minHeight: 120, padding: 10, background: "var(--bg)", border: "1px solid var(--border)", borderRadius: 6, color: "var(--text)", fontFamily: "var(--mono)", fontSize: 12, resize: "vertical", marginTop: 8, outline: "none" }}
+                        value={editContent[doc.id] || ""}
+                        onChange={e => setEditContent(prev => ({ ...prev, [doc.id]: e.target.value }))}
+                        placeholder="Escribe o pega el contenido del documento aquí..."
+                      />
+                      <button className="save-btn" style={{ marginTop: 8 }} onClick={() => saveDocContent(doc.id)} disabled={savingDoc === doc.id}>
+                        {savingDoc === doc.id ? "Guardando..." : "Guardar y enviar a revisión"}
+                      </button>
+                      {docComments.length > 0 && (
+                        <div style={{ marginTop: 12 }}>
+                          <div style={{ fontSize: 11, color: "var(--muted)", fontFamily: "var(--mono)", marginBottom: 6 }}>Comentarios del equipo:</div>
+                          {docComments.map(c => (
+                            <div key={c.id} style={{ padding: "6px 10px", background: c.author_type === 'team' ? "#0d2238" : "var(--bg)", border: "1px solid var(--border)", borderRadius: 6, marginBottom: 4, fontSize: 12, fontFamily: "var(--mono)" }}>
+                              <span style={{ color: c.author_type === 'team' ? "var(--accent)" : "var(--accent2)" }}>{c.author_type === 'team' ? "Asesor" : "Tú"}</span>
+                              <span style={{ color: "var(--muted)", marginLeft: 8, fontSize: 10 }}>{formatDate(c.created_at)}</span>
+                              <div style={{ marginTop: 4, color: "var(--text)" }}>{c.message}</div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                      <div style={{ display: "flex", gap: 6, marginTop: 8 }}>
+                        <input
+                          className="url-edit-input"
+                          style={{ flex: 1 }}
+                          value={newComment[doc.id] || ""}
+                          onChange={e => setNewComment(prev => ({ ...prev, [doc.id]: e.target.value }))}
+                          placeholder="Responder al equipo..."
+                          onKeyDown={e => e.key === "Enter" && sendComment(doc.id)}
+                        />
+                        <button className="url-edit-btn save" onClick={() => sendComment(doc.id)}>Enviar</button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// EXPEDIENTES DASHBOARD
+// ═══════════════════════════════════════════════════════════════════════════
+
+function ExpedientesDashboard({ students, teamMembers, onSelectStudent, onClose }) {
+  const [filterAsesor, setFilterAsesor] = useState("all");
+  const enProceso = students.filter(s => s.status === 'en_proceso');
+  const displayed = filterAsesor === "all" ? enProceso : enProceso.filter(s => s.assigned_to === filterAsesor);
+  const asesores = [...new Set(enProceso.map(s => s.assigned_to).filter(Boolean))];
+
+  return (
+    <div className="detail" style={{ overflow: "auto" }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
+        <div className="section-title">Expedientes activos · {displayed.length}</div>
+        <button className="btn-ghost" onClick={onClose}>✕ Cerrar</button>
+      </div>
+      {asesores.length > 1 && (
+        <div style={{ display: "flex", gap: 6, marginBottom: 12, flexWrap: "wrap" }}>
+          <div className={`filter-chip ${filterAsesor === "all" ? "active" : ""}`} onClick={() => setFilterAsesor("all")}>Todos</div>
+          {asesores.map(a => {
+            const member = teamMembers.find(m => m.email === a);
+            return <div key={a} className={`filter-chip ${filterAsesor === a ? "active" : ""}`} onClick={() => setFilterAsesor(a)}>{member?.name || a}</div>;
+          })}
+        </div>
+      )}
+      {displayed.length === 0 ? (
+        <div style={{ color: "var(--muted)", fontFamily: "var(--mono)", fontSize: 13, padding: "24px 0" }}>No hay expedientes en proceso.</div>
+      ) : (
+        <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12, fontFamily: "var(--mono)" }}>
+          <thead>
+            <tr style={{ borderBottom: "1px solid var(--border)", color: "var(--muted)" }}>
+              <th style={{ textAlign: "left", padding: "6px 8px" }}>Estudiante</th>
+              <th style={{ textAlign: "left", padding: "6px 8px" }}>Asesor</th>
+              <th style={{ textAlign: "center", padding: "6px 8px" }}>Origen</th>
+              <th style={{ textAlign: "center", padding: "6px 8px" }}>Portal</th>
+              <th style={{ textAlign: "left", padding: "6px 8px" }}>Recibido</th>
+            </tr>
+          </thead>
+          <tbody>
+            {displayed.map(s => {
+              const member = teamMembers.find(m => m.email === s.assigned_to);
+              return (
+                <tr key={s.id} style={{ borderBottom: "1px solid var(--border)", cursor: "pointer" }} onClick={() => { onSelectStudent(s); onClose(); }}>
+                  <td style={{ padding: "8px 8px" }}>
+                    <div style={{ color: "var(--text)", fontWeight: 500 }}>{s.full_name || "—"}</div>
+                    <div style={{ color: "var(--muted)", fontSize: 11 }}>{s.email}</div>
+                  </td>
+                  <td style={{ padding: "8px 8px", color: "var(--muted)" }}>{member?.name || s.assigned_to || "—"}</td>
+                  <td style={{ padding: "8px 8px", textAlign: "center", color: "var(--muted)" }}>{getOriginLabel(s.student_origin)}</td>
+                  <td style={{ padding: "8px 8px", textAlign: "center" }}>
+                    {s.client_user_id ? <span style={{ color: "#81C784" }}>✓ Activo</span> : <span style={{ color: "var(--muted)" }}>—</span>}
+                  </td>
+                  <td style={{ padding: "8px 8px", color: "var(--muted)" }}>{formatDate(s.created_at)}</td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      )}
+    </div>
+  );
+}
+
 function PublicApp({ route }) {
   const getPage = () => {
     if (route === "#/match/resultados") return <MatchResults />;
@@ -1950,6 +2480,7 @@ export default function App() {
   const [loading, setLoading] = useState(true);
   const [showUserMgmt, setShowUserMgmt] = useState(false);
   const [showFeedbackReview, setShowFeedbackReview] = useState(false);
+  const [showExpedientes, setShowExpedientes] = useState(false);
   const [feedbackPrompt, setFeedbackPrompt] = useState(null);
   const [teamMembers, setTeamMembers] = useState(TEAM_FALLBACK);
 
@@ -1987,7 +2518,7 @@ export default function App() {
     restoreSession();
   }, []);
   useEffect(() => {
-    if (user) {
+    if (user && user.role !== 'cliente') {
       loadStudents();
       if (user.role === "admin") {
         // Cargar miembros del equipo para asignación
@@ -2051,9 +2582,24 @@ export default function App() {
     return null;
   }
 
+  // Portal route — available on all domains
+  if (route === "#/portal") {
+    if (!user) return <><style>{css}</style><Login onLogin={handleLogin} /></>;
+    if (user.role === 'cliente') return <PortalCliente currentUser={user} onLogout={handleLogout} />;
+    // admin/team accidentally on #/portal → send to admin
+    location.hash = "#/admin";
+    return null;
+  }
+
   // Public routes
   if (!route.startsWith("#/admin")) {
     return <PublicApp route={route} />;
+  }
+
+  // If authenticated as cliente and somehow on admin route → redirect to portal
+  if (user?.role === 'cliente') {
+    location.hash = "#/portal";
+    return null;
   }
 
   // ── ADMIN ROUTES ──
@@ -2073,10 +2619,23 @@ export default function App() {
     <div className="app">
       <div className="header">
         <div className="header-left"><div className="logo-mark">▸ QueEstudiar</div><div className="header-title">Panel de Admisiones</div></div>
-        <div className="header-right"><div className="user-badge">{user.name}</div>{user.role === "admin" && <button className="btn-ghost" onClick={() => { setShowFeedbackReview(!showFeedbackReview); setShowUserMgmt(false); }} style={showFeedbackReview ? { borderColor: "var(--accent)", color: "var(--accent)" } : {}}>📊 Feedback</button>}{user.role === "admin" && <button className="btn-ghost" onClick={() => { setShowUserMgmt(!showUserMgmt); setShowFeedbackReview(false); }} style={showUserMgmt ? { borderColor: "var(--accent)", color: "var(--accent)" } : {}}>⚙ Usuarios</button>}<button className="btn-ghost" onClick={loadStudents}>↻ Actualizar</button><button className="btn-ghost" onClick={() => window.location.href = "https://queestudiar.es"}>Web pública</button><button className="btn-ghost" onClick={handleLogout}>Salir</button></div>
+        <div className="header-right"><div className="user-badge">{user.name}</div>{user.role === "admin" && <button className="btn-ghost" onClick={() => { setShowExpedientes(!showExpedientes); setShowFeedbackReview(false); setShowUserMgmt(false); }} style={showExpedientes ? { borderColor: "var(--accent)", color: "var(--accent)" } : {}}>📁 Expedientes</button>}{user.role === "admin" && <button className="btn-ghost" onClick={() => { setShowFeedbackReview(!showFeedbackReview); setShowUserMgmt(false); setShowExpedientes(false); }} style={showFeedbackReview ? { borderColor: "var(--accent)", color: "var(--accent)" } : {}}>📊 Feedback</button>}{user.role === "admin" && <button className="btn-ghost" onClick={() => { setShowUserMgmt(!showUserMgmt); setShowFeedbackReview(false); setShowExpedientes(false); }} style={showUserMgmt ? { borderColor: "var(--accent)", color: "var(--accent)" } : {}}>⚙ Usuarios</button>}<button className="btn-ghost" onClick={loadStudents}>↻ Actualizar</button><button className="btn-ghost" onClick={() => window.location.href = "https://queestudiar.es"}>Web pública</button><button className="btn-ghost" onClick={handleLogout}>Salir</button></div>
       </div>
       <div className="main">
         <div className="sidebar">
+          <div style={{ display: "flex", gap: 8, padding: "12px 16px 0", flexWrap: "wrap" }}>
+            {[
+              { label: "En proceso", value: counts.en_proceso || 0, color: "var(--accent)" },
+              { label: "Seleccionados", value: counts.contactado || 0, color: "var(--accent2)" },
+              { label: "Docs pendiente", value: "—", color: "var(--muted)" },
+              { label: "Cerrados este mes", value: students.filter(s => s.status === "cerrado" && new Date(s.created_at).getMonth() === new Date().getMonth() && new Date(s.created_at).getFullYear() === new Date().getFullYear()).length, color: "var(--muted)" },
+            ].map(({ label, value, color }) => (
+              <div key={label} style={{ flex: "1 1 calc(50% - 4px)", background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 8, padding: "8px 10px", minWidth: 90 }}>
+                <div style={{ fontSize: 18, fontWeight: 700, color, fontFamily: "var(--mono)" }}>{value}</div>
+                <div style={{ fontSize: 10, color: "var(--muted)", marginTop: 2 }}>{label}</div>
+              </div>
+            ))}
+          </div>
           <div className="sidebar-header">
             <div className="sidebar-title">Estudiantes · {filtered.length}</div>
             <input className="search-input" placeholder="Buscar por nombre, email, país..." value={search} onChange={e => setSearch(e.target.value)} />
@@ -2098,7 +2657,8 @@ export default function App() {
             );})}
           </div>
         </div>
-        {showFeedbackReview ? <FeedbackReview onClose={() => setShowFeedbackReview(false)} />
+        {showExpedientes ? <ExpedientesDashboard students={students} teamMembers={teamMembers} onSelectStudent={s => { setSelected(s); }} onClose={() => setShowExpedientes(false)} />
+        : showFeedbackReview ? <FeedbackReview onClose={() => setShowFeedbackReview(false)} />
         : showUserMgmt ? <UserManagement onClose={() => setShowUserMgmt(false)} />
         : selected ? <StudentDetail key={selected.id} student={selected} onStatusChange={handleStatusChange} onNotesSave={handleNotesSave} currentUser={user} onAssign={handleAssign} teamMembers={teamMembers} />
         : <div className="detail"><div className="empty"><div className="empty-icon">◉</div><div className="empty-text">Selecciona un estudiante para ver su expediente</div></div></div>}

@@ -13,7 +13,7 @@ async function authSignIn(email, password) {
     body: JSON.stringify({ email, password }),
   });
   const data = await res.json();
-  if (!data.access_token) throw new Error(data.error_description || data.msg || data.error || "Error de autenticación");
+  if (!data.access_token) throw new Error(data.error_description || data.message || data.msg || data.error || "Error de autenticación");
   return data;
 }
 

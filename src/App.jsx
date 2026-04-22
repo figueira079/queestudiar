@@ -71,8 +71,8 @@ function clearSession() {
 let _accessToken = null;
 function setAccessToken(token) { _accessToken = token; }
 function getAuthHeaders() {
-  const token = _accessToken || SUPABASE_KEY;
-  return { apikey: SUPABASE_KEY, Authorization: `Bearer ${token}` };
+  const token = _accessToken || SUPABASE_ANON_KEY;
+  return { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${token}` };
 }
 
 const STATUS_CONFIG = {

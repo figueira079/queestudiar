@@ -191,13 +191,14 @@ async function adminCreateUser(email, password, name, role) {
 }
 
 async function adminInviteStudent(email, studentId) {
-  const res = await fetch(`${SUPABASE_URL}/auth/v1/admin/users`, {
+  // Calls Edge Function server-side so service_role key never touches the browser
+  const res = await fetch(`${SUPABASE_URL}/functions/v1/invite-student`, {
     method: "POST",
-    headers: getAdminHeaders(),
-    body: JSON.stringify({ email, email_confirm: true, user_metadata: { role: 'cliente', student_id: studentId } }),
+    headers: { ...getAuthHeaders(), "Content-Type": "application/json" },
+    body: JSON.stringify({ email, student_id: studentId }),
   });
   const data = await res.json();
-  if (data.error || data.msg || data.message || !data.id) throw new Error(data.msg || data.error_description || data.message || data.error || "Error al invitar");
+  if (data.error || !data.id) throw new Error(data.error || "Error al invitar");
   return data;
 }
 

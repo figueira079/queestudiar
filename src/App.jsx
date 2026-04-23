@@ -197,7 +197,7 @@ async function adminInviteStudent(email, studentId) {
     body: JSON.stringify({ email, email_confirm: true, user_metadata: { role: 'cliente', student_id: studentId } }),
   });
   const data = await res.json();
-  if (data.error || data.msg || !data.id) throw new Error(data.msg || data.error_description || data.error || "Error al invitar");
+  if (data.error || data.msg || data.message || !data.id) throw new Error(data.msg || data.error_description || data.message || data.error || "Error al invitar");
   return data;
 }
 

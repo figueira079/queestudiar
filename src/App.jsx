@@ -76,11 +76,11 @@ function getAuthHeaders() {
 }
 
 const STATUS_CONFIG = {
-  nuevo:       { label: "Nuevo",        color: "#4FC3F7", bg: "#0d2a38" },
-  contactado:  { label: "Contactado",   color: "#FFB74D", bg: "#2d1f0a" },
-  en_proceso:  { label: "En proceso",   color: "#CE93D8", bg: "#1e0d2a" },
-  cerrado:     { label: "Cerrado ✓",    color: "#81C784", bg: "#0d2213" },
-  descartado:  { label: "Descartado",   color: "#EF9A9A", bg: "#2a0d0d" },
+  nuevo:       { label: "Nuevo",        color: "#2563eb", bg: "#dbeafe" },
+  contactado:  { label: "Contactado",   color: "#ca8a04", bg: "#fef9c3" },
+  en_proceso:  { label: "En proceso",   color: "#7c3aed", bg: "#ede9fe" },
+  cerrado:     { label: "Cerrado ✓",    color: "#16a34a", bg: "#dcfce7" },
+  descartado:  { label: "Descartado",   color: "#dc2626", bg: "#fee2e2" },
 };
 
 const DOCUMENT_TYPES = [
@@ -97,11 +97,11 @@ const DOCUMENT_TYPES = [
 ];
 
 const DOC_STATUS_CONFIG = {
-  pendiente:           { label: "Pendiente",          color: "#90A4AE", emoji: "⏳" },
-  recibido:            { label: "Recibido",            color: "#FFB74D", emoji: "📥" },
-  en_revision:         { label: "En revisión",         color: "#CE93D8", emoji: "🔍" },
-  aprobado:            { label: "Aprobado ✓",          color: "#81C784", emoji: "✅" },
-  necesita_correccion: { label: "Necesita corrección", color: "#EF9A9A", emoji: "✏️" },
+  pendiente:           { label: "Pendiente",          color: "#64748b", emoji: "⏳" },
+  recibido:            { label: "Recibido",            color: "#ca8a04", emoji: "📥" },
+  en_revision:         { label: "En revisión",         color: "#7c3aed", emoji: "🔍" },
+  aprobado:            { label: "Aprobado ✓",          color: "#16a34a", emoji: "✅" },
+  necesita_correccion: { label: "Necesita corrección", color: "#dc2626", emoji: "✏️" },
 };
 
 // ─── SUPABASE CLIENT ────────────────────────────────────────────────────────
@@ -214,20 +214,22 @@ async function adminDeleteUser(userId) {
 
 // ─── STYLES ─────────────────────────────────────────────────────────────────
 const css = `
-  @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,700&family=Work+Sans:wght@400;600;700&family=DM+Mono:wght@300;400;500&display=swap');
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
   :root {
-    --bg: #070b12; --surface: #0e1520; --border: #1c2840;
-    --accent: #3B82F6; --accent2: #06b6d4; --text: #e2e8f0;
-    --muted: #64748b; --font: 'Syne', sans-serif; --mono: 'DM Mono', monospace;
+    --bg: #faf6f0; --surface: #ffffff; --border: #e2e8f0;
+    --accent: #2563eb; --accent2: #2563eb; --text: #0f172a;
+    --muted: #64748b; --font: 'Bricolage Grotesque', 'Work Sans', sans-serif; --mono: 'DM Mono', monospace;
+    --terra: #e8531a; --sage: #16a34a;
+    --terra-light: #fde8df; --azure-light: #dbeafe; --sage-light: #dcfce7;
   }
   html, body, #root { height: 100%; background: var(--bg); color: var(--text); font-family: var(--font); }
   ::-webkit-scrollbar { width: 4px; }
   ::-webkit-scrollbar-track { background: var(--bg); }
   ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
   .app { display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
-  .login-wrap { display: flex; align-items: center; justify-content: center; height: 100vh; background: radial-gradient(ellipse at 30% 20%, #0f2040 0%, var(--bg) 60%); }
-  .login-card { width: 380px; padding: 48px 40px; background: var(--surface); border: 1px solid var(--border); border-radius: 16px; box-shadow: 0 0 80px #3B82F618; }
+  .login-wrap { display: flex; align-items: center; justify-content: center; height: 100vh; background: radial-gradient(ellipse at 30% 20%, #dbeafe 0%, #faf6f0 70%); }
+  .login-card { width: 380px; padding: 48px 40px; background: var(--surface); border: 1px solid var(--border); border-radius: 16px; box-shadow: 0 4px 32px #2563eb14; }
   .login-logo { font-size: 11px; letter-spacing: 0.25em; color: var(--accent2); font-family: var(--mono); margin-bottom: 32px; text-transform: uppercase; }
   .login-title { font-size: 28px; font-weight: 800; margin-bottom: 8px; }
   .login-sub { font-size: 13px; color: var(--muted); margin-bottom: 36px; }
@@ -237,7 +239,7 @@ const css = `
   .field input:focus { border-color: var(--accent); }
   .btn-primary { width: 100%; padding: 13px; background: var(--accent); border: none; border-radius: 8px; color: #fff; font-family: var(--font); font-weight: 700; font-size: 14px; cursor: pointer; transition: opacity 0.2s, transform 0.1s; letter-spacing: 0.05em; }
   .btn-primary:hover { opacity: 0.9; transform: translateY(-1px); }
-  .login-err { color: #EF9A9A; font-size: 12px; margin-top: 12px; text-align: center; font-family: var(--mono); }
+  .login-err { color: #dc2626; font-size: 12px; margin-top: 12px; text-align: center; font-family: var(--mono); }
   .header { display: flex; align-items: center; justify-content: space-between; padding: 0 28px; height: 56px; border-bottom: 1px solid var(--border); background: var(--surface); flex-shrink: 0; }
   .header-left { display: flex; align-items: center; gap: 20px; }
   .logo-mark { font-family: var(--mono); font-size: 11px; color: var(--accent2); letter-spacing: 0.2em; text-transform: uppercase; }
@@ -255,11 +257,11 @@ const css = `
   .search-input:focus { border-color: var(--accent); }
   .filter-row { display: flex; gap: 6px; margin-top: 10px; flex-wrap: wrap; }
   .filter-chip { font-size: 10px; padding: 3px 10px; border-radius: 20px; border: 1px solid var(--border); background: var(--bg); color: var(--muted); cursor: pointer; font-family: var(--mono); transition: all 0.15s; }
-  .filter-chip.active { border-color: var(--accent); color: var(--accent); background: #3B82F612; }
+  .filter-chip.active { border-color: var(--accent); color: var(--accent); background: var(--azure-light); }
   .student-list { flex: 1; overflow-y: auto; }
   .student-item { padding: 14px 20px; border-bottom: 1px solid var(--border); cursor: pointer; transition: background 0.15s; position: relative; }
-  .student-item:hover { background: #ffffff05; }
-  .student-item.active { background: #3B82F610; border-left: 2px solid var(--accent); }
+  .student-item:hover { background: #f8fafc; }
+  .student-item.active { background: var(--azure-light); border-left: 2px solid var(--accent); }
   .student-name { font-size: 14px; font-weight: 600; margin-bottom: 4px; }
   .student-meta { font-size: 11px; color: var(--muted); font-family: var(--mono); }
   .student-status { position: absolute; top: 14px; right: 14px; font-size: 10px; padding: 2px 8px; border-radius: 20px; font-family: var(--mono); }
@@ -281,13 +283,13 @@ const css = `
   .save-btn:hover { opacity: 0.85; }
   .save-btn:disabled { opacity: 0.4; cursor: default; }
   .program-grid { display: flex; flex-direction: column; gap: 14px; }
-  .program-card { background: var(--bg); border: 1px solid var(--border); border-radius: 12px; padding: 18px 20px; transition: border-color 0.2s; }
-  .program-card:hover { border-color: #2c3e5a; }
+  .program-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 18px 20px; transition: border-color 0.2s; }
+  .program-card:hover { border-color: var(--accent); }
   .program-name { font-size: 14px; font-weight: 700; margin-bottom: 6px; line-height: 1.4; }
   .program-inst { font-size: 12px; color: var(--accent2); margin-bottom: 10px; font-family: var(--mono); }
   .program-tags { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 12px; }
   .tag { font-size: 10px; padding: 3px 9px; border-radius: 4px; border: 1px solid var(--border); color: var(--muted); font-family: var(--mono); }
-  .tag.highlight { border-color: #2c3e5a; color: var(--accent2); }
+  .tag.highlight { border-color: var(--azure-light); color: var(--accent); }
   .program-footer { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
   .url-btn { display: inline-flex; align-items: center; gap: 6px; font-size: 11px; padding: 5px 12px; border-radius: 6px; border: 1px solid var(--accent); color: var(--accent); text-decoration: none; font-family: var(--mono); transition: all 0.15s; }
   .url-btn:hover { background: var(--accent); color: #fff; }
@@ -307,7 +309,7 @@ const css = `
   .url-edit-btn.save:hover { background: #22c55e; color: #fff; }
   .url-pencil { padding: 2px 5px; font-size: 10px; background: none; border: 1px solid transparent; color: var(--muted); cursor: pointer; border-radius: 4px; opacity: 0.4; transition: all 0.15s; line-height: 1; }
   .url-pencil:hover { opacity: 1; border-color: var(--border); color: var(--accent); }
-  .learning-banner { margin-bottom: 16px; padding: 12px 16px; background: #1a1500; border: 1px solid #f9731644; border-radius: 10px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; font-size: 12px; font-family: var(--mono); color: var(--text); }
+  .learning-banner { margin-bottom: 16px; padding: 12px 16px; background: var(--terra-light); border: 1px solid #e8531a44; border-radius: 10px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; font-size: 12px; font-family: var(--mono); color: var(--text); }
   .learning-count { color: #f97316; font-weight: 700; }
   .learning-btn { padding: 5px 12px; font-size: 11px; border-radius: 6px; border: none; cursor: pointer; font-family: var(--mono); font-weight: 600; transition: all 0.15s; }
   .learning-btn.apply { background: #f97316; color: #fff; }
@@ -320,9 +322,9 @@ const css = `
   .req-block:last-child { margin-bottom: 0; }
   .req-label { font-size: 10px; font-family: var(--mono); color: var(--muted); text-transform: uppercase; letter-spacing: 0.12em; margin-bottom: 6px; }
   .req-value { font-size: 13px; line-height: 1.6; color: var(--text); }
-  .req-pill { display: inline-block; font-size: 10px; padding: 2px 8px; border-radius: 4px; margin: 2px 3px 2px 0; background: #1c2840; color: var(--accent2); font-family: var(--mono); }
+  .req-pill { display: inline-block; font-size: 10px; padding: 2px 8px; border-radius: 4px; margin: 2px 3px 2px 0; background: var(--azure-light); color: var(--accent); font-family: var(--mono); }
   .dates-list { display: flex; flex-direction: column; gap: 8px; }
-  .date-item { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: #0a1020; border-radius: 6px; border: 1px solid var(--border); }
+  .date-item { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: #f0f4ff; border-radius: 6px; border: 1px solid var(--border); }
   .date-hito { font-size: 12px; color: var(--text); }
   .date-mes { font-size: 11px; color: var(--accent); font-family: var(--mono); }
   .tabs { display: flex; gap: 0; margin-bottom: 24px; border-bottom: 1px solid var(--border); }
@@ -333,18 +335,18 @@ const css = `
   .spinner { width: 16px; height: 16px; border: 2px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite; }
   @keyframes spin { to { transform: rotate(360deg); } }
   .user-mgmt-grid { display: flex; flex-direction: column; gap: 8px; }
-  .user-card { display: flex; justify-content: space-between; align-items: center; padding: 14px 18px; background: var(--bg); border: 1px solid var(--border); border-radius: 10px; transition: border-color 0.2s; }
-  .user-card:hover { border-color: #2c3e5a; }
+  .user-card { display: flex; justify-content: space-between; align-items: center; padding: 14px 18px; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; transition: border-color 0.2s; }
+  .user-card:hover { border-color: var(--accent); }
   .user-name { font-weight: 600; font-size: 14px; margin-bottom: 2px; }
   .user-email { font-size: 11px; color: var(--muted); font-family: var(--mono); }
   .user-role { font-size: 10px; padding: 3px 10px; border-radius: 20px; border: 1px solid var(--border); font-family: var(--mono); }
-  .user-role.admin { color: #CE93D8; border-color: #CE93D844; }
-  .user-role.team { color: var(--accent2); border-color: var(--accent2)44; }
+  .user-role.admin { color: #7c3aed; border-color: #7c3aed44; }
+  .user-role.team { color: var(--accent); border-color: var(--accent)44; }
   .user-form { background: var(--bg); border: 1px solid var(--border); border-radius: 12px; padding: 20px; margin-bottom: 24px; }
   .user-form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
   .user-form select { width: 100%; padding: 12px 16px; background: var(--bg); border: 1px solid var(--border); border-radius: 8px; color: var(--text); font-family: var(--font); font-size: 14px; outline: none; }
   .user-form select:focus { border-color: var(--accent); }
-  .success-msg { padding: 10px 16px; background: #0d2213; border: 1px solid #81C78444; border-radius: 8px; color: #81C784; font-size: 12px; font-family: var(--mono); margin-bottom: 16px; }
+  .success-msg { padding: 10px 16px; background: var(--sage-light); border: 1px solid #16a34a44; border-radius: 8px; color: #16a34a; font-size: 12px; font-family: var(--mono); margin-bottom: 16px; }
   .user-delete-btn { padding: 4px 8px; background: none; border: 1px solid transparent; color: var(--muted); cursor: pointer; border-radius: 4px; opacity: 0.4; transition: all 0.15s; font-size: 12px; }
   .user-delete-btn:hover { opacity: 1; border-color: #ef444488; color: #ef9a9a; }
   .visa-badge { display: inline-flex; align-items: center; gap: 4px; font-size: 10px; padding: 3px 9px; border-radius: 4px; font-family: var(--mono); }
@@ -443,7 +445,7 @@ function RequirementsPanel({ req }) {
         <div className="req-label">📋 Homologación del título</div>
         <div className="req-value">{hom.proceso || "—"}</div>
         {hom.tasa_eur && <div style={{ marginTop: 8 }}><span className="req-pill">Tasa: {hom.tasa_eur}€</span>{hom.modelo_tasa && <span className="req-pill">Modelo {hom.modelo_tasa}</span>}{hom.plazo_resolucion_meses && <span className="req-pill">Plazo: {hom.plazo_resolucion_meses} meses</span>}</div>}
-        {hom.volante_condicional && <div style={{ marginTop: 8, fontSize: 12, color: "#FFB74D", fontFamily: "var(--mono)" }}>⚠ Volante Condicional disponible</div>}
+        {hom.volante_condicional && <div style={{ marginTop: 8, fontSize: 12, color: "#ca8a04", fontFamily: "var(--mono)" }}>⚠ Volante Condicional disponible</div>}
       </div>
       <div className="req-block">
         <div className="req-label">🗣 Requisito lingüístico</div>
@@ -455,7 +457,7 @@ function RequirementsPanel({ req }) {
           <div className="req-label">📝 {tests.nombre}</div>
           {tests.organismo && <div style={{ fontSize: 11, color: "var(--accent2)", fontFamily: "var(--mono)", marginBottom: 6 }}>{tests.organismo}</div>}
           <div className="req-value">{tests.descripcion || ""}</div>
-          {tests.formula_nota_base && <div style={{ marginTop: 10, padding: "8px 12px", background: "#0a1020", borderRadius: 6, fontFamily: "var(--mono)", fontSize: 11, color: "var(--accent2)" }}>{tests.formula_nota_base}</div>}
+          {tests.formula_nota_base && <div style={{ marginTop: 10, padding: "8px 12px", background: "#f0f4ff", borderRadius: 6, fontFamily: "var(--mono)", fontSize: 11, color: "var(--accent)" }}>{tests.formula_nota_base}</div>}
           {tests.convocatorias?.map((c, i) => <div key={i} style={{ marginTop: 8, fontSize: 12, color: "var(--muted)" }}>📖 <strong style={{ color: "var(--text)" }}>{c.tipo}:</strong> {c.fechas_espana}{c.fechas_sedes_internacionales && ` · Internacional: ${c.fechas_sedes_internacionales}`}</div>)}
         </div>
       )}
@@ -464,7 +466,7 @@ function RequirementsPanel({ req }) {
           <div className="req-label">🎒 Becas disponibles</div>
           <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
             {scholarships.map((b, i) => (
-              <div key={i} style={{ padding: "8px 12px", background: "#0a1020", borderRadius: 6, borderLeft: "2px solid var(--accent)" }}>
+              <div key={i} style={{ padding: "8px 12px", background: "#f0f4ff", borderRadius: 6, borderLeft: "2px solid var(--accent)" }}>
                 <div style={{ fontSize: 12, fontWeight: 700 }}>{b.nombre}</div>
                 {b.organismo && <div style={{ fontSize: 11, color: "var(--muted)", fontFamily: "var(--mono)" }}>{b.organismo}</div>}
                 {(b.cuantia || b.cuantia_eur) && <div style={{ fontSize: 11, color: "var(--accent2)", marginTop: 2 }}>{b.cuantia || `${b.cuantia_eur}€`}</div>}
@@ -499,16 +501,16 @@ function RegionPanel({ regionData, studentOrigin }) {
               <div style={{ fontSize: 11, color: "var(--muted)", fontFamily: "var(--mono)" }}>{ptypeLabel[r.program_type] || r.program_type}</div>
             </div>
             <div style={{ textAlign: "right" }}>
-              <div style={{ fontSize: 20, fontWeight: 800, color: r.public_cost_eur === 0 ? "#81C784" : "var(--accent)" }}>
+              <div style={{ fontSize: 20, fontWeight: 800, color: r.public_cost_eur === 0 ? "#16a34a" : "var(--accent)" }}>
                 {r.public_cost_eur === 0 ? "Gratuito" : `${r.public_cost_eur?.toLocaleString("es-ES")}€`}
               </div>
               <div style={{ fontSize: 10, color: "var(--muted)", fontFamily: "var(--mono)" }}>público UE / año</div>
               {isNonEU && r.non_eu_surcharge && (
-                <div style={{ fontSize: 11, color: "#FFB74D", fontFamily: "var(--mono)", marginTop: 2 }}>⚠ +recargo no-UE</div>
+                <div style={{ fontSize: 11, color: "#ca8a04", fontFamily: "var(--mono)", marginTop: 2 }}>⚠ +recargo no-UE</div>
               )}
             </div>
           </div>
-          {r.private_cost_range && <div style={{ marginBottom: 8 }}><span className="req-pill">Privado: {r.private_cost_range}€/año</span>{r.non_eu_surcharge && <span className="req-pill" style={{ color: "#FFB74D" }}>⚠ Recargo no-UE</span>}</div>}
+          {r.private_cost_range && <div style={{ marginBottom: 8 }}><span className="req-pill">Privado: {r.private_cost_range}€/año</span>{r.non_eu_surcharge && <span className="req-pill" style={{ color: "#ca8a04" }}>⚠ Recargo no-UE</span>}</div>}
           {r.key_dates?.length > 0 && <div className="dates-list" style={{ marginBottom: 8 }}>{r.key_dates.map((d, j) => <div key={j} className="date-item"><span className="date-hito">{d.hito}</span><span className="date-mes">{d.fecha || d.mes}</span></div>)}</div>}
           {r.platform_url && <a href={r.platform_url} target="_blank" rel="noreferrer" className="url-btn" style={{ marginTop: 4 }}>↗ Portal de admisión</a>}
           {r.notes && <div style={{ marginTop: 10, fontSize: 11, color: "var(--muted)", lineHeight: 1.6, fontFamily: "var(--mono)" }}>{r.notes}</div>}
@@ -619,7 +621,7 @@ function EditableUrlBtn({ url, status, label, style: extraStyle, programId, fiel
                   : <span style={{ fontSize: 11, color: "var(--muted)", fontFamily: "var(--mono)" }}>Sin URL extranjero aún</span>}
                 <button className="url-pencil" onClick={() => setEditingExtranjero(true)} title="Editar URL extranjero">✏️</button>
               </div>
-              {extranjeroNotas && <div style={{ fontSize: 10, color: "#FFB74D", fontFamily: "var(--mono)" }}>ℹ {extranjeroNotas}</div>}
+              {extranjeroNotas && <div style={{ fontSize: 10, color: "#ca8a04", fontFamily: "var(--mono)" }}>ℹ {extranjeroNotas}</div>}
             </div>
           )}
         </div>
@@ -757,7 +759,7 @@ function FeedbackReview({ onClose }) {
         <div>
           <div className="detail-name">Feedback del equipo</div>
           <div style={{ fontSize: 12, color: "var(--muted)", fontFamily: "var(--mono)", marginTop: 4 }}>
-            Rating promedio: <span style={{ color: "var(--accent)" }}>{avgRating}</span> · Sin revisar: <span style={{ color: "#FFB74D" }}>{unreviewed}</span>
+            Rating promedio: <span style={{ color: "var(--accent)" }}>{avgRating}</span> · Sin revisar: <span style={{ color: "#ca8a04" }}>{unreviewed}</span>
           </div>
         </div>
         <button className="btn-ghost" onClick={onClose}>← Volver</button>
@@ -1207,7 +1209,7 @@ function StudentDetail({ student, onStatusChange, onNotesSave, currentUser, onAs
             <button className="btn-ghost" onClick={handleInvite} disabled={inviting} style={{ fontSize: 11 }}>
               {inviting ? "Enviando..." : clientUserId ? "↺ Reenviar invitación portal" : "✉ Invitar a portal"}
             </button>
-            {clientUserId && <span style={{ fontSize: 10, color: "#81C784", fontFamily: "var(--mono)", marginLeft: 8 }}>✓ Portal activado</span>}
+            {clientUserId && <span style={{ fontSize: 10, color: "#16a34a", fontFamily: "var(--mono)", marginLeft: 8 }}>✓ Portal activado</span>}
           </div>
         )}
         {currentUser?.role !== "admin" && student.assigned_to && (
@@ -1281,7 +1283,7 @@ function StudentDetail({ student, onStatusChange, onNotesSave, currentUser, onAs
                         {p.modalidad && <span className="tag">{p.modalidad}</span>}
                         {p.familia_area && <span className="tag">{p.familia_area}</span>}
                         {p.idioma && <span className="tag">{p.idioma}</span>}
-                        {price != null && <span className="tag" style={{ color: "#81C784", borderColor: "#81C78444" }}>{price === 0 ? "Gratuito" : `${price.toLocaleString("es-ES")}€/año`} · {priceLabel}</span>}
+                        {price != null && <span className="tag" style={{ color: "#16a34a", borderColor: "#16a34a44" }}>{price === 0 ? "Gratuito" : `${price.toLocaleString("es-ES")}€/año`} · {priceLabel}</span>}
                       </div>
                       <div style={{ marginBottom: 10 }}>
                         <EditableHours horas={p.horas_semanales} programId={m.programa_id} onUpdated={handleHoursUpdated} />
@@ -1332,7 +1334,7 @@ function StudentDetail({ student, onStatusChange, onNotesSave, currentUser, onAs
             </span>
           </div>
           {(student.desired_program_type === "grado" || (!student.desired_program_type && student.education_level === "bachillerato")) && (
-            <div style={{ marginBottom: 16, padding: "10px 14px", background: "#1c1500", border: "1px solid #FFB74D44", borderRadius: 8, fontSize: 11, fontFamily: "var(--mono)", color: "#FFB74D", lineHeight: 1.7 }}>
+            <div style={{ marginBottom: 16, padding: "10px 14px", background: "#fef9c3", border: "1px solid #ca8a0444", borderRadius: 8, fontSize: 11, fontFamily: "var(--mono)", color: "#ca8a04", lineHeight: 1.7 }}>
               ⚠ <strong>PCE (UNED):</strong> Requerida para carreras con nota de corte: Medicina, Enfermería, Psicología, Ingenierías. Excepción: estudiantes colombianos con Saber 11.
             </div>
           )}
@@ -2269,7 +2271,7 @@ function PortalCliente({ currentUser, onLogout }) {
         <div style={{ display: "flex", gap: 12, marginBottom: 24, flexWrap: "wrap" }}>
           {[
             { label: "Programas seleccionados", value: favoritos.length, color: "var(--accent2)" },
-            { label: "Documentos aprobados", value: `${docsAprobados} / ${documents.length}`, color: "#81C784" },
+            { label: "Documentos aprobados", value: `${docsAprobados} / ${documents.length}`, color: "#16a34a" },
           ].map(({ label, value, color }) => (
             <div key={label} style={{ flex: "1 1 180px", background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 8, padding: "12px 16px" }}>
               <div style={{ fontSize: 22, fontWeight: 700, color, fontFamily: "var(--mono)" }}>{value}</div>
@@ -2325,7 +2327,7 @@ function PortalCliente({ currentUser, onLogout }) {
                   </div>
                   {isOpen && (
                     <div style={{ padding: "0 14px 14px", borderTop: "1px solid var(--border)" }}>
-                      {doc.notes && <div style={{ fontSize: 11, color: "#FFB74D", fontFamily: "var(--mono)", margin: "10px 0 6px" }}>ℹ {doc.notes}</div>}
+                      {doc.notes && <div style={{ fontSize: 11, color: "#ca8a04", fontFamily: "var(--mono)", margin: "10px 0 6px" }}>ℹ {doc.notes}</div>}
                       <textarea
                         style={{ width: "100%", minHeight: 120, padding: 10, background: "var(--bg)", border: "1px solid var(--border)", borderRadius: 6, color: "var(--text)", fontFamily: "var(--mono)", fontSize: 12, resize: "vertical", marginTop: 8, outline: "none" }}
                         value={editContent[doc.id] || ""}
@@ -2339,7 +2341,7 @@ function PortalCliente({ currentUser, onLogout }) {
                         <div style={{ marginTop: 12 }}>
                           <div style={{ fontSize: 11, color: "var(--muted)", fontFamily: "var(--mono)", marginBottom: 6 }}>Comentarios del equipo:</div>
                           {docComments.map(c => (
-                            <div key={c.id} style={{ padding: "6px 10px", background: c.author_type === 'team' ? "#0d2238" : "var(--bg)", border: "1px solid var(--border)", borderRadius: 6, marginBottom: 4, fontSize: 12, fontFamily: "var(--mono)" }}>
+                            <div key={c.id} style={{ padding: "6px 10px", background: c.author_type === 'team' ? "#dbeafe" : "#f8fafc", border: "1px solid var(--border)", borderRadius: 6, marginBottom: 4, fontSize: 12, fontFamily: "var(--mono)" }}>
                               <span style={{ color: c.author_type === 'team' ? "var(--accent)" : "var(--accent2)" }}>{c.author_type === 'team' ? "Asesor" : "Tú"}</span>
                               <span style={{ color: "var(--muted)", marginLeft: 8, fontSize: 10 }}>{formatDate(c.created_at)}</span>
                               <div style={{ marginTop: 4, color: "var(--text)" }}>{c.message}</div>
@@ -2420,7 +2422,7 @@ function ExpedientesDashboard({ students, teamMembers, onSelectStudent, onClose 
                   <td style={{ padding: "8px 8px", color: "var(--muted)" }}>{member?.name || s.assigned_to || "—"}</td>
                   <td style={{ padding: "8px 8px", textAlign: "center", color: "var(--muted)" }}>{getOriginLabel(s.student_origin)}</td>
                   <td style={{ padding: "8px 8px", textAlign: "center" }}>
-                    {s.client_user_id ? <span style={{ color: "#81C784" }}>✓ Activo</span> : <span style={{ color: "var(--muted)" }}>—</span>}
+                    {s.client_user_id ? <span style={{ color: "#16a34a" }}>✓ Activo</span> : <span style={{ color: "var(--muted)" }}>—</span>}
                   </td>
                   <td style={{ padding: "8px 8px", color: "var(--muted)" }}>{formatDate(s.created_at)}</td>
                 </tr>

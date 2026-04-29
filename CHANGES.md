@@ -24,6 +24,21 @@ Registra aquí cada cambio significativo: qué se hizo, por qué, y qué podría
 
 ---
 
+## 2026-04-29 — sesion-6: portal del estudiante rediseñado + fix invitación + eliminado drive URL
+
+- **Qué**: Rediseño completo de `PortalCliente` con dashboard real; corrección del bug de re-invitación; eliminación del campo Drive URL del panel admin
+- **Por qué**: Portal mínimo no era suficiente para el estudiante; reenviar invitación a un usuario existente fallaba; Drive URL no se usaba y ensuciaba la UI
+- **Archivos modificados**: `src/App.jsx`
+- **Cambios principales**:
+  - **Drive URL eliminado**: `useState(driveUrl)`, `saveDriveUrl()`, `useEffect` setter y bloque JSX del input eliminados
+  - **Bug invitación corregido**: nueva función `sendPasswordRecovery()` que llama a `/auth/v1/recover`; `handleInvite()` ahora bifurca: si `clientUserId` existe → recovery email, si no → Edge Function; botón cambia a "↺ Reenviar acceso" / "✉ Invitar a portal"
+  - **TEAM_FALLBACK movido**: de línea ~2459 a antes de `PortalCliente` para que sea accesible dentro del componente
+  - **PortalCliente rediseñado**: bienvenida personalizada con nombre + perfil + badge de estado; tracker de 4 pasos visual; 4 stats (programas, favoritos, docs aprobados, próxima convocatoria); tarjeta del asesor con azure-light; tarjetas de programa con barra de acento, precio correcto (extracomunitario si aplica), visa badge; sección de próximas convocatorias hardcodeada por nivel educativo; documentación con estados vacíos útiles
+- **Podría afectar**: solo `PortalCliente` — lógica de datos intacta, solo JSX del render
+- **Verificado**: build limpio (`vite build` ✓ en 663ms, 0 errores)
+
+---
+
 ## 2026-04-26 — sesion-5: migración a tema claro (Meridian Navigation)
 
 - **Qué**: Migración completa del panel admin y portal del cliente del tema oscuro al tema claro del sistema de identidad Meridian Navigation

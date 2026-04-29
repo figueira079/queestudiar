@@ -997,10 +997,7 @@ function StudentDetail({ student, onStatusChange, onNotesSave, currentUser, onAs
   const [applyingLearning, setApplyingLearning] = useState(false);
   const [documents, setDocuments] = useState([]);
   const [loadingDocs, setLoadingDocs] = useState(false);
-  const [driveUrl, setDriveUrl] = useState(student.drive_folder_url || "");
-  const [savingDrive, setSavingDrive] = useState(false);
-
-  useEffect(() => { setNotes(student.notes || ""); setTab("matches"); setFilterArea("all"); setFilterStage("all"); setUrlLearning(null); setDriveUrl(student.drive_folder_url || ""); loadDocuments(); }, [student.id]);
+  useEffect(() => { setNotes(student.notes || ""); setTab("matches"); setFilterArea("all"); setFilterStage("all"); setUrlLearning(null); loadDocuments(); }, [student.id]);
   useEffect(() => { loadMatches(); loadRequirements(); }, [student.id]);
 
   async function loadMatches() {
@@ -1114,25 +1111,33 @@ function StudentDetail({ student, onStatusChange, onNotesSave, currentUser, onAs
     setDocuments(prev => prev.map(d => d.id === docId ? { ...d, ...data } : d));
   }
 
-  async function saveDriveUrl() {
-    setSavingDrive(true);
-    await patch("student_leads", student.id, { drive_folder_url: driveUrl.trim() || null });
-    setSavingDrive(false);
-  }
-
   const [inviting, setInviting] = useState(false);
   const [clientUserId, setClientUserId] = useState(student.client_user_id || null);
+
+  async function sendPasswordRecovery(email) {
+    const res = await fetch(`${SUPABASE_URL}/auth/v1/recover`, {
+      method: "POST",
+      headers: { apikey: SUPABASE_ANON_KEY, "Content-Type": "application/json" },
+      body: JSON.stringify({ email }),
+    });
+    if (!res.ok) throw new Error("Error al enviar email de acceso");
+  }
 
   async function handleInvite() {
     if (!student.email) { alert("El estudiante no tiene email registrado."); return; }
     setInviting(true);
     try {
-      const newUser = await adminInviteStudent(student.email, student.id);
-      await patch("student_leads", student.id, { client_user_id: newUser.id });
-      setClientUserId(newUser.id);
-      alert(`✅ Invitación enviada a ${student.email}`);
+      if (clientUserId) {
+        await sendPasswordRecovery(student.email);
+        alert(`✅ Email de acceso enviado a ${student.email}`);
+      } else {
+        const newUser = await adminInviteStudent(student.email, student.id);
+        await patch("student_leads", student.id, { client_user_id: newUser.id });
+        setClientUserId(newUser.id);
+        alert(`✅ Invitación enviada a ${student.email}`);
+      }
     } catch (e) {
-      alert(`Error al invitar: ${e.message}`);
+      alert(`Error: ${e.message}`);
     }
     setInviting(false);
   }
@@ -1207,7 +1212,7 @@ function StudentDetail({ student, onStatusChange, onNotesSave, currentUser, onAs
         {currentUser?.role === "admin" && (
           <div style={{ marginTop: 8 }}>
             <button className="btn-ghost" onClick={handleInvite} disabled={inviting} style={{ fontSize: 11 }}>
-              {inviting ? "Enviando..." : clientUserId ? "↺ Reenviar invitación portal" : "✉ Invitar a portal"}
+              {inviting ? "Enviando..." : clientUserId ? "↺ Reenviar acceso" : "✉ Invitar a portal"}
             </button>
             {clientUserId && <span style={{ fontSize: 10, color: "#16a34a", fontFamily: "var(--mono)", marginLeft: 8 }}>✓ Portal activado</span>}
           </div>
@@ -1354,19 +1359,6 @@ function StudentDetail({ student, onStatusChange, onNotesSave, currentUser, onAs
       {tab === "documentacion" && (
         <div className="section">
           <div className="section-title">Documentación del expediente</div>
-          <div style={{ marginBottom: 16, display: "flex", alignItems: "center", gap: 8 }}>
-            <input
-              className="url-edit-input"
-              style={{ flex: 1 }}
-              value={driveUrl}
-              onChange={e => setDriveUrl(e.target.value)}
-              placeholder="URL carpeta Drive del estudiante"
-            />
-            <button className="url-edit-btn save" onClick={saveDriveUrl} disabled={savingDrive}>{savingDrive ? "…" : "✓"}</button>
-            {driveUrl && driveUrl.startsWith("http") && (
-              <a href={driveUrl} target="_blank" rel="noreferrer" className="url-btn url-ok" style={{ fontSize: 11 }}>↗ Abrir Drive</a>
-            )}
-          </div>
           {loadingDocs ? (
             <div className="loading"><div className="spinner" /> Cargando...</div>
           ) : documents.length === 0 ? (
@@ -2164,6 +2156,13 @@ function SolicitudForm() {
 // PORTAL DEL CLIENTE
 // ═══════════════════════════════════════════════════════════════════════════
 
+const TEAM_FALLBACK = [
+  { email: "maria@queestudiar.es", name: "María" },
+  { email: "alejandro.suarez@estuvisa.es", name: "Alejandro Suárez" },
+  { email: "kenny.alvarez@estuvisa.es", name: "Kenny Álvarez" },
+  { email: "luis.solanas@estuvisa.es", name: "Luis Solanas" },
+];
+
 function PortalCliente({ currentUser, onLogout }) {
   const [lead, setLead] = useState(null);
   const [matches, setMatches] = useState([]);
@@ -2254,12 +2253,45 @@ function PortalCliente({ currentUser, onLogout }) {
     </div>
   );
 
-  const favoritos = matches.filter(m => m.match_stage === 'seleccionado' || m.match_stage === 'solicitud');
+  const favoritosCount = matches.filter(m => m.cliente_favorito === true).length;
   const docsAprobados = documents.filter(d => d.status === 'aprobado').length;
+  const hasSolicitud = matches.some(m => m.match_stage === 'solicitud');
+  const asesor = TEAM_FALLBACK.find(t => t.email === lead.assigned_to);
+  const levelLow = (lead.education_level || "").toLowerCase();
+  const isMaster = levelLow.includes("master");
+  const isFP = levelLow.includes("fp");
+  const isNonEU = lead.student_origin === "extracomunitario";
+  const proximaConv = isMaster ? "Sep 2026 / Ene 2027" : "Sep 2026";
+  const statusCfg = STATUS_CONFIG[lead.status] || STATUS_CONFIG.nuevo;
+
+  const trackerSteps = [
+    { label: "Perfil", done: true },
+    { label: "Programas", done: matches.length > 0 },
+    { label: "Documentos", done: documents.length > 0 },
+    { label: "Solicitudes", done: hasSolicitud },
+  ];
+
+  const convocatorias = isMaster ? [
+    { texto: "Plazo general universidades públicas", fecha: "Febrero – Abril 2026", past: false },
+    { texto: "Plazo universidades privadas", fecha: "Abierto todo el año", past: false },
+    { texto: "Másters con nota de corte", fecha: "Enero – Marzo 2026", past: true },
+    { texto: "Inicio de clases", fecha: "Septiembre 2026 / Enero 2027", past: false },
+  ] : isFP ? [
+    { texto: "Convocatoria FP pública", fecha: "Junio 2026", past: false },
+    { texto: "Centros privados", fecha: "Matrícula abierta", past: false },
+    { texto: "Inicio de clases", fecha: "Septiembre 2026", past: false },
+  ] : [
+    { texto: "Prueba de acceso (PCE/UNED)", fecha: "Convocatoria mayo 2026", past: false },
+    { texto: "Preinscripción universidades públicas", fecha: "Junio – Julio 2026", past: false },
+    { texto: "Plazo universidades privadas", fecha: "Abierto todo el año", past: false },
+    { texto: "Inicio de clases", fecha: "Septiembre 2026", past: false },
+  ];
 
   return (
     <div style={{ minHeight: "100vh", background: "var(--bg)", color: "var(--text)" }}>
       <style>{css}</style>
+
+      {/* HEADER */}
       <div className="header">
         <div className="header-left"><div className="logo-mark">▸ QueEstudiar</div><div className="header-title">Mi Portal</div></div>
         <div className="header-right">
@@ -2267,106 +2299,211 @@ function PortalCliente({ currentUser, onLogout }) {
           <button className="btn-ghost" onClick={onLogout}>Salir</button>
         </div>
       </div>
-      <div style={{ maxWidth: 900, margin: "0 auto", padding: "24px 16px" }}>
+
+      <div style={{ maxWidth: 860, margin: "0 auto", padding: "28px 16px" }}>
+
+        {/* BIENVENIDA */}
+        <div style={{ marginBottom: 28 }}>
+          <div style={{ fontFamily: "var(--display)", fontWeight: 700, fontSize: 26, color: "var(--text)", marginBottom: 6 }}>
+            Hola, {lead.full_name?.split(" ")[0] || "estudiante"} 👋
+          </div>
+          <div style={{ fontSize: 13, color: "var(--muted)", marginBottom: 10 }}>
+            {[lead.country_of_origin, lead.education_level, lead.study_area].filter(Boolean).join(" · ")}
+          </div>
+          <span style={{ display: "inline-block", fontSize: 11, fontWeight: 600, padding: "3px 10px", borderRadius: 20, background: statusCfg.bg, color: statusCfg.color, fontFamily: "var(--mono)" }}>
+            {statusCfg.label}
+          </span>
+        </div>
+
+        {/* TRACKER DE PROGRESO */}
+        <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 8, padding: "16px 20px", marginBottom: 24 }}>
+          <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", position: "relative" }}>
+            <div style={{ position: "absolute", top: 14, left: "12.5%", right: "12.5%", height: 2, background: "var(--border)", zIndex: 0 }} />
+            {trackerSteps.map((step, i) => {
+              const isCurrent = !step.done && (i === 0 || trackerSteps[i - 1].done);
+              return (
+                <div key={step.label} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 6, zIndex: 1 }}>
+                  <div style={{
+                    width: 28, height: 28, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center",
+                    fontSize: 11, fontWeight: 700, fontFamily: "var(--mono)",
+                    background: step.done ? "var(--accent)" : "var(--surface)",
+                    color: step.done ? "#fff" : isCurrent ? "var(--accent)" : "var(--muted)",
+                    border: step.done ? "2px solid var(--accent)" : isCurrent ? "2px solid var(--accent)" : "2px solid var(--border)",
+                  }}>
+                    {step.done ? "✓" : i + 1}
+                  </div>
+                  <div style={{ fontSize: 9, fontFamily: "var(--mono)", color: step.done ? "var(--accent)" : isCurrent ? "var(--accent)" : "var(--muted)", textAlign: "center", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                    {step.label}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* STATS */}
         <div style={{ display: "flex", gap: 12, marginBottom: 24, flexWrap: "wrap" }}>
           {[
-            { label: "Programas seleccionados", value: favoritos.length, color: "var(--accent2)" },
-            { label: "Documentos aprobados", value: `${docsAprobados} / ${documents.length}`, color: "#16a34a" },
-          ].map(({ label, value, color }) => (
-            <div key={label} style={{ flex: "1 1 180px", background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 8, padding: "12px 16px" }}>
-              <div style={{ fontSize: 22, fontWeight: 700, color, fontFamily: "var(--mono)" }}>{value}</div>
-              <div style={{ fontSize: 11, color: "var(--muted)", marginTop: 4 }}>{label}</div>
+            { label: "Programas recomendados", value: matches.length, color: "var(--accent)", mono: false },
+            { label: "Mis favoritos", value: favoritosCount, color: "var(--accent2)", mono: false },
+            { label: "Documentos aprobados", value: `${docsAprobados} / ${documents.length || "—"}`, color: "#16a34a", mono: true },
+            { label: "Próxima convocatoria", value: proximaConv, color: "var(--text)", mono: true },
+          ].map(({ label, value, color, mono }) => (
+            <div key={label} style={{ flex: "1 1 160px", background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 8, padding: "14px 16px" }}>
+              <div style={{ fontSize: 22, fontWeight: 700, color, fontFamily: mono ? "var(--mono)" : "var(--display)", lineHeight: 1.2 }}>{value}</div>
+              <div style={{ fontSize: 10, color: "var(--muted)", marginTop: 6 }}>{label}</div>
             </div>
           ))}
         </div>
 
-        <div className="section-title" style={{ marginBottom: 12 }}>Tus programas</div>
-        {matches.length === 0 ? (
-          <div style={{ color: "var(--muted)", fontSize: 13, fontFamily: "var(--mono)", marginBottom: 24 }}>Aún no tienes programas asignados.</div>
-        ) : (
-          <div className="program-grid" style={{ marginBottom: 24 }}>
-            {matches.map(m => {
-              const p = m.programas || {};
-              const isFav = m.cliente_favorito === true;
-              return (
-                <div key={m.id} className="program-card" style={{ border: isFav ? "1px solid var(--accent)" : undefined }}>
-                  <div className="program-name">{p.nombre || "Programa"}</div>
-                  <div className="program-inst">{p.ciudad || "—"}</div>
-                  <div className="program-tags">
-                    {p.tipo && <span className="tag highlight">{p.tipo}</span>}
-                    {m.match_stage && m.match_stage !== 'informe' && <span className="tag" style={{ color: "var(--accent)" }}>{m.match_stage === 'seleccionado' ? '⭐ Seleccionado' : '📨 En solicitud'}</span>}
-                  </div>
-                  <div style={{ marginTop: 8, display: "flex", gap: 8 }}>
-                    {p.url_solicitud && <a href={p.url_solicitud} target="_blank" rel="noreferrer" className="url-btn url-ok" style={{ fontSize: 11 }}>↗ Solicitud</a>}
-                    <button onClick={() => toggleFavorito(m.id, m.cliente_favorito)} style={{ fontSize: 11, padding: "3px 10px", borderRadius: 4, cursor: "pointer", border: `1px solid ${isFav ? "var(--accent)" : "var(--border)"}`, background: isFav ? "var(--accent)" : "var(--bg)", color: isFav ? "#fff" : "var(--muted)" }}>
-                      {isFav ? "👍 Me interesa" : "👍 Marcar interés"}
-                    </button>
-                  </div>
-                </div>
-              );
-            })}
+        {/* ASESOR */}
+        {asesor && (
+          <div style={{ background: "#dbeafe", borderRadius: 8, padding: "12px 16px", marginBottom: 24, display: "flex", alignItems: "center", gap: 12 }}>
+            <span style={{ fontSize: 20 }}>👤</span>
+            <div>
+              <div style={{ fontSize: 13, color: "var(--accent)", fontWeight: 600 }}>Tu asesor: {asesor.name}</div>
+              <div style={{ fontSize: 11, color: "var(--muted)", marginTop: 2 }}>Cualquier duda, escríbenos a hola@queestudiar.es</div>
+            </div>
           </div>
         )}
 
-        <div className="section-title" style={{ marginBottom: 12 }}>Mi documentación</div>
-        {documents.length === 0 ? (
-          <div style={{ color: "var(--muted)", fontSize: 13, fontFamily: "var(--mono)" }}>Tu asesor preparará el checklist de documentos pronto.</div>
-        ) : (
-          <div className="doc-list">
-            {documents.map(doc => {
-              const dsc = DOC_STATUS_CONFIG[doc.status] || DOC_STATUS_CONFIG.pendiente;
-              const isOpen = activeDocId === doc.id;
-              const docComments = comments[doc.id] || [];
-              return (
-                <div key={doc.id} style={{ background: "var(--surface)", border: `1px solid ${isOpen ? "var(--accent)" : "var(--border)"}`, borderRadius: 8, overflow: "hidden" }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 14px", cursor: "pointer" }} onClick={() => toggleDoc(doc.id)}>
-                    <span style={{ fontSize: 16 }}>{dsc.emoji}</span>
-                    <span style={{ flex: 1, fontFamily: "var(--mono)", fontSize: 13 }}>{doc.document_type}</span>
-                    <span style={{ fontSize: 11, color: dsc.color, fontFamily: "var(--mono)" }}>{dsc.label}</span>
-                    <span style={{ fontSize: 11, color: "var(--muted)" }}>{isOpen ? "▲" : "▼"}</span>
-                  </div>
-                  {isOpen && (
-                    <div style={{ padding: "0 14px 14px", borderTop: "1px solid var(--border)" }}>
-                      {doc.notes && <div style={{ fontSize: 11, color: "#ca8a04", fontFamily: "var(--mono)", margin: "10px 0 6px" }}>ℹ {doc.notes}</div>}
-                      <textarea
-                        style={{ width: "100%", minHeight: 120, padding: 10, background: "var(--bg)", border: "1px solid var(--border)", borderRadius: 6, color: "var(--text)", fontFamily: "var(--mono)", fontSize: 12, resize: "vertical", marginTop: 8, outline: "none" }}
-                        value={editContent[doc.id] || ""}
-                        onChange={e => setEditContent(prev => ({ ...prev, [doc.id]: e.target.value }))}
-                        placeholder="Escribe o pega el contenido del documento aquí..."
-                      />
-                      <button className="save-btn" style={{ marginTop: 8 }} onClick={() => saveDocContent(doc.id)} disabled={savingDoc === doc.id}>
-                        {savingDoc === doc.id ? "Guardando..." : "Guardar y enviar a revisión"}
-                      </button>
-                      {docComments.length > 0 && (
-                        <div style={{ marginTop: 12 }}>
-                          <div style={{ fontSize: 11, color: "var(--muted)", fontFamily: "var(--mono)", marginBottom: 6 }}>Comentarios del equipo:</div>
-                          {docComments.map(c => (
-                            <div key={c.id} style={{ padding: "6px 10px", background: c.author_type === 'team' ? "#dbeafe" : "#f8fafc", border: "1px solid var(--border)", borderRadius: 6, marginBottom: 4, fontSize: 12, fontFamily: "var(--mono)" }}>
-                              <span style={{ color: c.author_type === 'team' ? "var(--accent)" : "var(--accent2)" }}>{c.author_type === 'team' ? "Asesor" : "Tú"}</span>
-                              <span style={{ color: "var(--muted)", marginLeft: 8, fontSize: 10 }}>{formatDate(c.created_at)}</span>
-                              <div style={{ marginTop: 4, color: "var(--text)" }}>{c.message}</div>
-                            </div>
-                          ))}
+        {/* PROGRAMAS */}
+        <div style={{ marginBottom: 28 }}>
+          <div className="section-title" style={{ marginBottom: 12 }}>Tus programas recomendados</div>
+          {matches.length === 0 ? (
+            <div style={{ background: "var(--surface)", border: "1px dashed var(--border)", borderRadius: 8, padding: 24, textAlign: "center" }}>
+              <div style={{ fontSize: 13, color: "var(--muted)", fontStyle: "italic", lineHeight: 1.7 }}>
+                Estamos seleccionando los mejores programas para tu perfil.
+              </div>
+              <div style={{ fontSize: 12, color: "var(--muted)", fontStyle: "italic", marginTop: 8, lineHeight: 1.7 }}>
+                El equipo de QueEstudiar revisará tu expediente y te notificará pronto.
+              </div>
+            </div>
+          ) : (
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 12 }}>
+              {matches.map(m => {
+                const p = m.programas || {};
+                const isFav = m.cliente_favorito === true;
+                const price = isNonEU && p.precio_extracomunitario_eur != null ? p.precio_extracomunitario_eur : p.precio_anual_eur;
+                return (
+                  <div key={m.id} style={{ flex: "1 1 260px", background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 8, overflow: "hidden" }}>
+                    <div style={{ height: 4, background: isFav ? "var(--accent2)" : "var(--accent)" }} />
+                    <div style={{ padding: "12px 14px" }}>
+                      <div style={{ fontWeight: 700, fontSize: 13, color: "var(--text)", marginBottom: 2, lineHeight: 1.3 }}>{p.nombre || "Programa"}</div>
+                      <div style={{ fontSize: 11, color: "var(--muted)", marginBottom: 10 }}>{p.ciudad || "—"}</div>
+                      <div style={{ borderTop: "1px solid var(--border)", paddingTop: 8, marginBottom: 8 }}>
+                        <div style={{ fontSize: 14, fontWeight: 700, color: "var(--accent)", fontFamily: "var(--display)" }}>
+                          {price != null ? (price === 0 ? "Gratuito" : `${price.toLocaleString("es-ES")}€/año`) : "—"}
                         </div>
-                      )}
-                      <div style={{ display: "flex", gap: 6, marginTop: 8 }}>
-                        <input
-                          className="url-edit-input"
-                          style={{ flex: 1 }}
-                          value={newComment[doc.id] || ""}
-                          onChange={e => setNewComment(prev => ({ ...prev, [doc.id]: e.target.value }))}
-                          placeholder="Responder al equipo..."
-                          onKeyDown={e => e.key === "Enter" && sendComment(doc.id)}
-                        />
-                        <button className="url-edit-btn save" onClick={() => sendComment(doc.id)}>Enviar</button>
+                      </div>
+                      <div style={{ display: "flex", flexWrap: "wrap", gap: 4, marginBottom: 10 }}>
+                        {p.tipo && <span className="tag highlight">{p.tipo}</span>}
+                        {p.visa_eligible === 'elegible' && <span className="tag" style={{ color: "#16a34a", borderColor: "#16a34a44", background: "#dcfce7" }}>✓ Apto visado</span>}
+                        {p.visa_eligible === 'pendiente' && <span className="tag" style={{ color: "#ca8a04", borderColor: "#ca8a0444", background: "#fef9c3" }}>⏳ Pendiente</span>}
+                      </div>
+                      <div style={{ display: "flex", gap: 6 }}>
+                        <button
+                          onClick={() => toggleFavorito(m.id, m.cliente_favorito)}
+                          style={{ flex: 1, fontSize: 11, padding: "5px 8px", borderRadius: 5, cursor: "pointer", border: `1px solid ${isFav ? "var(--accent)" : "var(--border)"}`, background: isFav ? "var(--accent)" : "var(--surface)", color: isFav ? "#fff" : "var(--muted)" }}
+                        >
+                          {isFav ? "👍 Me interesa" : "Marcar interés"}
+                        </button>
+                        {p.url_solicitud && p.url_solicitud_status !== 'rota' && (
+                          <a href={p.url_solicitud} target="_blank" rel="noreferrer" className="url-btn url-ok" style={{ fontSize: 11 }}>↗ Ver</a>
+                        )}
                       </div>
                     </div>
-                  )}
-                </div>
-              );
-            })}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
+        {/* PRÓXIMAS CONVOCATORIAS */}
+        <div style={{ marginBottom: 28 }}>
+          <div className="section-title" style={{ marginBottom: 4 }}>Próximas convocatorias</div>
+          <div style={{ fontSize: 12, color: "var(--muted)", marginBottom: 12 }}>Fechas clave para los programas de tu perfil</div>
+          <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+            {convocatorias.map((c, i) => (
+              <div key={i} style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 6, padding: "10px 14px", display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12 }}>
+                <span style={{ fontSize: 12, color: "var(--text)" }}>{c.texto}</span>
+                <span style={{ fontSize: 11, color: c.past ? "var(--muted)" : "var(--accent)", fontFamily: "var(--mono)", whiteSpace: "nowrap" }}>{c.fecha}</span>
+              </div>
+            ))}
           </div>
-        )}
+        </div>
+
+        {/* DOCUMENTACIÓN */}
+        <div>
+          <div className="section-title" style={{ marginBottom: 12 }}>Mi documentación</div>
+          {documents.length === 0 ? (
+            <div style={{ background: "var(--surface)", border: "1px dashed var(--border)", borderRadius: 8, padding: 24, textAlign: "center" }}>
+              <div style={{ fontSize: 13, color: "var(--muted)", fontStyle: "italic", lineHeight: 1.7 }}>
+                Tu checklist de documentos está en preparación.
+              </div>
+              <div style={{ fontSize: 12, color: "var(--muted)", fontStyle: "italic", marginTop: 8, lineHeight: 1.7 }}>
+                Mientras tanto, puedes ir preparando: pasaporte vigente, título académico, certificado de notas y carta de motivación.
+              </div>
+            </div>
+          ) : (
+            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+              {documents.map(doc => {
+                const dsc = DOC_STATUS_CONFIG[doc.status] || DOC_STATUS_CONFIG.pendiente;
+                const isOpen = activeDocId === doc.id;
+                const docComments = comments[doc.id] || [];
+                return (
+                  <div key={doc.id} style={{ background: "var(--surface)", border: `1px solid ${isOpen ? "var(--accent)" : "var(--border)"}`, borderRadius: 8, overflow: "hidden" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 14px", cursor: "pointer" }} onClick={() => toggleDoc(doc.id)}>
+                      <span style={{ fontSize: 16 }}>{dsc.emoji}</span>
+                      <span style={{ flex: 1, fontFamily: "var(--mono)", fontSize: 13 }}>{doc.document_type}</span>
+                      <span style={{ fontSize: 11, color: dsc.color, fontFamily: "var(--mono)" }}>{dsc.label}</span>
+                      <span style={{ fontSize: 11, color: "var(--muted)" }}>{isOpen ? "▲" : "▼"}</span>
+                    </div>
+                    {isOpen && (
+                      <div style={{ padding: "0 14px 14px", borderTop: "1px solid var(--border)" }}>
+                        {doc.notes && <div style={{ fontSize: 11, color: "#ca8a04", fontFamily: "var(--mono)", margin: "10px 0 6px" }}>ℹ {doc.notes}</div>}
+                        <textarea
+                          style={{ width: "100%", minHeight: 120, padding: 10, background: "var(--bg)", border: "1px solid var(--border)", borderRadius: 6, color: "var(--text)", fontFamily: "var(--mono)", fontSize: 12, resize: "vertical", marginTop: 8, outline: "none" }}
+                          value={editContent[doc.id] || ""}
+                          onChange={e => setEditContent(prev => ({ ...prev, [doc.id]: e.target.value }))}
+                          placeholder="Escribe o pega el contenido del documento aquí..."
+                        />
+                        <button className="save-btn" style={{ marginTop: 8 }} onClick={() => saveDocContent(doc.id)} disabled={savingDoc === doc.id}>
+                          {savingDoc === doc.id ? "Guardando..." : "Guardar y enviar a revisión"}
+                        </button>
+                        {docComments.length > 0 && (
+                          <div style={{ marginTop: 12 }}>
+                            <div style={{ fontSize: 11, color: "var(--muted)", fontFamily: "var(--mono)", marginBottom: 6 }}>Comentarios del equipo:</div>
+                            {docComments.map(c => (
+                              <div key={c.id} style={{ padding: "6px 10px", background: c.author_type === 'team' ? "#dbeafe" : "#f8fafc", border: "1px solid var(--border)", borderRadius: 6, marginBottom: 4, fontSize: 12, fontFamily: "var(--mono)" }}>
+                                <span style={{ color: c.author_type === 'team' ? "var(--accent)" : "var(--accent2)" }}>{c.author_type === 'team' ? "Asesor" : "Tú"}</span>
+                                <span style={{ color: "var(--muted)", marginLeft: 8, fontSize: 10 }}>{formatDate(c.created_at)}</span>
+                                <div style={{ marginTop: 4, color: "var(--text)" }}>{c.message}</div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                        <div style={{ display: "flex", gap: 6, marginTop: 8 }}>
+                          <input
+                            className="url-edit-input"
+                            style={{ flex: 1 }}
+                            value={newComment[doc.id] || ""}
+                            onChange={e => setNewComment(prev => ({ ...prev, [doc.id]: e.target.value }))}
+                            placeholder="Responder al equipo..."
+                            onKeyDown={e => e.key === "Enter" && sendComment(doc.id)}
+                          />
+                          <button className="url-edit-btn save" onClick={() => sendComment(doc.id)}>Enviar</button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
       </div>
     </div>
   );
@@ -2463,13 +2600,6 @@ const IS_ADMIN_DOMAIN = HOST === "app.queestudiar.es";
 // ═══════════════════════════════════════════════════════════════════════════
 // MAIN APP COMPONENT (with hash routing)
 // ═══════════════════════════════════════════════════════════════════════════
-
-const TEAM_FALLBACK = [
-  { email: "maria@queestudiar.es", name: "María" },
-  { email: "alejandro.suarez@estuvisa.es", name: "Alejandro Suárez" },
-  { email: "kenny.alvarez@estuvisa.es", name: "Kenny Álvarez" },
-  { email: "luis.solanas@estuvisa.es", name: "Luis Solanas" },
-];
 
 export default function App() {
   // On admin domain, default to #/admin if no hash is set

@@ -893,10 +893,23 @@ function UserManagement({ onClose }) {
 
   async function loadUsers() {
     setLoading(true);
+    const fallbackUsers = TEAM_FALLBACK.map(m => ({
+      id: m.email,
+      email: m.email,
+      created_at: null,
+      user_metadata: { name: m.name, role: 'team' },
+      _isFallback: true,
+    }));
     try {
       const list = await adminListUsers();
-      setUsers(list.sort((a, b) => new Date(b.created_at) - new Date(a.created_at)));
-    } catch { setUsers([]); }
+      if (list && list.length > 0) {
+        setUsers(list.sort((a, b) => new Date(b.created_at) - new Date(a.created_at)));
+      } else {
+        setUsers(fallbackUsers);
+      }
+    } catch {
+      setUsers(fallbackUsers);
+    }
     setLoading(false);
   }
 
@@ -958,6 +971,11 @@ function UserManagement({ onClose }) {
         </form>
       )}
 
+      {users.some(u => u._isFallback) && (
+        <div style={{ padding: "8px 14px", background: "#dbeafe", borderRadius: 6, marginBottom: 16, fontSize: 11, color: "var(--accent)", fontFamily: "var(--mono)" }}>
+          Lista predefinida — configura VITE_SUPABASE_KEY con service_role en Vercel para gestión completa de usuarios.
+        </div>
+      )}
       {loading ? <div className="loading" style={{ height: 200 }}><div className="spinner" /> Cargando usuarios...</div>
       : users.length === 0 ? <div className="empty" style={{ height: 200 }}><div className="empty-icon">○</div><div className="empty-text">No hay usuarios registrados</div></div>
       : (
@@ -970,8 +988,10 @@ function UserManagement({ onClose }) {
               </div>
               <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
                 <span className={`user-role ${u.user_metadata?.role === "admin" ? "admin" : "team"}`}>{u.user_metadata?.role === "admin" ? "Admin" : "Equipo"}</span>
-                <span style={{ fontSize: 10, color: "var(--muted)", fontFamily: "var(--mono)" }}>{new Date(u.created_at).toLocaleDateString("es-ES", { day: "2-digit", month: "short", year: "numeric" })}</span>
-                <button className="user-delete-btn" onClick={() => handleDelete(u)} title="Eliminar usuario">🗑</button>
+                {u.created_at && <span style={{ fontSize: 10, color: "var(--muted)", fontFamily: "var(--mono)" }}>{new Date(u.created_at).toLocaleDateString("es-ES", { day: "2-digit", month: "short", year: "numeric" })}</span>}
+                {!u._isFallback && (
+                  <button className="user-delete-btn" onClick={() => handleDelete(u)} title="Eliminar usuario">🗑</button>
+                )}
               </div>
             </div>
           ))}
@@ -1229,7 +1249,22 @@ function StudentDetail({ student, onStatusChange, onNotesSave, currentUser, onAs
       {tab === "matches" && (
         <div className="section">
           {loadingMatches ? <div className="loading"><div className="spinner" /> Cargando programas...</div>
-          : matches.length === 0 ? <div style={{ color: "var(--muted)", fontSize: 13, fontFamily: "var(--mono)", padding: "20px 0" }}>Sin matches aún. N8N los guardará cuando el estudiante complete el formulario.</div>
+          : matches.length === 0 ? (
+            <div style={{ textAlign: "center", padding: "32px 16px", color: "var(--muted)" }}>
+              <div style={{ fontSize: 13, marginBottom: 8 }}>Sin programas asignados aún.</div>
+              <div style={{ fontSize: 11, fontFamily: "var(--mono)", marginBottom: 16, color: "var(--muted)" }}>
+                Puedes buscar programas manualmente y añadirlos, o esperar a que la automatización los genere.
+              </div>
+              <a
+                href="https://queestudiar.es/#/programas"
+                target="_blank"
+                rel="noreferrer"
+                style={{ fontSize: 11, padding: "6px 14px", borderRadius: 6, border: "1px solid var(--accent)", color: "var(--accent)", textDecoration: "none", fontFamily: "var(--mono)" }}
+              >
+                🔍 Buscar programas
+              </a>
+            </div>
+          )
           : (() => {
               const areas = ["all", ...Array.from(new Set(matches.map(m => m.programas?.familia_area).filter(Boolean))).sort()];
               const isNonEUStudent = student.student_origin === "extracomunitario" || student.student_origin === "latam_convenio";
@@ -2616,6 +2651,7 @@ export default function App() {
   const [showExpedientes, setShowExpedientes] = useState(false);
   const [feedbackPrompt, setFeedbackPrompt] = useState(null);
   const [teamMembers, setTeamMembers] = useState(TEAM_FALLBACK);
+  const [docsPendientes, setDocsPendientes] = useState(null);
 
   // Hash routing
   useEffect(() => {
@@ -2663,6 +2699,17 @@ export default function App() {
     }
   }, [user]);
 
+  async function loadDocsPendientes() {
+    try {
+      const res = await fetch(
+        `${SUPABASE_URL}/rest/v1/student_documents?select=id,status&or=(status.eq.pendiente,status.eq.necesita_correccion)`,
+        { headers: getAuthHeaders() }
+      );
+      const data = await res.json();
+      setDocsPendientes(Array.isArray(data) ? data.length : 0);
+    } catch { setDocsPendientes(0); }
+  }
+
   async function loadStudents() {
     setLoading(true);
     try {
@@ -2677,6 +2724,7 @@ export default function App() {
       if (list.length > 0 && !selected) setSelected(list[0]);
     } catch { setStudents([]); }
     setLoading(false);
+    loadDocsPendientes();
   }
 
   function handleLogin(u) { setUser(u); }
@@ -2759,13 +2807,43 @@ export default function App() {
           <div style={{ display: "flex", gap: 8, padding: "12px 16px 0", flexWrap: "wrap" }}>
             {[
               { label: "En proceso", value: counts.en_proceso || 0, color: "var(--accent)" },
-              { label: "Seleccionados", value: counts.contactado || 0, color: "var(--accent2)" },
-              { label: "Docs pendiente", value: "—", color: "var(--muted)" },
-              { label: "Cerrados este mes", value: students.filter(s => s.status === "cerrado" && new Date(s.created_at).getMonth() === new Date().getMonth() && new Date(s.created_at).getFullYear() === new Date().getFullYear()).length, color: "var(--muted)" },
+              { label: "Con matches", value: counts.en_proceso || 0, color: "var(--accent)" },
+              { label: "Docs pendiente", value: docsPendientes ?? "…", color: docsPendientes > 0 ? "#e8531a" : "var(--muted)" },
+              { label: "Cerrados", value: counts.cerrado || 0, color: "var(--muted)" },
             ].map(({ label, value, color }) => (
               <div key={label} style={{ flex: "1 1 calc(50% - 4px)", background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 8, padding: "8px 10px", minWidth: 90 }}>
                 <div style={{ fontSize: 18, fontWeight: 700, color, fontFamily: "var(--mono)" }}>{value}</div>
                 <div style={{ fontSize: 10, color: "var(--muted)", marginTop: 2 }}>{label}</div>
+              </div>
+            ))}
+          </div>
+          {/* Desglose por tipo de estudio */}
+          <div style={{ padding: "10px 16px 0", borderTop: "1px solid var(--border)", marginTop: 8 }}>
+            <div style={{ fontSize: 9, fontFamily: "var(--mono)", color: "var(--muted)", letterSpacing: "0.15em", textTransform: "uppercase", marginBottom: 6 }}>Tipos de estudio</div>
+            {[
+              { label: "Máster",  count: students.filter(s => (s.desired_program_type || s.education_level || "").toLowerCase().includes("master")).length },
+              { label: "Grado",   count: students.filter(s => (s.desired_program_type || s.education_level || "").toLowerCase().includes("grado")).length },
+              { label: "FP",      count: students.filter(s => (s.desired_program_type || s.education_level || "").toLowerCase().includes("fp")).length },
+              { label: "Otro",    count: students.filter(s => { const t = (s.desired_program_type || s.education_level || "").toLowerCase(); return !t.includes("master") && !t.includes("grado") && !t.includes("fp"); }).length },
+            ].filter(r => r.count > 0).map(({ label, count }) => (
+              <div key={label} style={{ display: "flex", justifyContent: "space-between", fontSize: 11, padding: "3px 0", borderBottom: "1px solid var(--border)" }}>
+                <span style={{ color: "var(--text)", fontFamily: "var(--mono)" }}>{label}</span>
+                <span style={{ color: "var(--accent)", fontFamily: "var(--mono)", fontWeight: 700 }}>{count}</span>
+              </div>
+            ))}
+          </div>
+          {/* Próximas convocatorias */}
+          <div style={{ padding: "10px 16px 8px" }}>
+            <div style={{ fontSize: 9, fontFamily: "var(--mono)", color: "var(--muted)", letterSpacing: "0.15em", textTransform: "uppercase", marginBottom: 6 }}>Próximas fechas clave</div>
+            {[
+              { label: "PCE/UNED",             fecha: "Mayo 2026" },
+              { label: "Preinscripción pública", fecha: "Jun–Jul 2026" },
+              { label: "Másters públicos",      fecha: "Feb–Abr 2026" },
+              { label: "Inicio de clases",      fecha: "Sep 2026" },
+            ].map(({ label, fecha }) => (
+              <div key={label} style={{ display: "flex", justifyContent: "space-between", fontSize: 10, padding: "3px 0", borderBottom: "1px solid var(--border)" }}>
+                <span style={{ color: "var(--muted)", fontFamily: "var(--mono)" }}>{label}</span>
+                <span style={{ color: "var(--accent)", fontFamily: "var(--mono)" }}>{fecha}</span>
               </div>
             ))}
           </div>

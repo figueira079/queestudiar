@@ -24,6 +24,22 @@ Registra aquí cada cambio significativo: qué se hizo, por qué, y qué podría
 
 ---
 
+## 2026-04-30 — sesion-7: fix dashboard métricas, usuarios fallback, mensaje matches vacíos
+
+- **Qué**: Correcciones del panel admin — métricas reales en el sidebar, usuarios con fallback, mensaje vacío mejorado
+- **Por qué**: "Docs pendiente" siempre mostraba "—"; usuarios quedaba vacío sin service_role key; mensaje matches era incorrecto; "Cerrados este mes" siempre daba 0
+- **Archivos modificados**: `src/App.jsx`
+- **Cambios principales**:
+  - **Docs pendiente**: nueva función `loadDocsPendientes()` con fetch a `student_documents` filtrando `status IN (pendiente, necesita_correccion)`; estado `docsPendientes` con null inicial (muestra "…" mientras carga); color terra si > 0
+  - **Métricas sidebar**: "Seleccionados" → "Con matches" (counts.en_proceso como proxy); "Cerrados este mes" → "Cerrados" (total, sin filtro de mes que siempre daba 0)
+  - **Desglose tipos de estudio**: sección bajo las métricas con conteo Máster/Grado/FP/Otro usando `students.filter`
+  - **Próximas fechas clave**: sección con 4 fechas hardcodeadas en el sidebar del admin
+  - **UserManagement fallback**: cuando `adminListUsers()` falla o devuelve vacío → muestra TEAM_FALLBACK; aviso azul informando que es lista predefinida; botón eliminar oculto para usuarios fallback; fecha de creación solo si existe
+  - **Mensaje matches vacíos**: reemplazado texto de n8n por mensaje útil + botón "🔍 Buscar programas" → `queestudiar.es/#/programas`
+- **Verificado**: build limpio (vite build ✓ en 614ms, 0 errores)
+
+---
+
 ## 2026-04-29 — sesion-6: portal del estudiante rediseñado + fix invitación + eliminado drive URL
 
 - **Qué**: Rediseño completo de `PortalCliente` con dashboard real; corrección del bug de re-invitación; eliminación del campo Drive URL del panel admin

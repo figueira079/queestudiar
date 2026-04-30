@@ -24,6 +24,26 @@ Registra aquí cada cambio significativo: qué se hizo, por qué, y qué podría
 
 ---
 
+## 2026-04-30 — sesion-8: fix RLS matches + dashboard como vista principal
+
+- **Qué**: Bug crítico de RLS en `matches` corregido (frontend no veía matches); dashboard como vista por defecto del admin
+- **Por qué**: La política `cliente_ve_sus_matches` referenciaba la tabla `clientes` del schema original (no existe en el schema actual) — bloqueaba silenciosamente todas las lecturas de matches desde el frontend
+- **Archivos modificados**: Supabase migrations + `src/App.jsx`
+- **Cambios SQL**:
+  - `DROP POLICY "cliente_ve_sus_matches" ON matches` — eliminada política rota
+  - `CREATE POLICY "authenticated_rw" ON matches FOR ALL TO authenticated USING (true) WITH CHECK (true)` — nueva política correcta
+  - Verificado: 5+ estudiantes con 50 matches cada uno visibles vía SQL
+- **Cambios App.jsx**:
+  - Nuevo componente `AdminDashboard` con métricas expandidas (4 cards con borde coloreado), expedientes recientes clicables, desglose por tipo de estudio, fechas clave
+  - `adminView` state reemplaza los 3 booleanos `showUserMgmt/showFeedbackReview/showExpedientes`
+  - Header: nueva barra de navegación con 4 botones (Dashboard/Expedientes/Usuarios/Feedback), filtrada por rol
+  - Vista por defecto al entrar: Dashboard (en lugar de lista de estudiantes)
+  - Vista Expedientes: sidebar simplificado (solo búsqueda + lista, sin métricas duplicadas)
+  - Navegación desde Dashboard: clic en expediente reciente → navega a Expedientes con ese estudiante seleccionado
+- **Verificado**: build limpio (vite build ✓ en 645ms, 0 errores)
+
+---
+
 ## 2026-04-30 — sesion-7: fix dashboard métricas, usuarios fallback, mensaje matches vacíos
 
 - **Qué**: Correcciones del panel admin — métricas reales en el sidebar, usuarios con fallback, mensaje vacío mejorado

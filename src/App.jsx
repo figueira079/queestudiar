@@ -2633,6 +2633,122 @@ const IS_PUBLIC_DOMAIN = HOST === "queestudiar.es" || HOST === "www.queestudiar.
 const IS_ADMIN_DOMAIN = HOST === "app.queestudiar.es";
 
 // ═══════════════════════════════════════════════════════════════════════════
+// ADMIN DASHBOARD
+// ═══════════════════════════════════════════════════════════════════════════
+
+function AdminDashboard({ students, docsPendientes, user, onNavigate }) {
+  const counts = students.reduce((acc, s) => {
+    acc[s.status || "nuevo"] = (acc[s.status || "nuevo"] || 0) + 1;
+    return acc;
+  }, {});
+
+  const METRICS = [
+    { label: "Total expedientes", value: students.length,       color: "var(--accent)",  icon: "📁" },
+    { label: "En proceso",        value: counts.en_proceso || 0, color: "#7c3aed",        icon: "⚙️" },
+    { label: "Docs pendiente",    value: docsPendientes ?? "…", color: docsPendientes > 0 ? "#e8531a" : "var(--muted)", icon: "📄" },
+    { label: "Cerrados total",    value: counts.cerrado || 0,   color: "#16a34a",         icon: "✅" },
+  ];
+
+  const TYPE_BREAKDOWN = [
+    { label: "Máster", count: students.filter(s => (s.desired_program_type || s.education_level || "").toLowerCase().includes("master")).length },
+    { label: "Grado",  count: students.filter(s => (s.desired_program_type || s.education_level || "").toLowerCase().includes("grado")).length },
+    { label: "FP",     count: students.filter(s => (s.desired_program_type || s.education_level || "").toLowerCase().includes("fp")).length },
+    { label: "Otro",   count: students.filter(s => { const t = (s.desired_program_type || s.education_level || "").toLowerCase(); return !t.includes("master") && !t.includes("grado") && !t.includes("fp"); }).length },
+  ].filter(r => r.count > 0);
+
+  const UPCOMING_DATES = [
+    { label: "PCE/UNED",               fecha: "Mayo 2026" },
+    { label: "Preinscripción pública",  fecha: "Jun–Jul 2026" },
+    { label: "Másters públicos",        fecha: "Feb–Abr 2026" },
+    { label: "Inicio de clases",        fecha: "Sep 2026" },
+  ];
+
+  const recentStudents = [...students]
+    .sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0))
+    .slice(0, 5);
+
+  const STATUS_COLORS = { nuevo: "#2563eb", contactado: "#ca8a04", en_proceso: "#7c3aed", cerrado: "#16a34a", descartado: "#dc2626" };
+
+  return (
+    <div style={{ padding: "24px 32px", maxWidth: 960, margin: "0 auto", overflowY: "auto" }}>
+      {/* Header */}
+      <div style={{ marginBottom: 24 }}>
+        <div style={{ fontFamily: "var(--display)", fontWeight: 700, fontSize: 22, color: "var(--text)", marginBottom: 4 }}>
+          Dashboard
+        </div>
+        <div style={{ fontSize: 11, fontFamily: "var(--mono)", color: "var(--muted)" }}>
+          Hola, {user?.name} · {new Date().toLocaleDateString("es-ES", { weekday: "long", day: "numeric", month: "long" })}
+        </div>
+      </div>
+
+      {/* Métricas principales */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12, marginBottom: 24 }}>
+        {METRICS.map(({ label, value, color, icon }) => (
+          <div key={label} style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 10, padding: "16px 18px", borderTop: `3px solid ${color}` }}>
+            <div style={{ fontSize: 20, marginBottom: 6 }}>{icon}</div>
+            <div style={{ fontFamily: "var(--mono)", fontSize: 26, fontWeight: 700, color, lineHeight: 1 }}>{value}</div>
+            <div style={{ fontSize: 10, fontFamily: "var(--mono)", color: "var(--muted)", marginTop: 6, textTransform: "uppercase", letterSpacing: "0.08em" }}>{label}</div>
+          </div>
+        ))}
+      </div>
+
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+        {/* Expedientes recientes */}
+        <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 10, padding: 16 }}>
+          <div style={{ fontSize: 9, fontFamily: "var(--mono)", color: "var(--muted)", letterSpacing: "0.15em", textTransform: "uppercase", marginBottom: 12 }}>Expedientes recientes</div>
+          {recentStudents.length === 0 ? (
+            <div style={{ fontSize: 11, color: "var(--muted)", fontFamily: "var(--mono)" }}>Sin expedientes</div>
+          ) : recentStudents.map(s => {
+            const status = s.status || "nuevo";
+            const col = STATUS_COLORS[status] || "#2563eb";
+            return (
+              <div key={s.id} onClick={() => onNavigate("expedientes", s)}
+                style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 0", borderBottom: "1px solid var(--border)", cursor: "pointer" }}>
+                <div>
+                  <div style={{ fontSize: 12, fontWeight: 600, color: "var(--text)" }}>{s.full_name}</div>
+                  <div style={{ fontSize: 10, color: "var(--muted)", fontFamily: "var(--mono)" }}>{s.email}</div>
+                </div>
+                <span style={{ fontSize: 9, padding: "2px 8px", borderRadius: 12, background: col + "22", color: col, fontFamily: "var(--mono)", textTransform: "uppercase" }}>
+                  {status}
+                </span>
+              </div>
+            );
+          })}
+          <button onClick={() => onNavigate("expedientes")}
+            style={{ marginTop: 10, fontSize: 11, fontFamily: "var(--mono)", color: "var(--accent)", background: "none", border: "none", cursor: "pointer", padding: 0 }}>
+            Ver todos los expedientes →
+          </button>
+        </div>
+
+        {/* Desglose + fechas */}
+        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+          <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 10, padding: 16 }}>
+            <div style={{ fontSize: 9, fontFamily: "var(--mono)", color: "var(--muted)", letterSpacing: "0.15em", textTransform: "uppercase", marginBottom: 10 }}>Tipos de estudio</div>
+            {TYPE_BREAKDOWN.length === 0
+              ? <div style={{ fontSize: 11, color: "var(--muted)", fontFamily: "var(--mono)" }}>Sin datos</div>
+              : TYPE_BREAKDOWN.map(({ label, count }) => (
+                <div key={label} style={{ display: "flex", justifyContent: "space-between", fontSize: 11, padding: "4px 0", borderBottom: "1px solid var(--border)" }}>
+                  <span style={{ color: "var(--text)", fontFamily: "var(--mono)" }}>{label}</span>
+                  <span style={{ color: "var(--accent)", fontFamily: "var(--mono)", fontWeight: 700 }}>{count}</span>
+                </div>
+              ))}
+          </div>
+          <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 10, padding: 16 }}>
+            <div style={{ fontSize: 9, fontFamily: "var(--mono)", color: "var(--muted)", letterSpacing: "0.15em", textTransform: "uppercase", marginBottom: 10 }}>Próximas fechas clave</div>
+            {UPCOMING_DATES.map(({ label, fecha }) => (
+              <div key={label} style={{ display: "flex", justifyContent: "space-between", fontSize: 10, padding: "4px 0", borderBottom: "1px solid var(--border)" }}>
+                <span style={{ color: "var(--muted)", fontFamily: "var(--mono)" }}>{label}</span>
+                <span style={{ color: "var(--accent)", fontFamily: "var(--mono)" }}>{fecha}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
 // MAIN APP COMPONENT (with hash routing)
 // ═══════════════════════════════════════════════════════════════════════════
 
@@ -2646,9 +2762,7 @@ export default function App() {
   const [search, setSearch] = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
   const [loading, setLoading] = useState(true);
-  const [showUserMgmt, setShowUserMgmt] = useState(false);
-  const [showFeedbackReview, setShowFeedbackReview] = useState(false);
-  const [showExpedientes, setShowExpedientes] = useState(false);
+  const [adminView, setAdminView] = useState("dashboard"); // "dashboard" | "expedientes" | "usuarios" | "feedback"
   const [feedbackPrompt, setFeedbackPrompt] = useState(null);
   const [teamMembers, setTeamMembers] = useState(TEAM_FALLBACK);
   const [docsPendientes, setDocsPendientes] = useState(null);
@@ -2800,80 +2914,85 @@ export default function App() {
     <div className="app">
       <div className="header">
         <div className="header-left"><div className="logo-mark">▸ QueEstudiar</div><div className="header-title">Panel de Admisiones</div></div>
-        <div className="header-right"><div className="user-badge">{user.name}</div>{(user.role === "admin" || user.role === "team") && <button className="btn-ghost" onClick={() => { setShowExpedientes(!showExpedientes); setShowFeedbackReview(false); setShowUserMgmt(false); }} style={showExpedientes ? { borderColor: "var(--accent)", color: "var(--accent)" } : {}}>📁 Expedientes</button>}{user.role === "admin" && <button className="btn-ghost" onClick={() => { setShowFeedbackReview(!showFeedbackReview); setShowUserMgmt(false); setShowExpedientes(false); }} style={showFeedbackReview ? { borderColor: "var(--accent)", color: "var(--accent)" } : {}}>📊 Feedback</button>}{user.role === "admin" && <button className="btn-ghost" onClick={() => { setShowUserMgmt(!showUserMgmt); setShowFeedbackReview(false); setShowExpedientes(false); }} style={showUserMgmt ? { borderColor: "var(--accent)", color: "var(--accent)" } : {}}>⚙ Usuarios</button>}<button className="btn-ghost" onClick={loadStudents}>↻ Actualizar</button><button className="btn-ghost" onClick={() => window.location.href = "https://queestudiar.es"}>Web pública</button><button className="btn-ghost" onClick={handleLogout}>Salir</button></div>
+        <div className="header-right">
+          <div className="user-badge">{user.name}</div>
+          <div style={{ display: "flex", gap: 4 }}>
+            {[
+              { key: "dashboard",   label: "📊 Dashboard",    roles: ["admin", "team"] },
+              { key: "expedientes", label: "📁 Expedientes",   roles: ["admin", "team"] },
+              { key: "usuarios",    label: "👤 Usuarios",      roles: ["admin"] },
+              { key: "feedback",    label: "💬 Feedback",      roles: ["admin"] },
+            ].filter(({ roles }) => roles.includes(user.role)).map(({ key, label }) => (
+              <button key={key} onClick={() => setAdminView(key)} style={{
+                fontSize: 11, fontFamily: "var(--mono)", padding: "5px 12px",
+                borderRadius: 6, border: "1px solid var(--border)", cursor: "pointer",
+                background: adminView === key ? "var(--accent)" : "var(--surface)",
+                color: adminView === key ? "#fff" : "var(--muted)",
+              }}>{label}</button>
+            ))}
+          </div>
+          <button className="btn-ghost" onClick={loadStudents}>↻ Actualizar</button>
+          <button className="btn-ghost" onClick={() => window.location.href = "https://queestudiar.es"}>Web pública</button>
+          <button className="btn-ghost" onClick={handleLogout}>Salir</button>
+        </div>
       </div>
-      <div className="main">
-        <div className="sidebar">
-          <div style={{ display: "flex", gap: 8, padding: "12px 16px 0", flexWrap: "wrap" }}>
-            {[
-              { label: "En proceso", value: counts.en_proceso || 0, color: "var(--accent)" },
-              { label: "Con matches", value: counts.en_proceso || 0, color: "var(--accent)" },
-              { label: "Docs pendiente", value: docsPendientes ?? "…", color: docsPendientes > 0 ? "#e8531a" : "var(--muted)" },
-              { label: "Cerrados", value: counts.cerrado || 0, color: "var(--muted)" },
-            ].map(({ label, value, color }) => (
-              <div key={label} style={{ flex: "1 1 calc(50% - 4px)", background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 8, padding: "8px 10px", minWidth: 90 }}>
-                <div style={{ fontSize: 18, fontWeight: 700, color, fontFamily: "var(--mono)" }}>{value}</div>
-                <div style={{ fontSize: 10, color: "var(--muted)", marginTop: 2 }}>{label}</div>
+
+      {/* ── MAIN CONTENT ── */}
+      {adminView === "dashboard" && (
+        <div className="main" style={{ overflow: "auto" }}>
+          <AdminDashboard
+            students={students}
+            docsPendientes={docsPendientes}
+            user={user}
+            onNavigate={(view, studentToSelect) => {
+              setAdminView(view);
+              if (studentToSelect) setSelected(studentToSelect);
+            }}
+          />
+        </div>
+      )}
+
+      {adminView === "expedientes" && (
+        <div className="main">
+          <div className="sidebar">
+            <div className="sidebar-header">
+              <div className="sidebar-title">Estudiantes · {filtered.length}</div>
+              <input className="search-input" placeholder="Buscar por nombre, email, país..." value={search} onChange={e => setSearch(e.target.value)} />
+              <div className="filter-row">
+                <div className={`filter-chip ${filterStatus === "all" ? "active" : ""}`} onClick={() => setFilterStatus("all")}>Todos ({students.length})</div>
+                {Object.entries(STATUS_CONFIG).map(([k, v]) => counts[k] > 0 && <div key={k} className={`filter-chip ${filterStatus === k ? "active" : ""}`} onClick={() => setFilterStatus(k)}>{v.label} ({counts[k]})</div>)}
               </div>
-            ))}
-          </div>
-          {/* Desglose por tipo de estudio */}
-          <div style={{ padding: "10px 16px 0", borderTop: "1px solid var(--border)", marginTop: 8 }}>
-            <div style={{ fontSize: 9, fontFamily: "var(--mono)", color: "var(--muted)", letterSpacing: "0.15em", textTransform: "uppercase", marginBottom: 6 }}>Tipos de estudio</div>
-            {[
-              { label: "Máster",  count: students.filter(s => (s.desired_program_type || s.education_level || "").toLowerCase().includes("master")).length },
-              { label: "Grado",   count: students.filter(s => (s.desired_program_type || s.education_level || "").toLowerCase().includes("grado")).length },
-              { label: "FP",      count: students.filter(s => (s.desired_program_type || s.education_level || "").toLowerCase().includes("fp")).length },
-              { label: "Otro",    count: students.filter(s => { const t = (s.desired_program_type || s.education_level || "").toLowerCase(); return !t.includes("master") && !t.includes("grado") && !t.includes("fp"); }).length },
-            ].filter(r => r.count > 0).map(({ label, count }) => (
-              <div key={label} style={{ display: "flex", justifyContent: "space-between", fontSize: 11, padding: "3px 0", borderBottom: "1px solid var(--border)" }}>
-                <span style={{ color: "var(--text)", fontFamily: "var(--mono)" }}>{label}</span>
-                <span style={{ color: "var(--accent)", fontFamily: "var(--mono)", fontWeight: 700 }}>{count}</span>
-              </div>
-            ))}
-          </div>
-          {/* Próximas convocatorias */}
-          <div style={{ padding: "10px 16px 8px" }}>
-            <div style={{ fontSize: 9, fontFamily: "var(--mono)", color: "var(--muted)", letterSpacing: "0.15em", textTransform: "uppercase", marginBottom: 6 }}>Próximas fechas clave</div>
-            {[
-              { label: "PCE/UNED",             fecha: "Mayo 2026" },
-              { label: "Preinscripción pública", fecha: "Jun–Jul 2026" },
-              { label: "Másters públicos",      fecha: "Feb–Abr 2026" },
-              { label: "Inicio de clases",      fecha: "Sep 2026" },
-            ].map(({ label, fecha }) => (
-              <div key={label} style={{ display: "flex", justifyContent: "space-between", fontSize: 10, padding: "3px 0", borderBottom: "1px solid var(--border)" }}>
-                <span style={{ color: "var(--muted)", fontFamily: "var(--mono)" }}>{label}</span>
-                <span style={{ color: "var(--accent)", fontFamily: "var(--mono)" }}>{fecha}</span>
-              </div>
-            ))}
-          </div>
-          <div className="sidebar-header">
-            <div className="sidebar-title">Estudiantes · {filtered.length}</div>
-            <input className="search-input" placeholder="Buscar por nombre, email, país..." value={search} onChange={e => setSearch(e.target.value)} />
-            <div className="filter-row">
-              <div className={`filter-chip ${filterStatus === "all" ? "active" : ""}`} onClick={() => setFilterStatus("all")}>Todos ({students.length})</div>
-              {Object.entries(STATUS_CONFIG).map(([k, v]) => counts[k] > 0 && <div key={k} className={`filter-chip ${filterStatus === k ? "active" : ""}`} onClick={() => setFilterStatus(k)}>{v.label} ({counts[k]})</div>)}
+            </div>
+            <div className="student-list">
+              {loading
+                ? <div className="loading" style={{ height: 200 }}><div className="spinner" /> Cargando...</div>
+                : filtered.length === 0
+                  ? <div className="empty" style={{ height: 200 }}><div className="empty-icon">◆</div><div className="empty-text">Sin estudiantes{search ? " con ese filtro" : " aún"}</div></div>
+                  : filtered.map(s => { const sc = STATUS_CONFIG[s.status || "nuevo"]; return (
+                    <div key={s.id} className={`student-item ${selected?.id === s.id ? "active" : ""}`} onClick={() => setSelected(s)}>
+                      <div className="student-name">{s.full_name || "Sin nombre"}</div>
+                      <div className="student-meta">{s.email || "—"} · {s.country_of_origin || "—"}</div>
+                      <div className="match-count">{(s.desired_program_type || s.education_level) ? `${s.desired_program_type || s.education_level} · ` : ""}{formatDate(s.created_at)}</div>
+                      <div className="student-status" style={{ color: sc.color, background: sc.bg }}>{sc.label}</div>
+                    </div>
+                  );})}
             </div>
           </div>
-          <div className="student-list">
-            {loading ? <div className="loading" style={{ height: 200 }}><div className="spinner" /> Cargando...</div>
-            : filtered.length === 0 ? <div className="empty" style={{ height: 200 }}><div className="empty-icon">◆</div><div className="empty-text">Sin estudiantes{search ? " con ese filtro" : " aún"}</div></div>
-            : filtered.map(s => { const sc = STATUS_CONFIG[s.status || "nuevo"]; return (
-              <div key={s.id} className={`student-item ${selected?.id === s.id ? "active" : ""}`} onClick={() => setSelected(s)}>
-                <div className="student-name">{s.full_name || "Sin nombre"}</div>
-                <div className="student-meta">{s.email || "—"} · {s.country_of_origin || "—"}</div>
-                <div className="match-count">{(s.desired_program_type || s.education_level) ? `${s.desired_program_type || s.education_level} · ` : ""}{formatDate(s.created_at)}</div>
-                <div className="student-status" style={{ color: sc.color, background: sc.bg }}>{sc.label}</div>
-              </div>
-            );})}
-          </div>
+          {selected
+            ? <StudentDetail key={selected.id} student={selected} onStatusChange={handleStatusChange} onNotesSave={handleNotesSave} currentUser={user} onAssign={handleAssign} teamMembers={teamMembers} />
+            : <div className="detail"><div className="empty"><div className="empty-icon">◉</div><div className="empty-text">Selecciona un estudiante para ver su expediente</div></div></div>
+          }
         </div>
-        {showExpedientes ? <ExpedientesDashboard students={students} teamMembers={teamMembers} onSelectStudent={s => { setSelected(s); }} onClose={() => setShowExpedientes(false)} />
-        : showFeedbackReview ? <FeedbackReview onClose={() => setShowFeedbackReview(false)} />
-        : showUserMgmt ? <UserManagement onClose={() => setShowUserMgmt(false)} />
-        : selected ? <StudentDetail key={selected.id} student={selected} onStatusChange={handleStatusChange} onNotesSave={handleNotesSave} currentUser={user} onAssign={handleAssign} teamMembers={teamMembers} />
-        : <div className="detail"><div className="empty"><div className="empty-icon">◉</div><div className="empty-text">Selecciona un estudiante para ver su expediente</div></div></div>}
-      </div>
+      )}
+
+      {adminView === "usuarios" && (
+        <div className="main"><UserManagement onClose={() => setAdminView("dashboard")} /></div>
+      )}
+
+      {adminView === "feedback" && (
+        <div className="main"><FeedbackReview onClose={() => setAdminView("dashboard")} /></div>
+      )}
+
     </div>
     {feedbackPrompt && <FeedbackPopup actionType={feedbackPrompt} userName={user.name} userEmail={user.email} onClose={() => setFeedbackPrompt(null)} />}
     </>

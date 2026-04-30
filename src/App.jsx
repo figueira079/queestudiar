@@ -2643,10 +2643,10 @@ function AdminDashboard({ students, docsPendientes, user, onNavigate }) {
   }, {});
 
   const METRICS = [
-    { label: "Total expedientes", value: students.length,       color: "var(--accent)",  icon: "📁" },
-    { label: "En proceso",        value: counts.en_proceso || 0, color: "#7c3aed",        icon: "⚙️" },
-    { label: "Docs pendiente",    value: docsPendientes ?? "…", color: docsPendientes > 0 ? "#e8531a" : "var(--muted)", icon: "📄" },
-    { label: "Cerrados total",    value: counts.cerrado || 0,   color: "#16a34a",         icon: "✅" },
+    { label: "Total expedientes", value: students.length,       color: "var(--accent)",  icon: "📁", filter: "all" },
+    { label: "En proceso",        value: counts.en_proceso || 0, color: "#7c3aed",        icon: "⚙️", filter: "en_proceso" },
+    { label: "Docs pendiente",    value: docsPendientes ?? "…", color: docsPendientes > 0 ? "#e8531a" : "var(--muted)", icon: "📄", filter: null },
+    { label: "Cerrados total",    value: counts.cerrado || 0,   color: "#16a34a",         icon: "✅", filter: "cerrado" },
   ];
 
   const TYPE_BREAKDOWN = [
@@ -2683,8 +2683,13 @@ function AdminDashboard({ students, docsPendientes, user, onNavigate }) {
 
       {/* Métricas principales */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12, marginBottom: 24 }}>
-        {METRICS.map(({ label, value, color, icon }) => (
-          <div key={label} style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 10, padding: "16px 18px", borderTop: `3px solid ${color}` }}>
+        {METRICS.map(({ label, value, color, icon, filter }) => (
+          <div key={label}
+            onClick={() => filter !== null && onNavigate("expedientes", null, filter)}
+            style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 10, padding: "16px 18px", borderTop: `3px solid ${color}`, cursor: filter !== null ? "pointer" : "default", transition: "box-shadow 0.15s" }}
+            onMouseEnter={e => { if (filter !== null) e.currentTarget.style.boxShadow = "0 2px 8px rgba(0,0,0,0.08)"; }}
+            onMouseLeave={e => { e.currentTarget.style.boxShadow = "none"; }}
+          >
             <div style={{ fontSize: 20, marginBottom: 6 }}>{icon}</div>
             <div style={{ fontFamily: "var(--mono)", fontSize: 26, fontWeight: 700, color, lineHeight: 1 }}>{value}</div>
             <div style={{ fontSize: 10, fontFamily: "var(--mono)", color: "var(--muted)", marginTop: 6, textTransform: "uppercase", letterSpacing: "0.08em" }}>{label}</div>
@@ -2944,9 +2949,10 @@ export default function App() {
             students={students}
             docsPendientes={docsPendientes}
             user={user}
-            onNavigate={(view, studentToSelect) => {
+            onNavigate={(view, studentToSelect, filter) => {
               setAdminView(view);
               if (studentToSelect) setSelected(studentToSelect);
+              if (filter !== undefined) setFilterStatus(filter || "all");
             }}
           />
         </div>

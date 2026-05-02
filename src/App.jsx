@@ -2643,10 +2643,10 @@ function AdminDashboard({ students, docsPendientes, user, onNavigate }) {
   }, {});
 
   const METRICS = [
-    { label: "Total expedientes", value: students.length,       color: "var(--accent)",  icon: "📁", filter: "all" },
-    { label: "En proceso",        value: counts.en_proceso || 0, color: "#7c3aed",        icon: "⚙️", filter: "en_proceso" },
-    { label: "Docs pendiente",    value: docsPendientes ?? "…", color: docsPendientes > 0 ? "#e8531a" : "var(--muted)", icon: "📄", filter: null },
-    { label: "Cerrados total",    value: counts.cerrado || 0,   color: "#16a34a",         icon: "✅", filter: "cerrado" },
+    { label: "Total expedientes", value: students.length,        color: "var(--accent)",                                          filter: "all" },
+    { label: "En proceso",        value: counts.en_proceso || 0, color: "#7c3aed",                                                filter: "en_proceso" },
+    { label: "Docs pendiente",    value: docsPendientes ?? "…",  color: docsPendientes > 0 ? "#e8531a" : "var(--muted)",          filter: null },
+    { label: "Cerrados total",    value: counts.cerrado || 0,    color: (counts.cerrado || 0) > 0 ? "#16a34a" : "var(--muted)",   filter: "cerrado" },
   ];
 
   const TYPE_BREAKDOWN = [
@@ -2657,10 +2657,10 @@ function AdminDashboard({ students, docsPendientes, user, onNavigate }) {
   ].filter(r => r.count > 0);
 
   const UPCOMING_DATES = [
-    { label: "PCE/UNED",               fecha: "Mayo 2026" },
-    { label: "Preinscripción pública",  fecha: "Jun–Jul 2026" },
-    { label: "Másters públicos",        fecha: "Feb–Abr 2026" },
-    { label: "Inicio de clases",        fecha: "Sep 2026" },
+    { label: "PCE/UNED",               fecha: "Mayo 2026",    past: false },
+    { label: "Preinscripción pública",  fecha: "Jun–Jul 2026", past: false },
+    { label: "Másters públicos",        fecha: "Feb–Abr 2026", past: true  },
+    { label: "Inicio de clases",        fecha: "Sep 2026",     past: false },
   ];
 
   const recentStudents = [...students]
@@ -2683,16 +2683,15 @@ function AdminDashboard({ students, docsPendientes, user, onNavigate }) {
 
       {/* Métricas principales */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12, marginBottom: 24 }}>
-        {METRICS.map(({ label, value, color, icon, filter }) => (
+        {METRICS.map(({ label, value, color, filter }) => (
           <div key={label}
             onClick={() => filter !== null && onNavigate("expedientes", null, filter)}
             style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 10, padding: "16px 18px", borderTop: `3px solid ${color}`, cursor: filter !== null ? "pointer" : "default", transition: "box-shadow 0.15s" }}
             onMouseEnter={e => { if (filter !== null) e.currentTarget.style.boxShadow = "0 2px 8px rgba(0,0,0,0.08)"; }}
             onMouseLeave={e => { e.currentTarget.style.boxShadow = "none"; }}
           >
-            <div style={{ fontSize: 20, marginBottom: 6 }}>{icon}</div>
-            <div style={{ fontFamily: "var(--mono)", fontSize: 26, fontWeight: 700, color, lineHeight: 1 }}>{value}</div>
-            <div style={{ fontSize: 10, fontFamily: "var(--mono)", color: "var(--muted)", marginTop: 6, textTransform: "uppercase", letterSpacing: "0.08em" }}>{label}</div>
+            <div style={{ fontFamily: "'Bricolage Grotesque', sans-serif", fontSize: 28, fontWeight: 700, color, lineHeight: 1 }}>{value}</div>
+            <div style={{ fontSize: 10, fontFamily: "var(--mono)", color: "var(--muted)", marginTop: 8, textTransform: "uppercase", letterSpacing: "0.08em" }}>{label}</div>
           </div>
         ))}
       </div>
@@ -2713,8 +2712,8 @@ function AdminDashboard({ students, docsPendientes, user, onNavigate }) {
                   <div style={{ fontSize: 12, fontWeight: 600, color: "var(--text)" }}>{s.full_name}</div>
                   <div style={{ fontSize: 10, color: "var(--muted)", fontFamily: "var(--mono)" }}>{s.email}</div>
                 </div>
-                <span style={{ fontSize: 9, padding: "2px 8px", borderRadius: 12, background: col + "22", color: col, fontFamily: "var(--mono)", textTransform: "uppercase" }}>
-                  {status}
+                <span style={{ fontSize: 9, padding: "2px 8px", borderRadius: 12, background: col + "22", color: col, fontFamily: "var(--mono)" }}>
+                  {STATUS_CONFIG[status]?.label || status}
                 </span>
               </div>
             );
@@ -2740,10 +2739,10 @@ function AdminDashboard({ students, docsPendientes, user, onNavigate }) {
           </div>
           <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 10, padding: 16 }}>
             <div style={{ fontSize: 9, fontFamily: "var(--mono)", color: "var(--muted)", letterSpacing: "0.15em", textTransform: "uppercase", marginBottom: 10 }}>Próximas fechas clave</div>
-            {UPCOMING_DATES.map(({ label, fecha }) => (
-              <div key={label} style={{ display: "flex", justifyContent: "space-between", fontSize: 10, padding: "4px 0", borderBottom: "1px solid var(--border)" }}>
-                <span style={{ color: "var(--muted)", fontFamily: "var(--mono)" }}>{label}</span>
-                <span style={{ color: "var(--accent)", fontFamily: "var(--mono)" }}>{fecha}</span>
+            {UPCOMING_DATES.map(({ label, fecha, past }) => (
+              <div key={label} style={{ display: "flex", justifyContent: "space-between", fontSize: 10, padding: "4px 0", borderBottom: "1px solid var(--border)", opacity: past ? 0.55 : 1 }}>
+                <span style={{ color: "var(--muted)", fontFamily: "var(--mono)" }}>{past ? "✓ " : ""}{label}</span>
+                <span style={{ color: past ? "var(--muted)" : "var(--accent)", fontFamily: "var(--mono)", textDecoration: past ? "line-through" : "none" }}>{fecha}</span>
               </div>
             ))}
           </div>

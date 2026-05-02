@@ -24,6 +24,23 @@ Registra aquí cada cambio significativo: qué se hizo, por qué, y qué podría
 
 ---
 
+## 2026-04-30 — sesion-9: pulido dashboard — fuente métricas, badges status, fechas pasadas, fix duplicados
+
+- **Qué**: 6 correcciones visuales y de datos en el AdminDashboard tras Sesión 8
+- **Por qué**: Números con fuente monoespaciada (ø con barra), badges mostraban valor crudo con guión bajo, fecha pasada en azul, cerrados=0 siempre verde, emojis en tarjetas inconsistentes, duplicados en student_leads
+- **Archivos modificados**: `src/App.jsx` (visual), Supabase SQL (duplicados)
+- **Cambios principales**:
+  - **Fuente métricas**: `var(--mono)` → `'Bricolage Grotesque', sans-serif` (28px) para números en tarjetas dashboard
+  - **Emojis eliminados**: campo `icon` y línea del emoji (`<div>`) quitados de las tarjetas de métricas
+  - **Color "Cerrados total"**: ahora muted (gris) cuando el valor es 0; verde sage solo si > 0
+  - **Badges status**: `{status}` (valor crudo) → `{STATUS_CONFIG[status]?.label || status}`; eliminado `textTransform: "uppercase"`
+  - **Fechas pasadas**: UPCOMING_DATES tiene campo `past`; "Feb–Abr 2026" se muestra con tachado, opacity 0.55 y prefijo "✓"
+  - **Duplicados BD**: 2 registros duplicados sin matches eliminados de `student_leads` (`valelara0811@gmail.com`); 26 registros de test (`figueira079@gmail.com`) con 50 matches cada uno — NO eliminados, pendiente decisión del equipo
+- **Podría afectar**: solo `AdminDashboard` — sin cambios funcionales en otras vistas
+- **Verificado**: build limpio (vite build ✓)
+
+---
+
 ## 2026-04-30 — sesion-8: fix RLS matches + dashboard como vista principal
 
 - **Qué**: Bug crítico de RLS en `matches` corregido (frontend no veía matches); dashboard como vista por defecto del admin

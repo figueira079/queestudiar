@@ -153,6 +153,7 @@ En producción: configuradas en Vercel dashboard
 ## Pendientes conocidos (no son bugs, son tareas)
 
 - [x] Crear `.gitignore` ✓
+- [x] RLS por rol implementado (Sesión 12) ✓
 - [ ] Crear `public/robots.txt`
 - [ ] Verificar que `VITE_SUPABASE_KEY` en Vercel es service_role (no anon)
 - [ ] Rellenar `horas_semanales` para masters y doctorados (tarea del equipo)
@@ -160,6 +161,35 @@ En producción: configuradas en Vercel dashboard
 - [ ] Workflow n8n para revisión automática de feedback
 - [ ] Estadísticas en `LandingPage` hardcodeadas (10.135 programas, 28 ciudades) — actualizar manualmente cuando cambien
 - [ ] Fechas en `SolicitudForm` hardcodeadas (sept-2026, ene-2027, sept-2027) — actualizar cuando lleguen
+
+## Pendientes técnicos (priorizados)
+
+### Urgente / causa confusión operativa
+- [ ] **`status_updated_at` en `student_leads`** — añadir columna + trigger SQL que se actualice automáticamente al cambiar `status`. El badge de inactividad de Sesión 11 usa `created_at` como proxy, lo que da falsos positivos en expedientes activos con mucha antigüedad.
+- [ ] **Limpiar duplicados en `student_leads`** — Valeria Lara Maldonado e Isolina aparecen dos veces. SQL en Sesión 9 brief para identificarlos y borrar los que no tengan matches.
+
+### Experiencia del estudiante
+- [ ] **Notificaciones por email** — el estudiante no recibe aviso cuando cambia el estado de un documento, se añade un comentario del equipo, o llegan matches nuevos. Brief: sesion-13.
+- [ ] **Responsive del portal para móvil** — los estudiantes abren el portal desde el teléfono al recibir el email de invitación. El layout actual está pensado para desktop.
+- [ ] **Mensajes de error visibles en el portal** — cuando una query falla silenciosamente (RLS, red), el estudiante no ve ningún aviso. Añadir estados de error explícitos.
+
+### Operativa del equipo
+- [ ] **Log de actividad en expedientes** — no hay forma de ver cuándo ni quién cambió el estado de un estudiante. Un registro mínimo en las notas o tabla `activity_log` sería muy útil para seguimiento.
+- [ ] **Bandeja de leads públicos** — los leads del formulario público llegan a `public_leads` vía n8n pero no hay UI en el CRM para verlos y convertirlos. NOTA: esta sección solo la verá María (admin), no el equipo de Estuvisa.
+
+### SEO y mantenimiento
+- [ ] `robots.txt` en `/public/` — sin él los bots indexan todo
+- [ ] Actualizar fechas en `SolicitudForm` cada septiembre (sept-2027, ene-2028, sept-2028)
+- [ ] Actualizar estadísticas hardcodeadas en `LandingPage` cuando cambien los datos
+
+### Reset de contraseña (documentado)
+Para resetear la contraseña de admin@queestudiar.es desde Supabase SQL Editor:
+```sql
+UPDATE auth.users
+SET encrypted_password = crypt('nueva_contraseña', gen_salt('bf')),
+    email_confirmed_at = now()
+WHERE email = 'admin@queestudiar.es';
+```
 
 ## Cómo deployar
 

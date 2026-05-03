@@ -6,3 +6,17 @@ dist/
 build/
 .DS_Store
 *.log
+workflow-*.json
+
+# Archivos locales que no van al repo
+*.pdf
+*.zip
+*.py
+brief-sesion-*.md
+.claude/
+RUCT/
+urls_solicitud_resultados.json
+App.jsx
+App_NUEVO.jsx
+App_public.jsx
+queestudiar-proyecto/

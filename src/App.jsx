@@ -212,6 +212,17 @@ async function adminDeleteUser(userId) {
 }
 
 
+async function notifyStudent(payload) {
+  // Fire-and-forget — los errores no bloquean la operación principal
+  try {
+    await fetch(`${SUPABASE_URL}/functions/v1/notify-student`, {
+      method: "POST",
+      headers: { ...getAuthHeaders(), "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+  } catch { /* silencioso */ }
+}
+
 // ─── STYLES ─────────────────────────────────────────────────────────────────
 const css = `
   @import url('https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,700&family=Work+Sans:wght@400;600;700&family=DM+Mono:wght@300;400;500&display=swap');
@@ -382,6 +393,10 @@ const css = `
 function formatDate(d) {
   if (!d) return "—";
   return new Date(d).toLocaleDateString("es-ES", { day: "2-digit", month: "short", year: "numeric" });
+}
+function daysSince(dateStr) {
+  if (!dateStr) return null;
+  return Math.floor((Date.now() - new Date(dateStr).getTime()) / (1000 * 60 * 60 * 24));
 }
 
 function getOriginLabel(origin) {
@@ -1129,10 +1144,54 @@ function StudentDetail({ student, onStatusChange, onNotesSave, currentUser, onAs
   async function patchDocument(docId, data) {
     await patch("student_documents", docId, { ...data, updated_at: new Date().toISOString() });
     setDocuments(prev => prev.map(d => d.id === docId ? { ...d, ...data } : d));
+
+    if (data.status && student.email && student.client_user_id) {
+      const doc = documents.find(d => d.id === docId);
+      notifyStudent({
+        type: "doc_status_changed",
+        student_email: student.email,
+        student_name: student.full_name,
+        document_type: doc?.document_type ?? "Documento",
+        new_status: data.status,
+        doc_notes: data.notes ?? doc?.notes ?? "",
+      });
+    }
   }
 
   const [inviting, setInviting] = useState(false);
   const [clientUserId, setClientUserId] = useState(student.client_user_id || null);
+  const [teamComment, setTeamComment] = useState("");
+  const [sendingComment, setSendingComment] = useState(false);
+
+  async function sendTeamComment() {
+    const msg = teamComment.trim();
+    if (!msg || !student.client_user_id) return;
+    setSendingComment(true);
+    try {
+      await fetch(`${SUPABASE_URL}/rest/v1/document_comments`, {
+        method: "POST",
+        headers: { ...getAuthHeaders(), "Content-Type": "application/json", Prefer: "return=minimal" },
+        body: JSON.stringify({
+          student_document_id: null,
+          author_id: currentUser.id,
+          author_type: "team",
+          message: msg,
+          student_id: student.id,
+        }),
+      });
+      setTeamComment("");
+      notifyStudent({
+        type: "team_comment",
+        student_email: student.email,
+        student_name: student.full_name,
+        comment_message: msg,
+      });
+      alert("✅ Mensaje enviado al estudiante");
+    } catch (e) {
+      alert(`Error: ${e.message}`);
+    }
+    setSendingComment(false);
+  }
 
   async function sendPasswordRecovery(email) {
     const res = await fetch(`${SUPABASE_URL}/auth/v1/recover`, {
@@ -1448,6 +1507,33 @@ function StudentDetail({ student, onStatusChange, onNotesSave, currentUser, onAs
                 })}
               </div>
             </>
+          )}
+
+          {/* Caja de mensaje al estudiante */}
+          {student.client_user_id && (
+            <div style={{ marginTop: 20, padding: "14px 16px", background: "var(--azure-light)", border: "1px solid #2563eb33", borderRadius: 8 }}>
+              <div style={{ fontSize: 11, fontFamily: "var(--mono)", color: "var(--accent)", marginBottom: 8, fontWeight: 600 }}>
+                ✉️ Enviar mensaje al estudiante
+              </div>
+              <textarea
+                value={teamComment}
+                onChange={e => setTeamComment(e.target.value)}
+                placeholder="Escribe un mensaje para el estudiante..."
+                rows={3}
+                style={{ width: "100%", padding: "8px 10px", background: "#fff", border: "1px solid var(--border)", borderRadius: 6, fontFamily: "var(--font)", fontSize: 13, color: "var(--text)", resize: "vertical", outline: "none" }}
+              />
+              <button
+                onClick={sendTeamComment}
+                disabled={sendingComment || !teamComment.trim()}
+                className="save-btn"
+                style={{ marginTop: 8, fontSize: 12 }}
+              >
+                {sendingComment ? "Enviando..." : "Enviar mensaje →"}
+              </button>
+              <div style={{ fontSize: 10, color: "var(--muted)", fontFamily: "var(--mono)", marginTop: 6 }}>
+                El estudiante recibirá este mensaje por email y podrá verlo en su portal.
+              </div>
+            </div>
           )}
         </div>
       )}
@@ -2208,6 +2294,7 @@ function PortalCliente({ currentUser, onLogout }) {
   const [editContent, setEditContent] = useState({});
   const [savingDoc, setSavingDoc] = useState(null);
   const [newComment, setNewComment] = useState({});
+  const [portalTab, setPortalTab] = useState("programas");
 
   useEffect(() => { loadPortalData(); }, []);
 
@@ -2296,30 +2383,32 @@ function PortalCliente({ currentUser, onLogout }) {
   const isMaster = levelLow.includes("master");
   const isFP = levelLow.includes("fp");
   const isNonEU = lead.student_origin === "extracomunitario";
-  const proximaConv = isMaster ? "Sep 2026 / Ene 2027" : "Sep 2026";
+  const nextDeadline = convocatorias.find(c => !c.past && !c.texto.toLowerCase().includes("inicio"));
+  const proximaConv = nextDeadline ? nextDeadline.fecha : (convocatorias.find(c => !c.past)?.fecha || "—");
+  const proximaConvLabel = nextDeadline ? nextDeadline.texto : "Próxima fecha";
   const statusCfg = STATUS_CONFIG[lead.status] || STATUS_CONFIG.nuevo;
 
   const trackerSteps = [
-    { label: "Perfil", done: true },
-    { label: "Programas", done: matches.length > 0 },
-    { label: "Documentos", done: documents.length > 0 },
-    { label: "Solicitudes", done: hasSolicitud },
+    { key: "perfil",      label: "Perfil",      done: true },
+    { key: "programas",   label: "Programas",   done: matches.length > 0 },
+    { key: "documentos",  label: "Documentos",  done: documents.length > 0 },
+    { key: "solicitudes", label: "Solicitudes", done: hasSolicitud },
   ];
 
   const convocatorias = isMaster ? [
-    { texto: "Plazo general universidades públicas", fecha: "Febrero – Abril 2026", past: false },
-    { texto: "Plazo universidades privadas", fecha: "Abierto todo el año", past: false },
-    { texto: "Másters con nota de corte", fecha: "Enero – Marzo 2026", past: true },
-    { texto: "Inicio de clases", fecha: "Septiembre 2026 / Enero 2027", past: false },
+    { texto: "Másters con nota de corte",             fecha: "Enero – Marzo 2026",          past: true  },
+    { texto: "Plazo general universidades públicas",   fecha: "Febrero – Abril 2026",        past: true  },
+    { texto: "Plazo universidades privadas",           fecha: "Abierto todo el año",          past: false },
+    { texto: "Inicio de clases",                       fecha: "Septiembre 2026 / Enero 2027", past: false },
   ] : isFP ? [
-    { texto: "Convocatoria FP pública", fecha: "Junio 2026", past: false },
-    { texto: "Centros privados", fecha: "Matrícula abierta", past: false },
-    { texto: "Inicio de clases", fecha: "Septiembre 2026", past: false },
+    { texto: "Convocatoria FP pública",                fecha: "Junio 2026",                  past: false },
+    { texto: "Centros privados",                       fecha: "Matrícula abierta",            past: false },
+    { texto: "Inicio de clases",                       fecha: "Septiembre 2026",              past: false },
   ] : [
-    { texto: "Prueba de acceso (PCE/UNED)", fecha: "Convocatoria mayo 2026", past: false },
-    { texto: "Preinscripción universidades públicas", fecha: "Junio – Julio 2026", past: false },
-    { texto: "Plazo universidades privadas", fecha: "Abierto todo el año", past: false },
-    { texto: "Inicio de clases", fecha: "Septiembre 2026", past: false },
+    { texto: "Prueba de acceso (PCE/UNED)",            fecha: "Convocatoria mayo 2026",       past: false },
+    { texto: "Preinscripción universidades públicas",  fecha: "Junio – Julio 2026",           past: false },
+    { texto: "Plazo universidades privadas",           fecha: "Abierto todo el año",           past: false },
+    { texto: "Inicio de clases",                       fecha: "Septiembre 2026",              past: false },
   ];
 
   return (
@@ -2350,24 +2439,36 @@ function PortalCliente({ currentUser, onLogout }) {
           </span>
         </div>
 
-        {/* TRACKER DE PROGRESO */}
+        {/* TRACKER DE PROGRESO — navegable como tabs */}
         <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 8, padding: "16px 20px", marginBottom: 24 }}>
           <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", position: "relative" }}>
             <div style={{ position: "absolute", top: 14, left: "12.5%", right: "12.5%", height: 2, background: "var(--border)", zIndex: 0 }} />
             {trackerSteps.map((step, i) => {
+              const isActive = portalTab === step.key;
               const isCurrent = !step.done && (i === 0 || trackerSteps[i - 1].done);
               return (
-                <div key={step.label} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 6, zIndex: 1 }}>
+                <div
+                  key={step.key}
+                  onClick={() => setPortalTab(step.key)}
+                  style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 6, zIndex: 1, cursor: "pointer" }}
+                >
                   <div style={{
                     width: 28, height: 28, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center",
                     fontSize: 11, fontWeight: 700, fontFamily: "var(--mono)",
-                    background: step.done ? "var(--accent)" : "var(--surface)",
-                    color: step.done ? "#fff" : isCurrent ? "var(--accent)" : "var(--muted)",
-                    border: step.done ? "2px solid var(--accent)" : isCurrent ? "2px solid var(--accent)" : "2px solid var(--border)",
+                    background: step.done ? "var(--accent)" : isActive ? "#ede9fe" : "var(--surface)",
+                    color: step.done ? "#fff" : isActive ? "#7c3aed" : isCurrent ? "var(--accent)" : "var(--muted)",
+                    border: isActive ? "2px solid #7c3aed" : step.done ? "2px solid var(--accent)" : isCurrent ? "2px solid var(--accent)" : "2px solid var(--border)",
+                    boxShadow: isActive ? "0 0 0 3px #7c3aed22" : "none",
+                    transition: "all 0.15s",
                   }}>
                     {step.done ? "✓" : i + 1}
                   </div>
-                  <div style={{ fontSize: 9, fontFamily: "var(--mono)", color: step.done ? "var(--accent)" : isCurrent ? "var(--accent)" : "var(--muted)", textAlign: "center", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                  <div style={{
+                    fontSize: 9, fontFamily: "var(--mono)", textAlign: "center",
+                    textTransform: "uppercase", letterSpacing: "0.05em",
+                    color: isActive ? "#7c3aed" : step.done ? "var(--accent)" : isCurrent ? "var(--accent)" : "var(--muted)",
+                    fontWeight: isActive ? 700 : 400,
+                  }}>
                     {step.label}
                   </div>
                 </div>
@@ -2379,12 +2480,12 @@ function PortalCliente({ currentUser, onLogout }) {
         {/* STATS */}
         <div style={{ display: "flex", gap: 12, marginBottom: 24, flexWrap: "wrap" }}>
           {[
-            { label: "Programas recomendados", value: matches.length, color: "var(--accent)", mono: false },
-            { label: "Mis favoritos", value: favoritosCount, color: "var(--accent2)", mono: false },
-            { label: "Documentos aprobados", value: `${docsAprobados} / ${documents.length || "—"}`, color: "#16a34a", mono: true },
-            { label: "Próxima convocatoria", value: proximaConv, color: "var(--text)", mono: true },
-          ].map(({ label, value, color, mono }) => (
-            <div key={label} style={{ flex: "1 1 160px", background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 8, padding: "14px 16px" }}>
+            { label: "Programas recomendados", value: matches.length,                                    color: "var(--accent)",  mono: false, tab: "programas"  },
+            { label: "Mis favoritos",           value: favoritosCount,                                   color: "var(--accent2)", mono: false, tab: "programas"  },
+            { label: "Documentos aprobados",    value: `${docsAprobados} / ${documents.length || "—"}`, color: "#16a34a",        mono: true,  tab: "documentos" },
+            { label: proximaConvLabel,          value: proximaConv,                                      color: "var(--accent)",  mono: true,  tab: "programas"  },
+          ].map(({ label, value, color, mono, tab }) => (
+            <div key={label} onClick={() => tab && setPortalTab(tab)} style={{ flex: "1 1 160px", background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 8, padding: "14px 16px", cursor: tab ? "pointer" : "default" }}>
               <div style={{ fontSize: 22, fontWeight: 700, color, fontFamily: mono ? "var(--mono)" : "var(--display)", lineHeight: 1.2 }}>{value}</div>
               <div style={{ fontSize: 10, color: "var(--muted)", marginTop: 6 }}>{label}</div>
             </div>
@@ -2402,142 +2503,214 @@ function PortalCliente({ currentUser, onLogout }) {
           </div>
         )}
 
-        {/* PROGRAMAS */}
-        <div style={{ marginBottom: 28 }}>
-          <div className="section-title" style={{ marginBottom: 12 }}>Tus programas recomendados</div>
-          {matches.length === 0 ? (
-            <div style={{ background: "var(--surface)", border: "1px dashed var(--border)", borderRadius: 8, padding: 24, textAlign: "center" }}>
-              <div style={{ fontSize: 13, color: "var(--muted)", fontStyle: "italic", lineHeight: 1.7 }}>
-                Estamos seleccionando los mejores programas para tu perfil.
-              </div>
-              <div style={{ fontSize: 12, color: "var(--muted)", fontStyle: "italic", marginTop: 8, lineHeight: 1.7 }}>
-                El equipo de QueEstudiar revisará tu expediente y te notificará pronto.
-              </div>
-            </div>
-          ) : (
-            <div style={{ display: "flex", flexWrap: "wrap", gap: 12 }}>
-              {matches.map(m => {
-                const p = m.programas || {};
-                const isFav = m.cliente_favorito === true;
-                const price = isNonEU && p.precio_extracomunitario_eur != null ? p.precio_extracomunitario_eur : p.precio_anual_eur;
-                return (
-                  <div key={m.id} style={{ flex: "1 1 260px", background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 8, overflow: "hidden" }}>
-                    <div style={{ height: 4, background: isFav ? "var(--accent2)" : "var(--accent)" }} />
-                    <div style={{ padding: "12px 14px" }}>
-                      <div style={{ fontWeight: 700, fontSize: 13, color: "var(--text)", marginBottom: 2, lineHeight: 1.3 }}>{p.nombre || "Programa"}</div>
-                      <div style={{ fontSize: 11, color: "var(--muted)", marginBottom: 10 }}>{p.ciudad || "—"}</div>
-                      <div style={{ borderTop: "1px solid var(--border)", paddingTop: 8, marginBottom: 8 }}>
-                        <div style={{ fontSize: 14, fontWeight: 700, color: "var(--accent)", fontFamily: "var(--display)" }}>
-                          {price != null ? (price === 0 ? "Gratuito" : `${price.toLocaleString("es-ES")}€/año`) : "—"}
-                        </div>
-                      </div>
-                      <div style={{ display: "flex", flexWrap: "wrap", gap: 4, marginBottom: 10 }}>
-                        {p.tipo && <span className="tag highlight">{p.tipo}</span>}
-                        {p.visa_eligible === 'elegible' && <span className="tag" style={{ color: "#16a34a", borderColor: "#16a34a44", background: "#dcfce7" }}>✓ Apto visado</span>}
-                        {p.visa_eligible === 'pendiente' && <span className="tag" style={{ color: "#ca8a04", borderColor: "#ca8a0444", background: "#fef9c3" }}>⏳ Pendiente</span>}
-                      </div>
-                      <div style={{ display: "flex", gap: 6 }}>
-                        <button
-                          onClick={() => toggleFavorito(m.id, m.cliente_favorito)}
-                          style={{ flex: 1, fontSize: 11, padding: "5px 8px", borderRadius: 5, cursor: "pointer", border: `1px solid ${isFav ? "var(--accent)" : "var(--border)"}`, background: isFav ? "var(--accent)" : "var(--surface)", color: isFav ? "#fff" : "var(--muted)" }}
-                        >
-                          {isFav ? "👍 Me interesa" : "Marcar interés"}
-                        </button>
-                        {p.url_solicitud && p.url_solicitud_status !== 'rota' && (
-                          <a href={p.url_solicitud} target="_blank" rel="noreferrer" className="url-btn url-ok" style={{ fontSize: 11 }}>↗ Ver</a>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </div>
+        {/* ── SECCIÓN ACTIVA SEGÚN TAB ── */}
 
-        {/* PRÓXIMAS CONVOCATORIAS */}
-        <div style={{ marginBottom: 28 }}>
-          <div className="section-title" style={{ marginBottom: 4 }}>Próximas convocatorias</div>
-          <div style={{ fontSize: 12, color: "var(--muted)", marginBottom: 12 }}>Fechas clave para los programas de tu perfil</div>
-          <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-            {convocatorias.map((c, i) => (
-              <div key={i} style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 6, padding: "10px 14px", display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12 }}>
-                <span style={{ fontSize: 12, color: "var(--text)" }}>{c.texto}</span>
-                <span style={{ fontSize: 11, color: c.past ? "var(--muted)" : "var(--accent)", fontFamily: "var(--mono)", whiteSpace: "nowrap" }}>{c.fecha}</span>
+        {/* TAB: PERFIL */}
+        {portalTab === "perfil" && (
+          <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 10, padding: "20px 24px", marginBottom: 28 }}>
+            <div className="section-title" style={{ marginBottom: 16 }}>Tu perfil académico</div>
+            {[
+              { label: "Nombre",              value: lead.full_name },
+              { label: "País de origen",      value: lead.country_of_origin },
+              { label: "Nivel de estudios",   value: lead.education_level },
+              { label: "Área de interés",     value: lead.study_area },
+              { label: "Ciudades preferidas", value: Array.isArray(lead.preferred_cities) ? lead.preferred_cities.join(", ") : lead.preferred_cities },
+              { label: "Tipo de estudiante",  value: lead.student_origin === "extracomunitario" ? "Extracomunitario" : lead.student_origin === "latam_convenio" ? "LATAM · Convenio" : lead.student_origin },
+            ].filter(r => r.value).map(({ label, value }) => (
+              <div key={label} style={{ display: "flex", gap: 16, padding: "8px 0", borderBottom: "1px solid var(--border)" }}>
+                <span style={{ fontSize: 11, color: "var(--muted)", fontFamily: "var(--mono)", minWidth: 140 }}>{label}</span>
+                <span style={{ fontSize: 12, color: "var(--text)", fontFamily: "var(--mono)" }}>{value}</span>
               </div>
             ))}
-          </div>
-        </div>
-
-        {/* DOCUMENTACIÓN */}
-        <div>
-          <div className="section-title" style={{ marginBottom: 12 }}>Mi documentación</div>
-          {documents.length === 0 ? (
-            <div style={{ background: "var(--surface)", border: "1px dashed var(--border)", borderRadius: 8, padding: 24, textAlign: "center" }}>
-              <div style={{ fontSize: 13, color: "var(--muted)", fontStyle: "italic", lineHeight: 1.7 }}>
-                Tu checklist de documentos está en preparación.
-              </div>
-              <div style={{ fontSize: 12, color: "var(--muted)", fontStyle: "italic", marginTop: 8, lineHeight: 1.7 }}>
-                Mientras tanto, puedes ir preparando: pasaporte vigente, título académico, certificado de notas y carta de motivación.
-              </div>
+            <div style={{ marginTop: 14, fontSize: 11, color: "var(--muted)", fontStyle: "italic" }}>
+              Para modificar tu perfil, contacta con tu asesor en hola@queestudiar.es
             </div>
-          ) : (
-            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-              {documents.map(doc => {
-                const dsc = DOC_STATUS_CONFIG[doc.status] || DOC_STATUS_CONFIG.pendiente;
-                const isOpen = activeDocId === doc.id;
-                const docComments = comments[doc.id] || [];
-                return (
-                  <div key={doc.id} style={{ background: "var(--surface)", border: `1px solid ${isOpen ? "var(--accent)" : "var(--border)"}`, borderRadius: 8, overflow: "hidden" }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 14px", cursor: "pointer" }} onClick={() => toggleDoc(doc.id)}>
-                      <span style={{ fontSize: 16 }}>{dsc.emoji}</span>
-                      <span style={{ flex: 1, fontFamily: "var(--mono)", fontSize: 13 }}>{doc.document_type}</span>
-                      <span style={{ fontSize: 11, color: dsc.color, fontFamily: "var(--mono)" }}>{dsc.label}</span>
-                      <span style={{ fontSize: 11, color: "var(--muted)" }}>{isOpen ? "▲" : "▼"}</span>
-                    </div>
-                    {isOpen && (
-                      <div style={{ padding: "0 14px 14px", borderTop: "1px solid var(--border)" }}>
-                        {doc.notes && <div style={{ fontSize: 11, color: "#ca8a04", fontFamily: "var(--mono)", margin: "10px 0 6px" }}>ℹ {doc.notes}</div>}
-                        <textarea
-                          style={{ width: "100%", minHeight: 120, padding: 10, background: "var(--bg)", border: "1px solid var(--border)", borderRadius: 6, color: "var(--text)", fontFamily: "var(--mono)", fontSize: 12, resize: "vertical", marginTop: 8, outline: "none" }}
-                          value={editContent[doc.id] || ""}
-                          onChange={e => setEditContent(prev => ({ ...prev, [doc.id]: e.target.value }))}
-                          placeholder="Escribe o pega el contenido del documento aquí..."
-                        />
-                        <button className="save-btn" style={{ marginTop: 8 }} onClick={() => saveDocContent(doc.id)} disabled={savingDoc === doc.id}>
-                          {savingDoc === doc.id ? "Guardando..." : "Guardar y enviar a revisión"}
-                        </button>
-                        {docComments.length > 0 && (
-                          <div style={{ marginTop: 12 }}>
-                            <div style={{ fontSize: 11, color: "var(--muted)", fontFamily: "var(--mono)", marginBottom: 6 }}>Comentarios del equipo:</div>
-                            {docComments.map(c => (
-                              <div key={c.id} style={{ padding: "6px 10px", background: c.author_type === 'team' ? "#dbeafe" : "#f8fafc", border: "1px solid var(--border)", borderRadius: 6, marginBottom: 4, fontSize: 12, fontFamily: "var(--mono)" }}>
-                                <span style={{ color: c.author_type === 'team' ? "var(--accent)" : "var(--accent2)" }}>{c.author_type === 'team' ? "Asesor" : "Tú"}</span>
-                                <span style={{ color: "var(--muted)", marginLeft: 8, fontSize: 10 }}>{formatDate(c.created_at)}</span>
-                                <div style={{ marginTop: 4, color: "var(--text)" }}>{c.message}</div>
-                              </div>
-                            ))}
+          </div>
+        )}
+
+        {/* TAB: PROGRAMAS */}
+        {portalTab === "programas" && (
+          <div>
+            <div style={{ marginBottom: 28 }}>
+              <div className="section-title" style={{ marginBottom: 12 }}>Tus programas recomendados</div>
+              {matches.length === 0 ? (
+                <div style={{ background: "var(--surface)", border: "1px dashed var(--border)", borderRadius: 8, padding: 24, textAlign: "center" }}>
+                  <div style={{ fontSize: 13, color: "var(--muted)", fontStyle: "italic", lineHeight: 1.7 }}>
+                    Estamos seleccionando los mejores programas para tu perfil.
+                  </div>
+                  <div style={{ fontSize: 12, color: "var(--muted)", fontStyle: "italic", marginTop: 8, lineHeight: 1.7 }}>
+                    El equipo de QueEstudiar revisará tu expediente y te notificará pronto.
+                  </div>
+                </div>
+              ) : (
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 12 }}>
+                  {matches.map(m => {
+                    const p = m.programas || {};
+                    const isFav = m.cliente_favorito === true;
+                    const price = isNonEU && p.precio_extracomunitario_eur != null ? p.precio_extracomunitario_eur : p.precio_anual_eur;
+                    return (
+                      <div key={m.id} style={{ flex: "1 1 260px", background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 8, overflow: "hidden" }}>
+                        <div style={{ height: 4, background: isFav ? "var(--accent2)" : "var(--accent)" }} />
+                        <div style={{ padding: "12px 14px" }}>
+                          <div style={{ fontWeight: 700, fontSize: 13, color: "var(--text)", marginBottom: 2, lineHeight: 1.3 }}>{p.nombre || "Programa"}</div>
+                          <div style={{ fontSize: 11, color: "var(--muted)", marginBottom: 10 }}>{p.ciudad || "—"}</div>
+                          <div style={{ borderTop: "1px solid var(--border)", paddingTop: 8, marginBottom: 8 }}>
+                            <div style={{ fontSize: 14, fontWeight: 700, color: "var(--accent)", fontFamily: "var(--display)" }}>
+                              {price != null ? (price === 0 ? "Gratuito" : `${price.toLocaleString("es-ES")}€/año`) : "—"}
+                            </div>
                           </div>
-                        )}
-                        <div style={{ display: "flex", gap: 6, marginTop: 8 }}>
-                          <input
-                            className="url-edit-input"
-                            style={{ flex: 1 }}
-                            value={newComment[doc.id] || ""}
-                            onChange={e => setNewComment(prev => ({ ...prev, [doc.id]: e.target.value }))}
-                            placeholder="Responder al equipo..."
-                            onKeyDown={e => e.key === "Enter" && sendComment(doc.id)}
-                          />
-                          <button className="url-edit-btn save" onClick={() => sendComment(doc.id)}>Enviar</button>
+                          <div style={{ display: "flex", flexWrap: "wrap", gap: 4, marginBottom: 10 }}>
+                            {p.tipo && <span className="tag highlight">{p.tipo}</span>}
+                            {p.visa_eligible === 'elegible' && <span className="tag" style={{ color: "#16a34a", borderColor: "#16a34a44", background: "#dcfce7" }}>✓ Apto visado</span>}
+                            {p.visa_eligible === 'pendiente' && <span className="tag" style={{ color: "#ca8a04", borderColor: "#ca8a0444", background: "#fef9c3" }}>⏳ Pendiente</span>}
+                          </div>
+                          <div style={{ display: "flex", gap: 6 }}>
+                            <button
+                              onClick={() => toggleFavorito(m.id, m.cliente_favorito)}
+                              style={{ flex: 1, fontSize: 11, padding: "5px 8px", borderRadius: 5, cursor: "pointer", border: `1px solid ${isFav ? "var(--accent)" : "var(--border)"}`, background: isFav ? "var(--accent)" : "var(--surface)", color: isFav ? "#fff" : "var(--muted)" }}
+                            >
+                              {isFav ? "👍 Me interesa" : "Marcar interés"}
+                            </button>
+                            {p.url_solicitud && p.url_solicitud_status !== 'rota' && (
+                              <a href={p.url_solicitud} target="_blank" rel="noreferrer" className="url-btn url-ok" style={{ fontSize: 11 }}>↗ Ver</a>
+                            )}
+                          </div>
                         </div>
                       </div>
-                    )}
-                  </div>
-                );
-              })}
+                    );
+                  })}
+                </div>
+              )}
             </div>
-          )}
-        </div>
+
+            {/* Próximas convocatorias — solo en tab Programas */}
+            <div style={{ marginBottom: 28 }}>
+              <div className="section-title" style={{ marginBottom: 4 }}>Próximas convocatorias</div>
+              <div style={{ fontSize: 12, color: "var(--muted)", marginBottom: 12 }}>Fechas clave para los programas de tu perfil</div>
+              <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                {convocatorias.map((c, i) => (
+                  <div key={i} style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 6, padding: "10px 14px", display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, opacity: c.past ? 0.5 : 1 }}>
+                    <span style={{ fontSize: 12, color: c.past ? "var(--muted)" : "var(--text)" }}>{c.past ? "✓ " : ""}{c.texto}</span>
+                    <span style={{ fontSize: 11, color: c.past ? "var(--muted)" : "var(--accent)", fontFamily: "var(--mono)", whiteSpace: "nowrap", textDecoration: c.past ? "line-through" : "none" }}>{c.fecha}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* TAB: DOCUMENTOS */}
+        {portalTab === "documentos" && (
+          <div>
+            <div className="section-title" style={{ marginBottom: 12 }}>Mi documentación</div>
+            {documents.length === 0 ? (
+              <div style={{ background: "var(--surface)", border: "1px dashed var(--border)", borderRadius: 8, padding: 24, textAlign: "center" }}>
+                <div style={{ fontSize: 13, color: "var(--muted)", fontStyle: "italic", lineHeight: 1.7 }}>
+                  Tu checklist de documentos está en preparación.
+                </div>
+                <div style={{ fontSize: 12, color: "var(--muted)", fontStyle: "italic", marginTop: 8, lineHeight: 1.7 }}>
+                  Mientras tanto, puedes ir preparando: pasaporte vigente, título académico, certificado de notas y carta de motivación.
+                </div>
+              </div>
+            ) : (
+              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                {documents.map(doc => {
+                  const dsc = DOC_STATUS_CONFIG[doc.status] || DOC_STATUS_CONFIG.pendiente;
+                  const isOpen = activeDocId === doc.id;
+                  const docComments = comments[doc.id] || [];
+                  return (
+                    <div key={doc.id} style={{ background: "var(--surface)", border: `1px solid ${isOpen ? "var(--accent)" : "var(--border)"}`, borderRadius: 8, overflow: "hidden" }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 14px", cursor: "pointer" }} onClick={() => toggleDoc(doc.id)}>
+                        <span style={{ fontSize: 16 }}>{dsc.emoji}</span>
+                        <span style={{ flex: 1, fontFamily: "var(--mono)", fontSize: 13 }}>{doc.document_type}</span>
+                        <span style={{ fontSize: 11, color: dsc.color, fontFamily: "var(--mono)" }}>{dsc.label}</span>
+                        <span style={{ fontSize: 11, color: "var(--muted)" }}>{isOpen ? "▲" : "▼"}</span>
+                      </div>
+                      {isOpen && (
+                        <div style={{ padding: "0 14px 14px", borderTop: "1px solid var(--border)" }}>
+                          {doc.notes && <div style={{ fontSize: 11, color: "#ca8a04", fontFamily: "var(--mono)", margin: "10px 0 6px" }}>ℹ {doc.notes}</div>}
+                          <textarea
+                            style={{ width: "100%", minHeight: 120, padding: 10, background: "var(--bg)", border: "1px solid var(--border)", borderRadius: 6, color: "var(--text)", fontFamily: "var(--mono)", fontSize: 12, resize: "vertical", marginTop: 8, outline: "none" }}
+                            value={editContent[doc.id] || ""}
+                            onChange={e => setEditContent(prev => ({ ...prev, [doc.id]: e.target.value }))}
+                            placeholder="Escribe o pega el contenido del documento aquí..."
+                          />
+                          <button className="save-btn" style={{ marginTop: 8 }} onClick={() => saveDocContent(doc.id)} disabled={savingDoc === doc.id}>
+                            {savingDoc === doc.id ? "Guardando..." : "Guardar y enviar a revisión"}
+                          </button>
+                          {docComments.length > 0 && (
+                            <div style={{ marginTop: 12 }}>
+                              <div style={{ fontSize: 11, color: "var(--muted)", fontFamily: "var(--mono)", marginBottom: 6 }}>Comentarios del equipo:</div>
+                              {docComments.map(c => (
+                                <div key={c.id} style={{ padding: "6px 10px", background: c.author_type === 'team' ? "#dbeafe" : "#f8fafc", border: "1px solid var(--border)", borderRadius: 6, marginBottom: 4, fontSize: 12, fontFamily: "var(--mono)" }}>
+                                  <span style={{ color: c.author_type === 'team' ? "var(--accent)" : "var(--accent2)" }}>{c.author_type === 'team' ? "Asesor" : "Tú"}</span>
+                                  <span style={{ color: "var(--muted)", marginLeft: 8, fontSize: 10 }}>{formatDate(c.created_at)}</span>
+                                  <div style={{ marginTop: 4, color: "var(--text)" }}>{c.message}</div>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                          <div style={{ display: "flex", gap: 6, marginTop: 8 }}>
+                            <input
+                              className="url-edit-input"
+                              style={{ flex: 1 }}
+                              value={newComment[doc.id] || ""}
+                              onChange={e => setNewComment(prev => ({ ...prev, [doc.id]: e.target.value }))}
+                              placeholder="Responder al equipo..."
+                              onKeyDown={e => e.key === "Enter" && sendComment(doc.id)}
+                            />
+                            <button className="url-edit-btn save" onClick={() => sendComment(doc.id)}>Enviar</button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* TAB: SOLICITUDES */}
+        {portalTab === "solicitudes" && (
+          <div>
+            <div className="section-title" style={{ marginBottom: 12 }}>Mis solicitudes activas</div>
+            {(() => {
+              const solicitudes = matches.filter(m => m.match_stage === 'solicitud');
+              return solicitudes.length === 0 ? (
+                <div style={{ background: "var(--surface)", border: "1px dashed var(--border)", borderRadius: 8, padding: 32, textAlign: "center" }}>
+                  <div style={{ fontSize: 32, marginBottom: 12 }}>📨</div>
+                  <div style={{ fontSize: 13, color: "var(--muted)", fontStyle: "italic", lineHeight: 1.7 }}>
+                    Aún no hay solicitudes activas.
+                  </div>
+                  <div style={{ fontSize: 12, color: "var(--muted)", marginTop: 8, lineHeight: 1.7 }}>
+                    Cuando el equipo marque un programa como "en solicitud", aparecerá aquí con el enlace directo para aplicar.
+                  </div>
+                </div>
+              ) : (
+                <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                  {solicitudes.map(m => {
+                    const p = m.programas || {};
+                    return (
+                      <div key={m.id} style={{ background: "var(--surface)", border: "1px solid #16a34a44", borderRadius: 8, padding: "14px 16px", display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12 }}>
+                        <div>
+                          <div style={{ fontSize: 13, fontWeight: 700, color: "var(--text)", marginBottom: 2 }}>{p.nombre || "Programa"}</div>
+                          <div style={{ fontSize: 11, color: "var(--muted)", fontFamily: "var(--mono)" }}>{p.ciudad || "—"}</div>
+                        </div>
+                        {p.url_solicitud && p.url_solicitud_status !== 'rota' && (
+                          <a href={p.url_solicitud} target="_blank" rel="noreferrer"
+                            style={{ fontSize: 11, padding: "6px 14px", borderRadius: 6, background: "#16a34a", color: "#fff", textDecoration: "none", fontFamily: "var(--mono)", whiteSpace: "nowrap" }}>
+                            ↗ Solicitar plaza
+                          </a>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              );
+            })()}
+          </div>
+        )}
 
       </div>
     </div>
@@ -2770,6 +2943,8 @@ export default function App() {
   const [feedbackPrompt, setFeedbackPrompt] = useState(null);
   const [teamMembers, setTeamMembers] = useState(TEAM_FALLBACK);
   const [docsPendientes, setDocsPendientes] = useState(null);
+  const [matchCounts, setMatchCounts] = useState({});
+  const [matchCountsLoaded, setMatchCountsLoaded] = useState(false);
 
   // Hash routing
   useEffect(() => {
@@ -2828,13 +3003,27 @@ export default function App() {
     } catch { setDocsPendientes(0); }
   }
 
+  async function loadMatchCounts() {
+    try {
+      const res = await fetch(
+        `${SUPABASE_URL}/rest/v1/matches?select=student_id`,
+        { headers: getAuthHeaders() }
+      );
+      const data = await res.json();
+      if (!Array.isArray(data)) return;
+      const counts = data.reduce((acc, m) => {
+        if (m.student_id) acc[m.student_id] = (acc[m.student_id] || 0) + 1;
+        return acc;
+      }, {});
+      setMatchCounts(counts);
+      setMatchCountsLoaded(true);
+    } catch { /* silencioso */ }
+  }
+
   async function loadStudents() {
     setLoading(true);
     try {
-      let url = `${SUPABASE_URL}/rest/v1/student_leads?select=*&order=created_at.desc`;
-      if (user.role === "team") {
-        url += `&assigned_to=eq.${encodeURIComponent(user.email)}`;
-      }
+      const url = `${SUPABASE_URL}/rest/v1/student_leads?select=*&order=created_at.desc`;
       const res = await fetch(url, { headers: getAuthHeaders() });
       const data = await res.json();
       const list = Array.isArray(data) ? data : [];
@@ -2843,6 +3032,7 @@ export default function App() {
     } catch { setStudents([]); }
     setLoading(false);
     loadDocsPendientes();
+    loadMatchCounts();
   }
 
   function handleLogin(u) { setUser(u); }
@@ -2935,7 +3125,7 @@ export default function App() {
               }}>{label}</button>
             ))}
           </div>
-          <button className="btn-ghost" onClick={loadStudents}>↻ Actualizar</button>
+          <button className="btn-ghost" onClick={() => { loadStudents(); loadMatchCounts(); }}>↻ Actualizar</button>
           <button className="btn-ghost" onClick={() => window.location.href = "https://queestudiar.es"}>Web pública</button>
           <button className="btn-ghost" onClick={handleLogout}>Salir</button>
         </div>
@@ -2973,14 +3163,50 @@ export default function App() {
                 ? <div className="loading" style={{ height: 200 }}><div className="spinner" /> Cargando...</div>
                 : filtered.length === 0
                   ? <div className="empty" style={{ height: 200 }}><div className="empty-icon">◆</div><div className="empty-text">Sin estudiantes{search ? " con ese filtro" : " aún"}</div></div>
-                  : filtered.map(s => { const sc = STATUS_CONFIG[s.status || "nuevo"]; return (
-                    <div key={s.id} className={`student-item ${selected?.id === s.id ? "active" : ""}`} onClick={() => setSelected(s)}>
-                      <div className="student-name">{s.full_name || "Sin nombre"}</div>
-                      <div className="student-meta">{s.email || "—"} · {s.country_of_origin || "—"}</div>
-                      <div className="match-count">{(s.desired_program_type || s.education_level) ? `${s.desired_program_type || s.education_level} · ` : ""}{formatDate(s.created_at)}</div>
-                      <div className="student-status" style={{ color: sc.color, background: sc.bg }}>{sc.label}</div>
-                    </div>
-                  );})}
+                  : filtered.map(s => {
+                    const sc = STATUS_CONFIG[s.status || "nuevo"];
+                    const nMatches = matchCountsLoaded ? (matchCounts[s.id] || 0) : null;
+                    const dias = daysSince(s.created_at);
+                    const isStale = (s.status === "nuevo" || !s.status) && dias !== null && dias > 14;
+                    const hasPortal = !!s.client_user_id;
+                    const asesorName = TEAM_FALLBACK.find(t => t.email === s.assigned_to)?.name;
+                    return (
+                      <div key={s.id} className={`student-item ${selected?.id === s.id ? "active" : ""}`} onClick={() => setSelected(s)}>
+                        {/* Fila 1: nombre + indicadores */}
+                        <div style={{ display: "flex", alignItems: "center", gap: 5, marginBottom: 2 }}>
+                          <div className="student-name" style={{ flex: 1 }}>{s.full_name || "Sin nombre"}</div>
+                          {hasPortal && <span title="Con acceso al portal" style={{ fontSize: 10 }}>🔑</span>}
+                          {isStale && (
+                            <span title={`${dias} días sin avanzar`} style={{ fontSize: 9, padding: "1px 5px", borderRadius: 8, background: "#fef9c3", color: "#ca8a04", fontFamily: "var(--mono)", whiteSpace: "nowrap" }}>
+                              {dias}d
+                            </span>
+                          )}
+                        </div>
+                        {/* Fila 2: email · país */}
+                        <div className="student-meta">{s.email || "—"} · {s.country_of_origin || "—"}</div>
+                        {/* Fila 3: tipo de estudio · asesor */}
+                        <div className="match-count">
+                          {(s.desired_program_type || s.education_level) ? `${s.desired_program_type || s.education_level}` : "Tipo no definido"}
+                          {asesorName ? ` · ${asesorName}` : ""}
+                        </div>
+                        {/* Fila 4: estado + badge de matches */}
+                        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 4 }}>
+                          <div className="student-status" style={{ color: sc.color, background: sc.bg }}>{sc.label}</div>
+                          {nMatches !== null ? (
+                            <span style={{
+                              fontSize: 9, padding: "1px 6px", borderRadius: 8, fontFamily: "var(--mono)", whiteSpace: "nowrap",
+                              background: nMatches > 0 ? "#dcfce7" : "#fee2e2",
+                              color: nMatches > 0 ? "#16a34a" : "#dc2626",
+                            }}>
+                              {nMatches > 0 ? `${nMatches} prog.` : "Sin matches"}
+                            </span>
+                          ) : (
+                            <span style={{ fontSize: 9, color: "var(--muted)", fontFamily: "var(--mono)" }}>…</span>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
             </div>
           </div>
           {selected

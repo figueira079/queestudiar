@@ -24,6 +24,78 @@ Registra aquí cada cambio significativo: qué se hizo, por qué, y qué podría
 
 ---
 
+## 2026-05-03 — sesion-13: notificaciones email al estudiante — estado documentos, mensajes del equipo, matches nuevos (Resend + Edge Function)
+
+- **Qué**: Notificaciones automáticas por email al estudiante en 3 eventos: cambio de estado de documento, mensaje del equipo, y matches nuevos
+- **Por qué**: El estudiante no sabía cuándo pasaba algo en su expediente — tenía que entrar al portal a comprobarlo
+- **Archivos modificados**: `src/App.jsx`, `supabase/functions/notify-student/index.ts` (nuevo), Supabase SQL
+- **Cambios principales**:
+  - **Edge Function `notify-student`** (nueva, desplegada): 3 templates HTML con el diseño Meridian; detecta tanto llamadas desde App.jsx como Database Webhooks de Supabase; throttle para matches (solo notifica en el 1.º o cada 10 para evitar spam si n8n inserta en bulk)
+  - **`notifyStudent(payload)`** helper global en App.jsx: fire-and-forget — errores no bloquean el flujo del equipo
+  - **Trigger en `patchDocument`**: cuando el equipo cambia el estado de un doc y el estudiante tiene portal activo (`client_user_id`), dispara notificación tipo `doc_status_changed`
+  - **`sendTeamComment()`** en `StudentDetail`: nueva función que inserta en `document_comments` con `author_type: 'team'` y `student_id` (sin FK a doc específico), luego dispara notificación tipo `team_comment`
+  - **UI caja de mensaje**: aparece en la pestaña Documentación de cada expediente cuando el estudiante tiene portal activo; botón deshabilitado si el campo está vacío
+  - **SQL `document_comments`**: `student_document_id` ahora permite NULL (comentarios generales de expediente); nueva columna `student_id UUID` con FK a `student_leads`; política RLS `client_read_own_comments` actualizada para incluir ambos tipos de comentario
+- **Parte E pendiente (manual)**: En Supabase Dashboard → Database → Webhooks → crear hook `notify-on-new-matches` en tabla `matches`, evento INSERT, tipo Edge Function `notify-student`
+- **Podría afectar**: `PortalCliente` tab Documentos — los comentarios de equipo con `author_type: 'team'` ya se renderizan correctamente (misma lógica de sesión anterior)
+- **Verificado**: build limpio (vite build ✓ en 675ms, 0 errores); Edge Function desplegada (status ACTIVE)
+
+---
+
+## 2026-05-02 — sesion-12: RLS y permisos por rol — aislamiento de datos entre roles
+
+- **Qué**: Modelo de permisos correcto para admin/team/cliente en las 5 tablas principales; equipo ve todos los expedientes
+- **Por qué**: La política permisiva `authenticated_rw` dejaba que cualquier estudiante autenticado leyera todos los datos de otros estudiantes vía REST API
+- **Archivos modificados**: Supabase migrations + `src/App.jsx`
+- **Cambios SQL (5 migraciones):**
+  - `student_leads`: eliminadas 3 políticas permisivas → 2 nuevas (`team_all_leads` para admin+team, `client_read_own_lead` para cliente vía `client_user_id`)
+  - `matches`: habilitado RLS + eliminada `authenticated_rw` → 3 nuevas (`team_all_matches`, `client_read_own_matches`, `client_update_own_matches`)
+  - `student_documents`: eliminada `authenticated_full_access` → 3 nuevas (`team_all_docs`, `client_read_own_docs`, `client_update_own_docs`)
+  - `document_comments`: eliminada `authenticated_rw` → 3 nuevas (`team_all_comments`, `client_read_own_comments`, `client_insert_own_comments` — esta última fuerza `author_id = auth.uid()` y `author_type = 'cliente'`)
+  - `programas`: añadida `team_write_programas` (ALL para admin+team) para que los PATCH de visa_eligible/URLs funcionen sin necesidad de service_role key en el frontend
+- **Cambio App.jsx**: eliminado filtro `if (user.role === "team") url += assigned_to=eq...` — el team ahora ve todos los expedientes (controlado por RLS)
+- **Podría afectar**: portal del estudiante (si `user_metadata.role` no es exactamente `'cliente'`, sus matches no cargarán — verificar); funciones n8n no afectadas (usan service_role key que bypasea RLS)
+- **Verificado**: build limpio (vite build ✓ en 673ms, 0 errores); políticas verificadas con `pg_policies`
+
+---
+
+## 2026-05-02 — sesion-11: lista expedientes con badge de matches, alerta inactividad, indicador portal y asesor
+
+- **Qué**: Tres indicadores nuevos en cada item de la lista de estudiantes para priorizar atención de un vistazo
+- **Por qué**: El equipo tenía que abrir cada expediente para saber si tenía matches o llevaba tiempo sin avanzar
+- **Archivos modificados**: `src/App.jsx`
+- **Cambios principales**:
+  - **Estado `matchCounts` / `matchCountsLoaded`**: nueva query ligera a `matches?select=student_id` que construye un mapa `{ student_id: count }` — se carga en paralelo con `loadDocsPendientes` al abrir el panel
+  - **Badge de matches** (fila 4): verde "X prog." si tiene matches, rojo "Sin matches" si tiene 0, "…" mientras carga
+  - **Alerta de inactividad** (fila 1): badge naranja con número de días si el estudiante lleva >14 días en estado `nuevo`
+  - **Indicador portal** (fila 1): icono 🔑 si `client_user_id` no es nulo (tiene acceso activo al portal)
+  - **Nombre asesor** (fila 3): resuelto desde `TEAM_FALLBACK` — muestra "grado · María" en vez de email largo
+  - **Helper `daysSince`**: nueva función global junto a `formatDate`
+  - **Botón ↻ Actualizar**: ahora llama también a `loadMatchCounts()` para refrescar los badges
+- **Podría afectar**: solo la lista de items en la vista Expedientes — sin cambios en `StudentDetail`, portal ni parte pública
+- **Verificado**: build limpio (vite build ✓ en 623ms, 0 errores)
+
+---
+
+## 2026-05-02 — sesion-10: portal tracker navegable como tabs + fix próxima convocatoria muestra plazo inscripción
+
+- **Qué**: Tracker de 4 pasos pasa de decorativo a navegación por pestañas; fix de "Próxima convocatoria" que mostraba inicio de clases en vez del plazo de inscripción más próximo
+- **Por qué**: El portal era scroll plano sin estructura; "Sep 2026" no es accionable para el estudiante; "Feb–Abr 2026" para masters no estaba marcado como pasado
+- **Archivos modificados**: `src/App.jsx`
+- **Cambios principales**:
+  - **Estado `portalTab`**: nuevo `useState("programas")` — el portal abre directamente en la sección de programas
+  - **Tracker interactivo**: clic en cualquier paso cambia la sección activa; paso activo tiene halo purple (#7c3aed) y label en negrita
+  - **Contenido por tabs**: 4 secciones condicionales (Perfil / Programas+Convocatorias / Documentos / Solicitudes) reemplazan el scroll continuo
+  - **Fix `convocatorias`**: "Plazo general universidades públicas Feb–Abr 2026" y "Másters con nota de corte Ene–Mar 2026" ahora con `past: true`; convocatorias pasadas muestran tachado, opacity 0.5 y prefijo "✓"
+  - **Fix `proximaConv`**: lógica dinámica que busca el primer plazo no vencido y sin "Inicio de clases"; label de la tarjeta también es dinámico (`proximaConvLabel`)
+  - **Stats clickables**: tarjetas de stats con `onClick` navegan al tab correcto (Programas/Documentos)
+  - **Tab Perfil**: vista de solo lectura con datos del `lead` (nombre, país, nivel, área, ciudades, origen)
+  - **Tab Solicitudes**: muestra programas en `match_stage === 'solicitud'` con enlace "Solicitar plaza", o estado vacío
+- **Podría afectar**: solo `PortalCliente` — sin cambios en panel admin ni parte pública
+- **Verificado**: build limpio (vite build ✓ en 659ms, 0 errores)
+
+---
+
 ## 2026-04-30 — sesion-9: pulido dashboard — fuente métricas, badges status, fechas pasadas, fix duplicados
 
 - **Qué**: 6 correcciones visuales y de datos en el AdminDashboard tras Sesión 8

@@ -1047,8 +1047,9 @@ function StudentDetail({ student, onStatusChange, onNotesSave, currentUser, onAs
   const [applyingLearning, setApplyingLearning] = useState(false);
   const [documents, setDocuments] = useState([]);
   const [loadingDocs, setLoadingDocs] = useState(false);
+  const [selectedPtype, setSelectedPtype] = useState(null);
   useEffect(() => { setNotes(student.notes || ""); setTab("matches"); setFilterArea("all"); setFilterStage("all"); setUrlLearning(null); loadDocuments(); }, [student.id]);
-  useEffect(() => { loadMatches(); loadRequirements(); }, [student.id]);
+  useEffect(() => { setSelectedPtype(null); loadMatches(); loadRequirements(); }, [student.id]);
 
   async function loadMatches() {
     setLoadingMatches(true);
@@ -1059,24 +1060,28 @@ function StudentDetail({ student, onStatusChange, onNotesSave, currentUser, onAs
     setLoadingMatches(false);
   }
 
-  async function loadRequirements() {
+  const ptypeMap = {
+    "grado": "university_bachelor",
+    "fp_superior": "fp_superior",
+    "master": "university_master",
+    "doctorado": "university_master",
+  };
+  const ptypeMapLegacy = {
+    "bachillerato": "university_bachelor",
+    "fp_superior": "fp_superior",
+    "grado": "university_master",
+    "master": "university_master",
+  };
+  const ptypeAuto = ptypeMap[student.desired_program_type] || ptypeMapLegacy[student.education_level] || "university_bachelor";
+  const ptype = selectedPtype || ptypeAuto;
+
+  async function loadRequirements(ptypeOverride) {
     try {
-      const ptypeMap = {
-        "grado": "university_bachelor",
-        "fp_superior": "fp_superior",
-        "master": "university_master",
-        "doctorado": "university_master",
-      };
-      const ptypeMapLegacy = {
-        "bachillerato": "university_bachelor",
-        "fp_superior": "fp_superior",
-        "grado": "university_master",
-        "master": "university_master",
-      };
-      const ptype = ptypeMap[student.desired_program_type] || ptypeMapLegacy[student.education_level] || "university_bachelor";
+      const ptypeToUse = ptypeOverride || selectedPtype || ptypeAuto;
       const origin = student.student_origin || "extracomunitario";
-      const reqs = await query("admission_requirements", "*", { program_type: ptype, student_origin: origin });
+      const reqs = await query("admission_requirements", "*", { program_type: ptypeToUse, student_origin: origin });
       if (Array.isArray(reqs) && reqs.length > 0) setRequirements(reqs[0]);
+      else setRequirements(null);
       const cityToRegion = {
         "Madrid": "Madrid", "Barcelona": "Cataluña", "Valencia": "Comunidad Valenciana",
         "Sevilla": "Andalucía", "Málaga": "Andalucía", "Granada": "Andalucía",
@@ -1094,12 +1099,12 @@ function StudentDetail({ student, onStatusChange, onNotesSave, currentUser, onAs
       let regionResults = [];
       if (regions.length > 0) {
         const regionParam = regions.map(r => encodeURIComponent(r)).join(",");
-        const url = `${SUPABASE_URL}/rest/v1/admission_by_region?select=*&program_type=eq.${ptype}&region=in.(${regionParam})`;
+        const url = `${SUPABASE_URL}/rest/v1/admission_by_region?select=*&program_type=eq.${ptypeToUse}&region=in.(${regionParam})`;
         const res = await fetch(url, { headers: getAuthHeaders() });
         regionResults = await res.json();
       }
       if (!Array.isArray(regionResults) || regionResults.length === 0) {
-        const fallback = await query("admission_by_region", "*", { program_type: ptype });
+        const fallback = await query("admission_by_region", "*", { program_type: ptypeToUse });
         regionResults = Array.isArray(fallback) ? fallback.slice(0, 4) : [];
       }
       setRegionData(regionResults);
@@ -1452,6 +1457,39 @@ function StudentDetail({ student, onStatusChange, onNotesSave, currentUser, onAs
               ⚠ <strong>PCE (UNED):</strong> Requerida para carreras con nota de corte: Medicina, Enfermería, Psicología, Ingenierías. Excepción: estudiantes colombianos con Saber 11.
             </div>
           )}
+          {/* Selector de tipo de programa */}
+          <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 14, padding: "10px 14px", background: "var(--azure-light)", border: "1px solid #2563eb33", borderRadius: 8, flexWrap: "wrap" }}>
+            <span style={{ fontSize: 11, color: "var(--accent)", fontFamily: "var(--mono)", fontWeight: 600, whiteSpace: "nowrap" }}>
+              Tipo de programa:
+            </span>
+            {[
+              { value: "university_bachelor", label: "Grado" },
+              { value: "fp_superior",         label: "FP Superior" },
+              { value: "university_master",   label: "Máster / Doctorado" },
+            ].map(opt => (
+              <button
+                key={opt.value}
+                onClick={() => { setSelectedPtype(opt.value); loadRequirements(opt.value); }}
+                style={{
+                  fontSize: 11, padding: "4px 12px", borderRadius: 20, cursor: "pointer", fontFamily: "var(--mono)",
+                  border: `1px solid ${ptype === opt.value ? "var(--accent)" : "var(--border)"}`,
+                  background: ptype === opt.value ? "var(--accent)" : "var(--surface)",
+                  color: ptype === opt.value ? "#fff" : "var(--muted)",
+                  transition: "all 0.15s",
+                }}
+              >
+                {opt.label}
+              </button>
+            ))}
+            {selectedPtype && (
+              <button
+                onClick={() => { setSelectedPtype(null); loadRequirements(ptypeAuto); }}
+                style={{ fontSize: 10, color: "var(--muted)", fontFamily: "var(--mono)", background: "none", border: "none", cursor: "pointer", textDecoration: "underline" }}
+              >
+                Restablecer auto
+              </button>
+            )}
+          </div>
           <RequirementsPanel req={requirements} />
         </div>
       )}

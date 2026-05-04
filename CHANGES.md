@@ -24,6 +24,21 @@ Registra aquí cada cambio significativo: qué se hizo, por qué, y qué podría
 
 ---
 
+## 2026-05-04 — sesion-16: selector manual de tipo de programa en panel Requisitos
+
+- **Qué**: El asesor puede elegir manualmente el tipo de programa (Grado / FP Superior / Máster-Doctorado) en la pestaña Requisitos de cada expediente
+- **Por qué**: La auto-detección usaba `education_level` como proxy del tipo deseado, generando falsos positivos (ej. estudiante con `education_level=grado` veía requisitos de máster en vez de grado)
+- **Archivos modificados**: `src/App.jsx`
+- **Cambios principales**:
+  - `selectedPtype` state (null = auto-detección); se resetea a null al cambiar de expediente
+  - `ptypeAuto` calculado una vez del estudiante; `ptype = selectedPtype || ptypeAuto`
+  - `loadRequirements(ptypeOverride)` acepta override explícito — también actualiza `regionData` con el mismo tipo
+  - Selector visual de 3 botones pill encima del `RequirementsPanel`; botón activo resaltado en azul; link "Restablecer auto" aparece solo si hay selección manual
+- **Podría afectar**: pestaña Requisitos en `StudentDetail` — comportamiento igual a antes si el asesor no toca el selector
+- **Verificado**: build limpio (vite build ✓ en 467ms, 0 errores)
+
+---
+
 ## 2026-05-04 — sesion-15: portal responsive para móvil
 
 - **Qué**: Portal del estudiante (`PortalCliente`) adaptado para pantallas ≤600px

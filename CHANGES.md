@@ -24,6 +24,21 @@ Registra aquí cada cambio significativo: qué se hizo, por qué, y qué podría
 
 ---
 
+## 2026-05-03 — sesion-14: status_updated_at — badge de inactividad corregido
+
+- **Qué**: Nueva columna `status_updated_at` en `student_leads` con trigger automático; badge naranja de inactividad usa este campo en lugar de `created_at`
+- **Por qué**: Falsos positivos — expedientes creados hace >14 días aparecían como inactivos aunque se hubieran actualizado ayer; el badge ahora refleja la última vez que se cambió el status
+- **Archivos modificados**: Supabase migration + `src/App.jsx`
+- **Cambios SQL**:
+  - `ALTER TABLE student_leads ADD COLUMN IF NOT EXISTS status_updated_at TIMESTAMPTZ`
+  - Backfill con `created_at` para registros históricos
+  - Trigger `trg_status_updated_at`: se dispara en BEFORE UPDATE, actualiza `status_updated_at = NOW()` solo cuando `status` cambia
+- **Cambio App.jsx (línea 3169)**: `daysSince(s.created_at)` → `daysSince(s.status_updated_at || s.created_at)`
+- **Podría afectar**: lista de expedientes — badge naranja "inactivo" ya no aparece para expedientes viejos cuyo status se haya actualizado recientemente
+- **Verificado**: columna y trigger verificados en `information_schema`; build limpio
+
+---
+
 ## 2026-05-03 — sesion-13: notificaciones email al estudiante — estado documentos, mensajes del equipo, matches nuevos (Resend + Edge Function)
 
 - **Qué**: Notificaciones automáticas por email al estudiante en 3 eventos: cambio de estado de documento, mensaje del equipo, y matches nuevos

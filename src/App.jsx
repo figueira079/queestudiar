@@ -3166,7 +3166,7 @@ export default function App() {
                   : filtered.map(s => {
                     const sc = STATUS_CONFIG[s.status || "nuevo"];
                     const nMatches = matchCountsLoaded ? (matchCounts[s.id] || 0) : null;
-                    const dias = daysSince(s.created_at);
+                    const dias = daysSince(s.status_updated_at || s.created_at);
                     const isStale = (s.status === "nuevo" || !s.status) && dias !== null && dias > 14;
                     const hasPortal = !!s.client_user_id;
                     const asesorName = TEAM_FALLBACK.find(t => t.email === s.assigned_to)?.name;

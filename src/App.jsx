@@ -2398,17 +2398,6 @@ function PortalCliente({ currentUser, onLogout }) {
   const isMaster = levelLow.includes("master");
   const isFP = levelLow.includes("fp");
   const isNonEU = lead.student_origin === "extracomunitario";
-  const nextDeadline = convocatorias.find(c => !c.past && !c.texto.toLowerCase().includes("inicio"));
-  const proximaConv = nextDeadline ? nextDeadline.fecha : (convocatorias.find(c => !c.past)?.fecha || "—");
-  const proximaConvLabel = nextDeadline ? nextDeadline.texto : "Próxima fecha";
-  const statusCfg = STATUS_CONFIG[lead.status] || STATUS_CONFIG.nuevo;
-
-  const trackerSteps = [
-    { key: "perfil",      label: "Perfil",      done: true },
-    { key: "programas",   label: "Programas",   done: matches.length > 0 },
-    { key: "documentos",  label: "Documentos",  done: documents.length > 0 },
-    { key: "solicitudes", label: "Solicitudes", done: hasSolicitud },
-  ];
 
   const convocatorias = isMaster ? [
     { texto: "Másters con nota de corte",             fecha: "Enero – Marzo 2026",          past: true  },
@@ -2424,6 +2413,18 @@ function PortalCliente({ currentUser, onLogout }) {
     { texto: "Preinscripción universidades públicas",  fecha: "Junio – Julio 2026",           past: false },
     { texto: "Plazo universidades privadas",           fecha: "Abierto todo el año",           past: false },
     { texto: "Inicio de clases",                       fecha: "Septiembre 2026",              past: false },
+  ];
+
+  const nextDeadline = convocatorias.find(c => !c.past && !c.texto.toLowerCase().includes("inicio"));
+  const proximaConv = nextDeadline ? nextDeadline.fecha : (convocatorias.find(c => !c.past)?.fecha || "—");
+  const proximaConvLabel = nextDeadline ? nextDeadline.texto : "Próxima fecha";
+  const statusCfg = STATUS_CONFIG[lead.status] || STATUS_CONFIG.nuevo;
+
+  const trackerSteps = [
+    { key: "perfil",      label: "Perfil",      done: true },
+    { key: "programas",   label: "Programas",   done: matches.length > 0 },
+    { key: "documentos",  label: "Documentos",  done: documents.length > 0 },
+    { key: "solicitudes", label: "Solicitudes", done: hasSolicitud },
   ];
 
   return (

@@ -388,6 +388,21 @@ const css = `
   .doc-status-select { flex: 0 0 auto; font-size: 11px; font-family: var(--mono); background: var(--bg); color: var(--text); border: 1px solid var(--border); border-radius: 4px; padding: 3px 6px; cursor: pointer; }
   .doc-notes-input { flex: 1; font-size: 11px; font-family: var(--mono); background: var(--bg); color: var(--muted); border: 1px solid var(--border); border-radius: 4px; padding: 3px 8px; outline: none; }
   .doc-notes-input:focus { border-color: var(--accent); color: var(--text); }
+
+/* ── Portal cliente — responsive móvil ── */
+@media (max-width: 600px) {
+  .portal-header { padding: 0 16px !important; }
+  .portal-header .user-badge { max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .portal-stats { gap: 8px !important; }
+  .portal-stat-card { flex: 1 1 calc(50% - 8px) !important; min-width: 0 !important; padding: 10px 12px !important; }
+  .portal-stat-card .stat-value { font-size: 18px !important; }
+  .portal-conv-row { flex-direction: column !important; gap: 4px !important; align-items: flex-start !important; }
+  .portal-conv-fecha { white-space: normal !important; }
+  .portal-solicitud-row { flex-direction: column !important; align-items: flex-start !important; gap: 10px !important; }
+  .portal-solicitud-btn { width: 100% !important; text-align: center !important; }
+  .portal-perfil-row { flex-direction: column !important; gap: 4px !important; }
+  .portal-perfil-label { min-width: unset !important; }
+}
 `;
 
 function formatDate(d) {
@@ -2416,7 +2431,7 @@ function PortalCliente({ currentUser, onLogout }) {
       <style>{css}</style>
 
       {/* HEADER */}
-      <div className="header">
+      <div className="header portal-header">
         <div className="header-left"><div className="logo-mark">▸ QueEstudiar</div><div className="header-title">Mi Portal</div></div>
         <div className="header-right">
           <div className="user-badge">{lead.full_name || currentUser.email}</div>
@@ -2478,15 +2493,15 @@ function PortalCliente({ currentUser, onLogout }) {
         </div>
 
         {/* STATS */}
-        <div style={{ display: "flex", gap: 12, marginBottom: 24, flexWrap: "wrap" }}>
+        <div className="portal-stats" style={{ display: "flex", gap: 12, marginBottom: 24, flexWrap: "wrap" }}>
           {[
             { label: "Programas recomendados", value: matches.length,                                    color: "var(--accent)",  mono: false, tab: "programas"  },
             { label: "Mis favoritos",           value: favoritosCount,                                   color: "var(--accent2)", mono: false, tab: "programas"  },
             { label: "Documentos aprobados",    value: `${docsAprobados} / ${documents.length || "—"}`, color: "#16a34a",        mono: true,  tab: "documentos" },
             { label: proximaConvLabel,          value: proximaConv,                                      color: "var(--accent)",  mono: true,  tab: "programas"  },
           ].map(({ label, value, color, mono, tab }) => (
-            <div key={label} onClick={() => tab && setPortalTab(tab)} style={{ flex: "1 1 160px", background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 8, padding: "14px 16px", cursor: tab ? "pointer" : "default" }}>
-              <div style={{ fontSize: 22, fontWeight: 700, color, fontFamily: mono ? "var(--mono)" : "var(--display)", lineHeight: 1.2 }}>{value}</div>
+            <div key={label} onClick={() => tab && setPortalTab(tab)} className="portal-stat-card" style={{ flex: "1 1 160px", background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 8, padding: "14px 16px", cursor: tab ? "pointer" : "default" }}>
+              <div className="stat-value" style={{ fontSize: 22, fontWeight: 700, color, fontFamily: mono ? "var(--mono)" : "var(--display)", lineHeight: 1.2 }}>{value}</div>
               <div style={{ fontSize: 10, color: "var(--muted)", marginTop: 6 }}>{label}</div>
             </div>
           ))}
@@ -2517,8 +2532,8 @@ function PortalCliente({ currentUser, onLogout }) {
               { label: "Ciudades preferidas", value: Array.isArray(lead.preferred_cities) ? lead.preferred_cities.join(", ") : lead.preferred_cities },
               { label: "Tipo de estudiante",  value: lead.student_origin === "extracomunitario" ? "Extracomunitario" : lead.student_origin === "latam_convenio" ? "LATAM · Convenio" : lead.student_origin },
             ].filter(r => r.value).map(({ label, value }) => (
-              <div key={label} style={{ display: "flex", gap: 16, padding: "8px 0", borderBottom: "1px solid var(--border)" }}>
-                <span style={{ fontSize: 11, color: "var(--muted)", fontFamily: "var(--mono)", minWidth: 140 }}>{label}</span>
+              <div key={label} className="portal-perfil-row" style={{ display: "flex", gap: 16, padding: "8px 0", borderBottom: "1px solid var(--border)" }}>
+                <span className="portal-perfil-label" style={{ fontSize: 11, color: "var(--muted)", fontFamily: "var(--mono)", minWidth: 140 }}>{label}</span>
                 <span style={{ fontSize: 12, color: "var(--text)", fontFamily: "var(--mono)" }}>{value}</span>
               </div>
             ))}
@@ -2589,9 +2604,9 @@ function PortalCliente({ currentUser, onLogout }) {
               <div style={{ fontSize: 12, color: "var(--muted)", marginBottom: 12 }}>Fechas clave para los programas de tu perfil</div>
               <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
                 {convocatorias.map((c, i) => (
-                  <div key={i} style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 6, padding: "10px 14px", display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, opacity: c.past ? 0.5 : 1 }}>
+                  <div key={i} className="portal-conv-row" style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 6, padding: "10px 14px", display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, opacity: c.past ? 0.5 : 1 }}>
                     <span style={{ fontSize: 12, color: c.past ? "var(--muted)" : "var(--text)" }}>{c.past ? "✓ " : ""}{c.texto}</span>
-                    <span style={{ fontSize: 11, color: c.past ? "var(--muted)" : "var(--accent)", fontFamily: "var(--mono)", whiteSpace: "nowrap", textDecoration: c.past ? "line-through" : "none" }}>{c.fecha}</span>
+                    <span className="portal-conv-fecha" style={{ fontSize: 11, color: c.past ? "var(--muted)" : "var(--accent)", fontFamily: "var(--mono)", whiteSpace: "nowrap", textDecoration: c.past ? "line-through" : "none" }}>{c.fecha}</span>
                   </div>
                 ))}
               </div>
@@ -2692,13 +2707,13 @@ function PortalCliente({ currentUser, onLogout }) {
                   {solicitudes.map(m => {
                     const p = m.programas || {};
                     return (
-                      <div key={m.id} style={{ background: "var(--surface)", border: "1px solid #16a34a44", borderRadius: 8, padding: "14px 16px", display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12 }}>
+                      <div key={m.id} className="portal-solicitud-row" style={{ background: "var(--surface)", border: "1px solid #16a34a44", borderRadius: 8, padding: "14px 16px", display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12 }}>
                         <div>
                           <div style={{ fontSize: 13, fontWeight: 700, color: "var(--text)", marginBottom: 2 }}>{p.nombre || "Programa"}</div>
                           <div style={{ fontSize: 11, color: "var(--muted)", fontFamily: "var(--mono)" }}>{p.ciudad || "—"}</div>
                         </div>
                         {p.url_solicitud && p.url_solicitud_status !== 'rota' && (
-                          <a href={p.url_solicitud} target="_blank" rel="noreferrer"
+                          <a href={p.url_solicitud} target="_blank" rel="noreferrer" className="portal-solicitud-btn"
                             style={{ fontSize: 11, padding: "6px 14px", borderRadius: 6, background: "#16a34a", color: "#fff", textDecoration: "none", fontFamily: "var(--mono)", whiteSpace: "nowrap" }}>
                             ↗ Solicitar plaza
                           </a>

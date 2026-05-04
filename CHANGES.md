@@ -24,6 +24,23 @@ Registra aquí cada cambio significativo: qué se hizo, por qué, y qué podría
 
 ---
 
+## 2026-05-04 — sesion-15: portal responsive para móvil
+
+- **Qué**: Portal del estudiante (`PortalCliente`) adaptado para pantallas ≤600px
+- **Por qué**: Los estudiantes abren el portal desde el móvil al recibir el email de invitación; el layout anterior se desbordaba
+- **Archivos modificados**: `src/App.jsx` (CSS + JSX)
+- **Cambios CSS** (nueva `@media (max-width: 600px)` en `const css`):
+  - `.portal-header`: padding reducido a 16px; `.user-badge` con `text-overflow: ellipsis`
+  - `.portal-stats` / `.portal-stat-card`: tarjetas en 2 columnas (50% - 8px cada una)
+  - `.portal-conv-row`: convocatorias en columna con fecha debajo
+  - `.portal-solicitud-row` / `.portal-solicitud-btn`: botón "Solicitar plaza" a ancho completo
+  - `.portal-perfil-row` / `.portal-perfil-label`: label y valor apilados verticalmente
+- **Cambios JSX**: añadidas clases `portal-*` en 7 elementos sin modificar lógica ni `style` existente
+- **No afecta**: CRM de admin (`PortalAdmin`), parte pública — clases exclusivamente del portal del estudiante
+- **Verificado**: build limpio (vite build ✓ en 469ms, 0 errores)
+
+---
+
 ## 2026-05-03 — sesion-14: status_updated_at — badge de inactividad corregido
 
 - **Qué**: Nueva columna `status_updated_at` en `student_leads` con trigger automático; badge naranja de inactividad usa este campo en lugar de `created_at`

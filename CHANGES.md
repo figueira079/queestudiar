@@ -36,6 +36,7 @@ Registra aquí cada cambio significativo: qué se hizo, por qué, y qué podría
   - `PortalCliente`: nueva función `uploadDocFile(docId, file)` con validación PDF + 10 MB y subida a `student-documents/{user_id}/{docId}.pdf` con `x-upsert`
   - `PortalCliente`: textarea + botón "Guardar" sustituidos por card del archivo subido + botón "Seleccionar PDF"
   - `StudentDetail`: enlace `↗ Ver PDF` condicional en cada `doc-row` cuando `doc.file_url` existe
+  - **Add-on**: botón "Eliminar" en la card verde + función `deleteDocFile(docId)` con `window.confirm` + 4ª policy RLS `Students delete own documents` (DELETE)
 - **Podría afectar**: pestaña Documentos del portal (estudiante) y pestaña Documentos del CRM (asesor). Otras pestañas (Programas, Solicitudes, Requisitos) no tocadas.
 - **Verificado**: build limpio, queries existentes sin cambios
 

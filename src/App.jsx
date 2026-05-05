@@ -2457,6 +2457,30 @@ function PortalCliente({ currentUser, onLogout }) {
     setUploadingDoc(null);
   }
 
+  async function deleteDocFile(docId) {
+    if (!window.confirm("¿Eliminar el archivo? Esta acción no se puede deshacer.")) return;
+    setUploadingDoc(docId);
+    try {
+      const path = `${currentUser.id}/${docId}.pdf`;
+      await fetch(`${SUPABASE_URL}/storage/v1/object/student-documents/${path}`, {
+        method: "DELETE",
+        headers: getAuthHeaders(),
+      });
+      await patch("student_documents", docId, {
+        file_url: null, file_name: null,
+        file_size: null, file_type: null,
+        status: "pendiente",
+        updated_at: new Date().toISOString(),
+      });
+      setDocuments(prev => prev.map(d =>
+        d.id === docId ? { ...d, file_url: null, file_name: null, file_size: null, status: "pendiente" } : d
+      ));
+    } catch {
+      setUploadError(prev => ({ ...prev, [docId]: "No se pudo eliminar el archivo." }));
+    }
+    setUploadingDoc(null);
+  }
+
   const toggleDoc = async (docId) => {
     if (activeDocId === docId) { setActiveDocId(null); return; }
     setActiveDocId(docId);
@@ -2761,6 +2785,13 @@ function PortalCliente({ currentUser, onLogout }) {
                               >
                                 Ver PDF
                               </a>
+                              <button
+                                onClick={() => deleteDocFile(doc.id)}
+                                disabled={uploadingDoc === doc.id}
+                                style={{ fontSize: 11, padding: "4px 10px", borderRadius: 5, background: "none", border: "1px solid #dc262644", color: "#dc2626", cursor: "pointer", fontFamily: "var(--mono)", whiteSpace: "nowrap", opacity: uploadingDoc === doc.id ? 0.5 : 1 }}
+                              >
+                                Eliminar
+                              </button>
                             </div>
                           ) : (
                             <div style={{ fontSize: 11, color: "var(--muted)", fontFamily: "var(--mono)", marginTop: 10, fontStyle: "italic" }}>

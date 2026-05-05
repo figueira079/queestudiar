@@ -1537,6 +1537,16 @@ function StudentDetail({ student, onStatusChange, onNotesSave, currentUser, onAs
                           <option key={k} value={k}>{v.emoji} {v.label}</option>
                         ))}
                       </select>
+                      {doc.file_url && (
+                        <a
+                          href={doc.file_url}
+                          target="_blank"
+                          rel="noreferrer"
+                          style={{ fontSize: 11, color: "var(--accent)", fontFamily: "var(--mono)", marginLeft: 8, whiteSpace: "nowrap" }}
+                        >
+                          ↗ Ver PDF
+                        </a>
+                      )}
                       <input
                         className="doc-notes-input"
                         value={doc.notes || ""}
@@ -1554,6 +1564,16 @@ function StudentDetail({ student, onStatusChange, onNotesSave, currentUser, onAs
                       <select className="doc-status-select" value={doc.status} onChange={e => patchDocument(doc.id, { status: e.target.value })} style={{ color: dsc.color, borderColor: dsc.color + "66" }}>
                         {Object.entries(DOC_STATUS_CONFIG).map(([k, v]) => <option key={k} value={k}>{v.emoji} {v.label}</option>)}
                       </select>
+                      {doc.file_url && (
+                        <a
+                          href={doc.file_url}
+                          target="_blank"
+                          rel="noreferrer"
+                          style={{ fontSize: 11, color: "var(--accent)", fontFamily: "var(--mono)", marginLeft: 8, whiteSpace: "nowrap" }}
+                        >
+                          ↗ Ver PDF
+                        </a>
+                      )}
                       <input className="doc-notes-input" value={doc.notes || ""} onChange={e => patchDocument(doc.id, { notes: e.target.value })} placeholder="Notas..." />
                     </div>
                   );
@@ -2344,8 +2364,8 @@ function PortalCliente({ currentUser, onLogout }) {
   const [loading, setLoading] = useState(true);
   const [activeDocId, setActiveDocId] = useState(null);
   const [comments, setComments] = useState({});
-  const [editContent, setEditContent] = useState({});
-  const [savingDoc, setSavingDoc] = useState(null);
+  const [uploadingDoc, setUploadingDoc] = useState(null);
+  const [uploadError, setUploadError] = useState({});
   const [newComment, setNewComment] = useState({});
   const [portalTab, setPortalTab] = useState("programas");
 
@@ -2365,9 +2385,6 @@ function PortalCliente({ currentUser, onLogout }) {
       setMatches(Array.isArray(matchData) ? matchData.filter(m => m.programas?.visa_eligible !== 'no_elegible') : []);
       const docs = Array.isArray(docData) ? docData : [];
       setDocuments(docs);
-      const contentMap = {};
-      docs.forEach(d => { contentMap[d.id] = d.content || ""; });
-      setEditContent(contentMap);
     } catch {}
     setLoading(false);
   }
@@ -2376,14 +2393,6 @@ function PortalCliente({ currentUser, onLogout }) {
     const next = current === true ? null : true;
     await patch("matches", matchId, { cliente_favorito: next });
     setMatches(prev => prev.map(m => m.id === matchId ? { ...m, cliente_favorito: next } : m));
-  }
-
-  async function saveDocContent(docId) {
-    setSavingDoc(docId);
-    const content = editContent[docId] || "";
-    await patch("student_documents", docId, { content, status: 'en_revision', updated_at: new Date().toISOString() });
-    setDocuments(prev => prev.map(d => d.id === docId ? { ...d, content, status: 'en_revision' } : d));
-    setSavingDoc(null);
   }
 
   async function loadComments(docId) {
@@ -2401,6 +2410,51 @@ function PortalCliente({ currentUser, onLogout }) {
     });
     setNewComment(prev => ({ ...prev, [docId]: "" }));
     await loadComments(docId);
+  }
+
+  async function uploadDocFile(docId, file) {
+    if (!file || file.type !== "application/pdf") {
+      setUploadError(prev => ({ ...prev, [docId]: "Solo se aceptan archivos PDF." }));
+      return;
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      setUploadError(prev => ({ ...prev, [docId]: "El archivo no puede superar 10 MB." }));
+      return;
+    }
+    setUploadingDoc(docId);
+    setUploadError(prev => ({ ...prev, [docId]: null }));
+    try {
+      const path = `${currentUser.id}/${docId}.pdf`;
+      const uploadUrl = `${SUPABASE_URL}/storage/v1/object/student-documents/${path}`;
+      const uploadRes = await fetch(uploadUrl, {
+        method: "POST",
+        headers: {
+          ...getAuthHeaders(),
+          "Content-Type": "application/pdf",
+          "x-upsert": "true",
+        },
+        body: file,
+      });
+      if (!uploadRes.ok) throw new Error("Error al subir el archivo.");
+
+      const fileUrl = `${SUPABASE_URL}/storage/v1/object/authenticated/student-documents/${path}`;
+      await patch("student_documents", docId, {
+        file_url: fileUrl,
+        file_name: file.name,
+        file_size: file.size,
+        file_type: "application/pdf",
+        status: "en_revision",
+        updated_at: new Date().toISOString(),
+      });
+      setDocuments(prev => prev.map(d =>
+        d.id === docId
+          ? { ...d, file_url: fileUrl, file_name: file.name, file_size: file.size, status: "en_revision" }
+          : d
+      ));
+    } catch (e) {
+      setUploadError(prev => ({ ...prev, [docId]: "No se pudo subir el archivo. Inténtalo de nuevo." }));
+    }
+    setUploadingDoc(null);
   }
 
   const toggleDoc = async (docId) => {
@@ -2682,16 +2736,77 @@ function PortalCliente({ currentUser, onLogout }) {
                       </div>
                       {isOpen && (
                         <div style={{ padding: "0 14px 14px", borderTop: "1px solid var(--border)" }}>
-                          {doc.notes && <div style={{ fontSize: 11, color: "#ca8a04", fontFamily: "var(--mono)", margin: "10px 0 6px" }}>ℹ {doc.notes}</div>}
-                          <textarea
-                            style={{ width: "100%", minHeight: 120, padding: 10, background: "var(--bg)", border: "1px solid var(--border)", borderRadius: 6, color: "var(--text)", fontFamily: "var(--mono)", fontSize: 12, resize: "vertical", marginTop: 8, outline: "none" }}
-                            value={editContent[doc.id] || ""}
-                            onChange={e => setEditContent(prev => ({ ...prev, [doc.id]: e.target.value }))}
-                            placeholder="Escribe o pega el contenido del documento aquí..."
-                          />
-                          <button className="save-btn" style={{ marginTop: 8 }} onClick={() => saveDocContent(doc.id)} disabled={savingDoc === doc.id}>
-                            {savingDoc === doc.id ? "Guardando..." : "Guardar y enviar a revisión"}
-                          </button>
+                          {doc.notes && (
+                            <div style={{ fontSize: 11, color: "#ca8a04", fontFamily: "var(--mono)", margin: "10px 0 6px" }}>
+                              ℹ {doc.notes}
+                            </div>
+                          )}
+
+                          {doc.file_url ? (
+                            <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 12px", background: "#f0fdf4", border: "1px solid #86efac", borderRadius: 6, marginTop: 10 }}>
+                              <span style={{ fontSize: 18 }}>📄</span>
+                              <div style={{ flex: 1, minWidth: 0 }}>
+                                <div style={{ fontSize: 12, fontWeight: 600, color: "var(--text)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                                  {doc.file_name || "documento.pdf"}
+                                </div>
+                                <div style={{ fontSize: 10, color: "var(--muted)", fontFamily: "var(--mono)", marginTop: 2 }}>
+                                  {doc.file_size ? `${(doc.file_size / 1024).toFixed(0)} KB` : ""}
+                                </div>
+                              </div>
+                              <a
+                                href={doc.file_url}
+                                target="_blank"
+                                rel="noreferrer"
+                                style={{ fontSize: 11, padding: "4px 10px", borderRadius: 5, background: "var(--accent)", color: "#fff", textDecoration: "none", fontFamily: "var(--mono)", whiteSpace: "nowrap" }}
+                              >
+                                Ver PDF
+                              </a>
+                            </div>
+                          ) : (
+                            <div style={{ fontSize: 11, color: "var(--muted)", fontFamily: "var(--mono)", marginTop: 10, fontStyle: "italic" }}>
+                              Aún no has subido ningún archivo.
+                            </div>
+                          )}
+
+                          <div style={{ marginTop: 12 }}>
+                            <label style={{ display: "block", fontSize: 11, color: "var(--muted)", fontFamily: "var(--mono)", marginBottom: 6 }}>
+                              {doc.file_url ? "Reemplazar PDF:" : "Subir PDF:"}
+                            </label>
+                            <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
+                              <input
+                                type="file"
+                                accept=".pdf,application/pdf"
+                                id={`file-${doc.id}`}
+                                style={{ display: "none" }}
+                                onChange={e => {
+                                  const file = e.target.files?.[0];
+                                  if (file) uploadDocFile(doc.id, file);
+                                  e.target.value = "";
+                                }}
+                              />
+                              <label
+                                htmlFor={`file-${doc.id}`}
+                                style={{
+                                  fontSize: 12, padding: "7px 16px", borderRadius: 6, cursor: "pointer",
+                                  border: "1px solid var(--accent)", color: "var(--accent)", background: "var(--surface)",
+                                  fontFamily: "var(--mono)", whiteSpace: "nowrap",
+                                  opacity: uploadingDoc === doc.id ? 0.6 : 1,
+                                  pointerEvents: uploadingDoc === doc.id ? "none" : "auto",
+                                }}
+                              >
+                                {uploadingDoc === doc.id ? "Subiendo…" : "Seleccionar PDF"}
+                              </label>
+                              <span style={{ fontSize: 10, color: "var(--muted)", fontFamily: "var(--mono)" }}>
+                                Máx. 10 MB · Solo PDF
+                              </span>
+                            </div>
+                            {uploadError[doc.id] && (
+                              <div style={{ marginTop: 6, fontSize: 11, color: "#dc2626", fontFamily: "var(--mono)" }}>
+                                ⚠ {uploadError[doc.id]}
+                              </div>
+                            )}
+                          </div>
+
                           {docComments.length > 0 && (
                             <div style={{ marginTop: 12 }}>
                               <div style={{ fontSize: 11, color: "var(--muted)", fontFamily: "var(--mono)", marginBottom: 6 }}>Comentarios del equipo:</div>

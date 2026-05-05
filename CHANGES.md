@@ -24,6 +24,23 @@ Registra aquí cada cambio significativo: qué se hizo, por qué, y qué podría
 
 ---
 
+## 2026-05-05 — sesion-17: subida de PDFs a Supabase Storage
+
+- **Qué**: El estudiante sube PDFs reales (max 10 MB) en la pestaña Documentos del portal en lugar de pegar texto en un `textarea`. El asesor ve un enlace "↗ Ver PDF" en la pestaña Documentos del CRM.
+- **Por qué**: Prerequisito de la Sesión 19 (evaluación con IA). La columna `content` se preserva intacta para guardar el texto extraído del PDF más adelante.
+- **Archivos modificados**: `src/App.jsx`, Supabase (DB + Storage policies)
+- **Cambios principales**:
+  - SQL: 4 columnas nuevas en `student_documents` (`file_url`, `file_name`, `file_size`, `file_type`)
+  - SQL: 3 políticas RLS en `storage.objects` para bucket `student-documents` (INSERT propio, SELECT autenticado, UPDATE propio)
+  - `PortalCliente`: `editContent`/`savingDoc` reemplazados por `uploadingDoc`/`uploadError`
+  - `PortalCliente`: nueva función `uploadDocFile(docId, file)` con validación PDF + 10 MB y subida a `student-documents/{user_id}/{docId}.pdf` con `x-upsert`
+  - `PortalCliente`: textarea + botón "Guardar" sustituidos por card del archivo subido + botón "Seleccionar PDF"
+  - `StudentDetail`: enlace `↗ Ver PDF` condicional en cada `doc-row` cuando `doc.file_url` existe
+- **Podría afectar**: pestaña Documentos del portal (estudiante) y pestaña Documentos del CRM (asesor). Otras pestañas (Programas, Solicitudes, Requisitos) no tocadas.
+- **Verificado**: build limpio, queries existentes sin cambios
+
+---
+
 ## 2026-05-04 — sesion-16: selector manual de tipo de programa en panel Requisitos
 
 - **Qué**: El asesor puede elegir manualmente el tipo de programa (Grado / FP Superior / Máster-Doctorado) en la pestaña Requisitos de cada expediente

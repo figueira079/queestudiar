@@ -170,8 +170,10 @@ En producción: configuradas en Vercel dashboard
 
 ### Experiencia del estudiante
 - [ ] **Notificaciones por email** — el estudiante no recibe aviso cuando cambia el estado de un documento, se añade un comentario del equipo, o llegan matches nuevos. Brief: sesion-13.
-- [ ] **Responsive del portal para móvil** — los estudiantes abren el portal desde el teléfono al recibir el email de invitación. El layout actual está pensado para desktop.
+- [ ] **Responsive del portal para móvil** — los estudiantes abren el portal desde el teléfono al recibir el email de invitación. El layout actual está pensado para desktop. Brief: sesion-15.
 - [ ] **Mensajes de error visibles en el portal** — cuando una query falla silenciosamente (RLS, red), el estudiante no ve ningún aviso. Añadir estados de error explícitos.
+- [ ] **Checklist de requisitos no filtra por tipo de estudio** — el panel de requisitos en el CRM muestra requisitos genéricos sin aplicar la lógica del tipo de programa (grado, máster, FP). Por ejemplo, para un estudiante de grado aparecen requisitos de máster. Hay que filtrar los requisitos según `education_level` o el tipo del programa seleccionado.
+- [ ] **Enlace al Ministerio en el requisito de nota equivalente** — para másters, el requisito de nota equivalente debería incluir un botón/enlace directo a la página del Ministerio de Universidades donde el estudiante puede consultar la tabla de equivalencias. URL: https://www.universidades.gob.es/equivalencia-de-notas-medias-de-estudios-universitarios-realizados-en-centros-extranjeros/
 
 ### Operativa del equipo
 - [ ] **Log de actividad en expedientes** — no hay forma de ver cuándo ni quién cambió el estado de un estudiante. Un registro mínimo en las notas o tabla `activity_log` sería muy útil para seguimiento.

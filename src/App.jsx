@@ -2261,6 +2261,9 @@ function SolicitudForm() {
   const [country, setCountry] = useState("");
   const [budget, setBudget] = useState("");
   const [startDate, setStartDate] = useState("");
+  const [studentOrigin, setStudentOrigin] = useState("");
+  const [educationLevel, setEducationLevel] = useState("");
+  const [submitError, setSubmitError] = useState(null);
   const [sending, setSending] = useState(false);
   const [submitted, setSubmitted] = useState(false);
 
@@ -2272,19 +2275,36 @@ function SolicitudForm() {
   }, []);
 
   const handleSubmit = async () => {
-    if (!name || !email) return;
+    if (!name || !email || !studentOrigin || !educationLevel) return;
     setSending(true);
-    await publicInsert("public_leads", {
-      full_name: name, email, phone, country_of_origin: country,
-      flow_type: "decidido",
-      selected_programa_ids: selectedIds,
-      budget_range: budget,
-      planned_start_date: startDate,
-    });
+    setSubmitError(null);
+    try {
+      const res = await fetch(`${SUPABASE_URL}/functions/v1/onboard-student`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          full_name: name,
+          email,
+          phone,
+          country_of_origin: country,
+          student_origin: studentOrigin,
+          education_level: educationLevel,
+          budget_range: budget,
+          planned_start_date: startDate,
+          selected_programa_ids: selectedIds,
+        }),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error || "Error al enviar la solicitud.");
+      }
+      setSubmitted(true);
+      sessionStorage.removeItem("selectedPrograms");
+      sessionStorage.removeItem("selectedProgramIds");
+    } catch (e) {
+      setSubmitError(e.message || "No se pudo enviar. Inténtalo de nuevo.");
+    }
     setSending(false);
-    setSubmitted(true);
-    sessionStorage.removeItem("selectedPrograms");
-    sessionStorage.removeItem("selectedProgramIds");
   };
 
   if (submitted) return (
@@ -2317,6 +2337,25 @@ function SolicitudForm() {
         <div className="pub-field"><label className="pub-label">Teléfono (con prefijo)</label><input className="pub-input" value={phone} onChange={e => setPhone(e.target.value)} placeholder="+34 600 000 000" /></div>
         <div className="pub-field"><label className="pub-label">País de origen</label><input className="pub-input" value={country} onChange={e => setCountry(e.target.value)} /></div>
         <div className="pub-field">
+          <label className="pub-label">¿De dónde eres? *</label>
+          <select className="pub-select" value={studentOrigin} onChange={e => setStudentOrigin(e.target.value)}>
+            <option value="">Selecciona tu origen...</option>
+            <option value="comunitario">Ciudadano de la UE / EEE</option>
+            <option value="latinoamerica">Latinoamérica (con acuerdo bilateral)</option>
+            <option value="extracomunitario">Fuera de la UE — necesito visado de estudiante</option>
+          </select>
+        </div>
+        <div className="pub-field">
+          <label className="pub-label">¿Cuál es tu nivel de estudios actual? *</label>
+          <select className="pub-select" value={educationLevel} onChange={e => setEducationLevel(e.target.value)}>
+            <option value="">Selecciona tu nivel...</option>
+            <option value="bachillerato">Bachillerato / Educación Secundaria</option>
+            <option value="fp_superior">FP de Grado Superior o equivalente</option>
+            <option value="grado">Grado universitario / Licenciatura</option>
+            <option value="master">Máster o posgrado</option>
+          </select>
+        </div>
+        <div className="pub-field">
           <label className="pub-label">Presupuesto anual</label>
           <select className="pub-select" value={budget} onChange={e => setBudget(e.target.value)}>
             <option value="">Selecciona un rango</option>
@@ -2337,9 +2376,15 @@ function SolicitudForm() {
           </select>
         </div>
 
+        {submitError && (
+          <div style={{ marginBottom: 12, padding: "10px 14px", background: "#fef2f2", border: "1px solid #fca5a5", borderRadius: 6, fontSize: 13, color: "#dc2626" }}>
+            ⚠ {submitError}
+          </div>
+        )}
+
         <div style={{ display: "flex", gap: 12, marginTop: 24 }}>
           <button className="pub-btn pub-btn-outline pub-btn-sm" onClick={() => location.hash = "#/programas"} style={{ flex: 1 }}>← Volver</button>
-          <button className="pub-btn pub-btn-primary pub-btn-sm" onClick={handleSubmit} disabled={!name || !email || sending} style={{ flex: 1 }}>{sending ? "Enviando..." : "Enviar solicitud"}</button>
+          <button className="pub-btn pub-btn-primary pub-btn-sm" onClick={handleSubmit} disabled={!name || !email || !studentOrigin || !educationLevel || sending} style={{ flex: 1 }}>{sending ? "Enviando..." : "Enviar solicitud"}</button>
         </div>
       </div>
     </div>

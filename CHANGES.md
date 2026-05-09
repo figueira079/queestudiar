@@ -24,6 +24,25 @@ Registra aquí cada cambio significativo: qué se hizo, por qué, y qué podría
 
 ---
 
+## 2026-05-09 — sesion-18: formulario de onboarding + edge function `onboard-student`
+
+- **Qué**: El `SolicitudForm` público deja de delegar en n8n (`public_leads`) y crea directamente el expediente, los matches y el checklist de documentos vía la nueva edge function `onboard-student`.
+- **Por qué**: Reduce latencia entre lead y expediente operativo, elimina el round-trip por n8n y permite generar el checklist correcto según el tipo de programa (`master` / `grado` / `fp_superior`) en el momento del envío.
+- **Archivos modificados**: `src/App.jsx`, `supabase/functions/onboard-student/index.ts` (nuevo)
+- **Cambios principales**:
+  - `SolicitudForm`: 3 estados nuevos (`studentOrigin`, `educationLevel`, `submitError`)
+  - `SolicitudForm`: 2 selects obligatorios (origen del estudiante + nivel de estudios) antes del campo Presupuesto
+  - `SolicitudForm`: `handleSubmit` reemplazado — `publicInsert("public_leads", ...)` → `fetch` a `/functions/v1/onboard-student` con try/catch + bloque visual de error
+  - Botón deshabilitado hasta los 4 campos obligatorios (nombre, email, origen, nivel)
+  - Edge Function `onboard-student` (verify_jwt: false): inserta lead → inserta matches → consulta `programas.tipo` para detectar tipo dominante → inserta checklist (10 / 7 / 6 docs según master/grado/fp_superior)
+- **Podría afectar**:
+  - Flujo "decidido" del formulario público — los nuevos leads YA NO llegan a `public_leads`, sino directamente a `student_leads` + `matches` + `student_documents`
+  - n8n: si tenía workflow sobre `public_leads.flow_type='decidido'`, queda sin tráfico (el flujo "indeciso" de `MatchResults` sigue intacto)
+  - CRM: los nuevos `document_type` (`Equivalencia nota media DENM`, `Homologación o Volante Inscripción`, `Seguro médico privado`) no están en `DOCUMENT_TYPES` → caen en el bloque de "documentos extra" del `StudentDetail`, funcionan pero quedan separados del listado principal
+- **Verificado**: build limpio (286.13 kB), edge function deployada (version 1, status ACTIVE)
+
+---
+
 ## 2026-05-05 — sesion-17: subida de PDFs a Supabase Storage
 
 - **Qué**: El estudiante sube PDFs reales (max 10 MB) en la pestaña Documentos del portal en lugar de pegar texto en un `textarea`. El asesor ve un enlace "↗ Ver PDF" en la pestaña Documentos del CRM.

@@ -24,6 +24,25 @@ Registra aquí cada cambio significativo: qué se hizo, por qué, y qué podría
 
 ---
 
+## 2026-05-09 — sesion-19: evaluación IA de documentos con Gemini
+
+- **Qué**: Cuando el estudiante sube un PDF, una edge function (`evaluate-document`) lo descarga del bucket privado, lo envía a Gemini 1.5 Flash con una rúbrica específica por tipo de documento, y guarda puntuación (1–5) + feedback en la BD. La evaluación aparece tanto en el portal del estudiante como en el CRM del asesor.
+- **Por qué**: Reduce el tiempo del asesor en revisar documentos triviales y orienta al estudiante sobre la calidad del archivo subido antes de que llegue a admisiones.
+- **Archivos modificados**: `src/App.jsx`, `supabase/functions/evaluate-document/index.ts` (nuevo)
+- **Cambios principales**:
+  - SQL: 3 columnas en `student_documents` (`ai_score INTEGER`, `ai_feedback TEXT`, `ai_evaluated_at TIMESTAMPTZ`)
+  - Edge Function `evaluate-document` (verify_jwt: true): descarga PDF con service_role → base64 (chunked) → Gemini 1.5 Flash con `inline_data` + rúbrica → parsea JSON → update DB
+  - 10 rúbricas específicas (Carta motivación, CV, Recomendación, Expediente, Título, Idioma, Solvencia, Seguro, DENM, Homologación) + 1 default
+  - `PortalCliente`: fire-and-forget tras upload exitoso; bloque "Evaluación IA" con estrellas+feedback en card del documento; mensaje "Evaluación pendiente" si hay archivo sin evaluar
+  - `StudentDetail` CRM: cada `doc-row` envuelto en wrapper vertical para acomodar el bloque IA debajo (estrellas+feedback compactos)
+  - Modelo: `gemini-1.5-flash`, `temperature: 0.1`, `maxOutputTokens: 512`, soporta PDFs nativamente
+- **Podría afectar**: Tab Documentos del portal (estudiante) y Tab Documentos del CRM (asesor). El wrapper vertical en CRM no rompe el layout existente — el `doc-row` mantiene su flex horizontal.
+- **Costes**: 0 €/día mientras se mantenga bajo el tier gratuito de Gemini (1.500 req/día, 15 RPM)
+- **Prerequisito configurado**: `GEMINI_API_KEY` en Supabase Edge Functions Secrets
+- **Verificado**: build limpio (288.65 kB), edge function deployada (version 1, status ACTIVE)
+
+---
+
 ## 2026-05-09 — sesion-18: formulario de onboarding + edge function `onboard-student`
 
 - **Qué**: El `SolicitudForm` público deja de delegar en n8n (`public_leads`) y crea directamente el expediente, los matches y el checklist de documentos vía la nueva edge function `onboard-student`.

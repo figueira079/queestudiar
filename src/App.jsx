@@ -1525,56 +1525,84 @@ function StudentDetail({ student, onStatusChange, onNotesSave, currentUser, onAs
                   if (!doc) return null;
                   const dsc = DOC_STATUS_CONFIG[doc.status] || DOC_STATUS_CONFIG.pendiente;
                   return (
-                    <div key={dt} className="doc-row">
-                      <div className="doc-type">{dt}</div>
-                      <select
-                        className="doc-status-select"
-                        value={doc.status}
-                        onChange={e => patchDocument(doc.id, { status: e.target.value })}
-                        style={{ color: dsc.color, borderColor: dsc.color + "66" }}
-                      >
-                        {Object.entries(DOC_STATUS_CONFIG).map(([k, v]) => (
-                          <option key={k} value={k}>{v.emoji} {v.label}</option>
-                        ))}
-                      </select>
-                      {doc.file_url && (
-                        <a
-                          href={doc.file_url}
-                          target="_blank"
-                          rel="noreferrer"
-                          style={{ fontSize: 11, color: "var(--accent)", fontFamily: "var(--mono)", marginLeft: 8, whiteSpace: "nowrap" }}
+                    <div key={dt} style={{ display: "flex", flexDirection: "column" }}>
+                      <div className="doc-row">
+                        <div className="doc-type">{dt}</div>
+                        <select
+                          className="doc-status-select"
+                          value={doc.status}
+                          onChange={e => patchDocument(doc.id, { status: e.target.value })}
+                          style={{ color: dsc.color, borderColor: dsc.color + "66" }}
                         >
-                          ↗ Ver PDF
-                        </a>
+                          {Object.entries(DOC_STATUS_CONFIG).map(([k, v]) => (
+                            <option key={k} value={k}>{v.emoji} {v.label}</option>
+                          ))}
+                        </select>
+                        {doc.file_url && (
+                          <a
+                            href={doc.file_url}
+                            target="_blank"
+                            rel="noreferrer"
+                            style={{ fontSize: 11, color: "var(--accent)", fontFamily: "var(--mono)", marginLeft: 8, whiteSpace: "nowrap" }}
+                          >
+                            ↗ Ver PDF
+                          </a>
+                        )}
+                        <input
+                          className="doc-notes-input"
+                          value={doc.notes || ""}
+                          onChange={e => patchDocument(doc.id, { notes: e.target.value })}
+                          placeholder="Notas..."
+                        />
+                      </div>
+                      {doc.ai_score && (
+                        <div style={{ marginTop: 6, marginBottom: 6, padding: "6px 10px", background: "#f8fafc", borderRadius: 5, border: "1px solid var(--border)" }}>
+                          <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+                            <span style={{ fontSize: 11, fontFamily: "var(--mono)", color: "var(--muted)" }}>IA:</span>
+                            <span style={{ fontSize: 12 }}>{"⭐".repeat(doc.ai_score)}{"☆".repeat(5 - doc.ai_score)}</span>
+                            <span style={{ fontSize: 11, color: "var(--muted)", fontFamily: "var(--mono)" }}>{doc.ai_score}/5</span>
+                          </div>
+                          {doc.ai_feedback && (
+                            <div style={{ fontSize: 11, color: "var(--text)", marginTop: 4, lineHeight: 1.5 }}>{doc.ai_feedback}</div>
+                          )}
+                        </div>
                       )}
-                      <input
-                        className="doc-notes-input"
-                        value={doc.notes || ""}
-                        onChange={e => patchDocument(doc.id, { notes: e.target.value })}
-                        placeholder="Notas..."
-                      />
                     </div>
                   );
                 })}
                 {documents.filter(d => !DOCUMENT_TYPES.includes(d.document_type)).map(doc => {
                   const dsc = DOC_STATUS_CONFIG[doc.status] || DOC_STATUS_CONFIG.pendiente;
                   return (
-                    <div key={doc.id} className="doc-row">
-                      <div className="doc-type">{doc.document_type}</div>
-                      <select className="doc-status-select" value={doc.status} onChange={e => patchDocument(doc.id, { status: e.target.value })} style={{ color: dsc.color, borderColor: dsc.color + "66" }}>
-                        {Object.entries(DOC_STATUS_CONFIG).map(([k, v]) => <option key={k} value={k}>{v.emoji} {v.label}</option>)}
-                      </select>
-                      {doc.file_url && (
-                        <a
-                          href={doc.file_url}
-                          target="_blank"
-                          rel="noreferrer"
-                          style={{ fontSize: 11, color: "var(--accent)", fontFamily: "var(--mono)", marginLeft: 8, whiteSpace: "nowrap" }}
-                        >
-                          ↗ Ver PDF
-                        </a>
+                    <div key={doc.id} style={{ display: "flex", flexDirection: "column" }}>
+                      <div className="doc-row">
+                        <div className="doc-type">{doc.document_type}</div>
+                        <select className="doc-status-select" value={doc.status} onChange={e => patchDocument(doc.id, { status: e.target.value })} style={{ color: dsc.color, borderColor: dsc.color + "66" }}>
+                          {Object.entries(DOC_STATUS_CONFIG).map(([k, v]) => <option key={k} value={k}>{v.emoji} {v.label}</option>)}
+                        </select>
+                        {doc.file_url && (
+                          <a
+                            href={doc.file_url}
+                            target="_blank"
+                            rel="noreferrer"
+                            style={{ fontSize: 11, color: "var(--accent)", fontFamily: "var(--mono)", marginLeft: 8, whiteSpace: "nowrap" }}
+                          >
+                            ↗ Ver PDF
+                          </a>
+                        )}
+                        <input className="doc-notes-input" value={doc.notes || ""} onChange={e => patchDocument(doc.id, { notes: e.target.value })} placeholder="Notas..." />
+                      </div>
+                      {doc.ai_score && (
+                        <div style={{ marginTop: 6, marginBottom: 6, padding: "6px 10px", background: "#f8fafc", borderRadius: 5, border: "1px solid var(--border)" }}>
+                          <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+                            <span style={{ fontSize: 11, fontFamily: "var(--mono)", color: "var(--muted)" }}>IA:</span>
+                            <span style={{ fontSize: 12 }}>{"⭐".repeat(doc.ai_score)}{"☆".repeat(5 - doc.ai_score)}</span>
+                            <span style={{ fontSize: 11, color: "var(--muted)", fontFamily: "var(--mono)" }}>{doc.ai_score}/5</span>
+                          </div>
+                          {doc.ai_feedback && (
+                            <div style={{ fontSize: 11, color: "var(--text)", marginTop: 4, lineHeight: 1.5 }}>{doc.ai_feedback}</div>
+                          )}
+                        </div>
                       )}
-                      <input className="doc-notes-input" value={doc.notes || ""} onChange={e => patchDocument(doc.id, { notes: e.target.value })} placeholder="Notas..." />
                     </div>
                   );
                 })}
@@ -2496,6 +2524,12 @@ function PortalCliente({ currentUser, onLogout }) {
           ? { ...d, file_url: fileUrl, file_name: file.name, file_size: file.size, status: "en_revision" }
           : d
       ));
+
+      fetch(`${SUPABASE_URL}/functions/v1/evaluate-document`, {
+        method: "POST",
+        headers: { ...getAuthHeaders(), "Content-Type": "application/json" },
+        body: JSON.stringify({ document_id: docId }),
+      }).catch(() => {});
     } catch (e) {
       setUploadError(prev => ({ ...prev, [docId]: "No se pudo subir el archivo. Inténtalo de nuevo." }));
     }
@@ -2843,6 +2877,21 @@ function PortalCliente({ currentUser, onLogout }) {
                               Aún no has subido ningún archivo.
                             </div>
                           )}
+
+                          {doc.ai_score ? (
+                            <div style={{ marginTop: 10, padding: "8px 12px", background: "#f8fafc", border: "1px solid var(--border)", borderRadius: 6 }}>
+                              <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4, flexWrap: "wrap" }}>
+                                <span style={{ fontSize: 12, fontWeight: 600, color: "var(--text)", fontFamily: "var(--mono)" }}>Evaluación IA:</span>
+                                <span style={{ fontSize: 13 }}>{"⭐".repeat(doc.ai_score)}{"☆".repeat(5 - doc.ai_score)}</span>
+                                <span style={{ fontSize: 11, color: "var(--muted)", fontFamily: "var(--mono)" }}>{doc.ai_score}/5</span>
+                              </div>
+                              <div style={{ fontSize: 12, color: "var(--text)", lineHeight: 1.5 }}>{doc.ai_feedback}</div>
+                            </div>
+                          ) : doc.file_url ? (
+                            <div style={{ marginTop: 8, fontSize: 11, color: "var(--muted)", fontFamily: "var(--mono)", fontStyle: "italic" }}>
+                              Evaluación pendiente — aparecerá en breve.
+                            </div>
+                          ) : null}
 
                           <div style={{ marginTop: 12 }}>
                             <label style={{ display: "block", fontSize: 11, color: "var(--muted)", fontFamily: "var(--mono)", marginBottom: 6 }}>

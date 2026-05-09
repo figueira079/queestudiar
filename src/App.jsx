@@ -75,6 +75,26 @@ function getAuthHeaders() {
   return { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${token}` };
 }
 
+async function openPdf(fileUrl) {
+  if (!fileUrl) return;
+  try {
+    const storagePath = fileUrl.split("/storage/v1/object/authenticated/")[1];
+    if (!storagePath) throw new Error("Ruta no válida");
+    const res = await fetch(`${SUPABASE_URL}/storage/v1/object/sign/${storagePath}`, {
+      method: "POST",
+      headers: { ...getAuthHeaders(), "Content-Type": "application/json" },
+      body: JSON.stringify({ expiresIn: 3600 }),
+    });
+    if (!res.ok) throw new Error(`sign failed: ${res.status}`);
+    const { signedURL } = await res.json();
+    if (!signedURL) throw new Error("respuesta sin signedURL");
+    window.open(`${SUPABASE_URL}${signedURL}`, "_blank");
+  } catch (e) {
+    alert("No se pudo abrir el PDF. Intenta de nuevo o contacta con tu asesor.");
+    window.open(fileUrl, "_blank");
+  }
+}
+
 const STATUS_CONFIG = {
   nuevo:       { label: "Nuevo",        color: "#2563eb", bg: "#dbeafe" },
   contactado:  { label: "Contactado",   color: "#ca8a04", bg: "#fef9c3" },
@@ -1539,14 +1559,12 @@ function StudentDetail({ student, onStatusChange, onNotesSave, currentUser, onAs
                           ))}
                         </select>
                         {doc.file_url && (
-                          <a
-                            href={doc.file_url}
-                            target="_blank"
-                            rel="noreferrer"
-                            style={{ fontSize: 11, color: "var(--accent)", fontFamily: "var(--mono)", marginLeft: 8, whiteSpace: "nowrap" }}
+                          <button
+                            onClick={() => openPdf(doc.file_url)}
+                            style={{ fontSize: 11, color: "var(--accent)", fontFamily: "var(--mono)", marginLeft: 8, whiteSpace: "nowrap", background: "none", border: "none", cursor: "pointer", padding: 0 }}
                           >
                             ↗ Ver PDF
-                          </a>
+                          </button>
                         )}
                         <input
                           className="doc-notes-input"
@@ -1580,14 +1598,12 @@ function StudentDetail({ student, onStatusChange, onNotesSave, currentUser, onAs
                           {Object.entries(DOC_STATUS_CONFIG).map(([k, v]) => <option key={k} value={k}>{v.emoji} {v.label}</option>)}
                         </select>
                         {doc.file_url && (
-                          <a
-                            href={doc.file_url}
-                            target="_blank"
-                            rel="noreferrer"
-                            style={{ fontSize: 11, color: "var(--accent)", fontFamily: "var(--mono)", marginLeft: 8, whiteSpace: "nowrap" }}
+                          <button
+                            onClick={() => openPdf(doc.file_url)}
+                            style={{ fontSize: 11, color: "var(--accent)", fontFamily: "var(--mono)", marginLeft: 8, whiteSpace: "nowrap", background: "none", border: "none", cursor: "pointer", padding: 0 }}
                           >
                             ↗ Ver PDF
-                          </a>
+                          </button>
                         )}
                         <input className="doc-notes-input" value={doc.notes || ""} onChange={e => patchDocument(doc.id, { notes: e.target.value })} placeholder="Notas..." />
                       </div>
@@ -2856,14 +2872,12 @@ function PortalCliente({ currentUser, onLogout }) {
                                   {doc.file_size ? `${(doc.file_size / 1024).toFixed(0)} KB` : ""}
                                 </div>
                               </div>
-                              <a
-                                href={doc.file_url}
-                                target="_blank"
-                                rel="noreferrer"
-                                style={{ fontSize: 11, padding: "4px 10px", borderRadius: 5, background: "var(--accent)", color: "#fff", textDecoration: "none", fontFamily: "var(--mono)", whiteSpace: "nowrap" }}
+                              <button
+                                onClick={() => openPdf(doc.file_url)}
+                                style={{ fontSize: 11, padding: "4px 10px", borderRadius: 5, background: "var(--accent)", color: "#fff", border: "none", cursor: "pointer", fontFamily: "var(--mono)", whiteSpace: "nowrap" }}
                               >
                                 Ver PDF
-                              </a>
+                              </button>
                               <button
                                 onClick={() => deleteDocFile(doc.id)}
                                 disabled={uploadingDoc === doc.id}

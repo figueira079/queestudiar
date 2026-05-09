@@ -2545,7 +2545,8 @@ function PortalCliente({ currentUser, onLogout }) {
         method: "POST",
         headers: { ...getAuthHeaders(), "Content-Type": "application/json" },
         body: JSON.stringify({ document_id: docId }),
-      }).catch(() => {});
+      }).then(r => console.log("evaluate-document status:", r.status))
+        .catch(e => console.error("evaluate-document error:", e));
     } catch (e) {
       setUploadError(prev => ({ ...prev, [docId]: "No se pudo subir el archivo. Inténtalo de nuevo." }));
     }

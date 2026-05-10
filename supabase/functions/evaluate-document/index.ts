@@ -189,6 +189,7 @@ Deno.serve(async (req) => {
       );
     }
 
+    // ── 1. Obtener el registro del documento ─────────────────────────────
     const { data: doc, error: docError } = await supabase
       .from("student_documents")
       .select("id, document_type, file_url, status")
@@ -209,24 +210,26 @@ Deno.serve(async (req) => {
       );
     }
 
-    const storagePath = doc.file_url
-      .split("/storage/v1/object/authenticated/")[1];
+    // ── 2. Descargar el PDF usando el cliente JS (service role bypasa RLS) ─
+    // Extraer solo la ruta dentro del bucket: "USER_ID/DOC_ID.pdf"
+    const objectPath = doc.file_url
+      .split("/storage/v1/object/authenticated/student-documents/")[1];
 
-    const fileRes = await fetch(
-      `${Deno.env.get("SUPABASE_URL")}/storage/v1/object/${storagePath}`,
-      {
-        headers: {
-          Authorization: `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`,
-        },
-      }
-    );
-
-    if (!fileRes.ok) {
-      throw new Error(`No se pudo descargar el archivo: ${fileRes.status}`);
+    if (!objectPath) {
+      throw new Error(`No se pudo extraer la ruta del archivo de: ${doc.file_url}`);
     }
 
-    const fileBuffer = await fileRes.arrayBuffer();
+    const { data: fileBlob, error: downloadError } = await supabase.storage
+      .from("student-documents")
+      .download(objectPath);
 
+    if (downloadError || !fileBlob) {
+      throw new Error(`Error descargando archivo: ${downloadError?.message ?? "blob vacío"}`);
+    }
+
+    const fileBuffer = await fileBlob.arrayBuffer();
+
+    // ── 3. Convertir a base64 en chunks (evita stack overflow en PDFs grandes) ─
     const bytes = new Uint8Array(fileBuffer);
     let binary = "";
     const chunkSize = 8192;
@@ -235,8 +238,8 @@ Deno.serve(async (req) => {
     }
     const base64Pdf = btoa(binary);
 
+    // ── 4. Seleccionar rúbrica y llamar a Gemini ──────────────────────────
     const rubric = RUBRICS[doc.document_type] ?? RUBRIC_DEFAULT;
-
     const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY")!;
     const GEMINI_MODEL = "gemini-1.5-flash";
 
@@ -274,6 +277,7 @@ Deno.serve(async (req) => {
       throw new Error(`Error en la API de Gemini: ${geminiRes.status} — ${errBody}`);
     }
 
+    // ── 5. Parsear respuesta de Gemini ────────────────────────────────────
     const geminiData = await geminiRes.json();
     const rawText = geminiData.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
 
@@ -293,6 +297,7 @@ Deno.serve(async (req) => {
       feedback = rawText.slice(0, 500);
     }
 
+    // ── 6. Guardar en student_documents ───────────────────────────────────
     const { error: updateError } = await supabase
       .from("student_documents")
       .update({

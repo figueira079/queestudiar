@@ -1876,18 +1876,25 @@ const publicCss = `
 
 /* Program cards grid */
 .pub-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;}
-.pub-program{background:#fff;border:1px solid var(--pub-border);border-radius:var(--pub-radius);padding:20px;transition:all .2s;position:relative;}
+.pub-program{background:#fff;border:1px solid var(--pub-border);border-radius:var(--pub-radius);padding:20px;transition:all .2s;position:relative;cursor:pointer;}
 .pub-program:hover{box-shadow:0 4px 12px rgba(0,0,0,.08);border-color:#cbd5e1;}
 .pub-program.selected{border-color:var(--pub-primary);box-shadow:0 0 0 2px rgba(79,70,229,.15);}
-.pub-program-name{font-size:15px;font-weight:600;margin-bottom:8px;line-height:1.3;}
-.pub-program-meta{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px;}
+.pub-program.open{border-color:var(--pub-primary);box-shadow:0 4px 16px rgba(79,70,229,.12);}
+.pub-program-name{font-size:15px;font-weight:600;margin-bottom:10px;line-height:1.4;}
+.pub-program-meta{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px;}
 .pub-badge{display:inline-flex;align-items:center;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:500;}
 .pub-badge-tipo{background:#eef2ff;color:var(--pub-primary);}
 .pub-badge-city{background:#f0fdf4;color:#16a34a;}
 .pub-badge-mod{background:#fef3c7;color:#d97706;}
-.pub-program-price{font-size:14px;font-weight:600;color:var(--pub-primary);margin-bottom:12px;}
-.pub-program-area{font-size:12px;color:var(--pub-muted);margin-bottom:12px;}
-.pub-program-btn{width:100%;padding:8px;border:1px solid var(--pub-border);border-radius:8px;background:transparent;cursor:pointer;font-size:13px;font-weight:500;transition:all .2s;font-family:inherit;}
+.pub-program-footer{display:flex;align-items:center;justify-content:space-between;gap:8px;}
+.pub-program-price{font-size:14px;font-weight:700;color:var(--pub-primary);}
+.pub-program-toggle{font-size:12px;color:var(--pub-muted);font-weight:500;white-space:nowrap;flex-shrink:0;}
+.pub-program-area{font-size:12px;color:var(--pub-muted);}
+.pub-program-expanded{border-top:1px solid var(--pub-border);margin-top:14px;padding-top:14px;}
+.pub-program-details{display:flex;flex-wrap:wrap;gap:14px;font-size:12px;color:var(--pub-muted);margin-bottom:14px;}
+.pub-program-actions{display:flex;gap:8px;flex-wrap:wrap;}
+.pub-program-actions .pub-btn{flex:1;min-width:120px;justify-content:center;}
+.pub-program-btn{flex:1;min-width:100px;padding:9px 12px;border:1px solid var(--pub-border);border-radius:8px;background:transparent;cursor:pointer;font-size:13px;font-weight:500;transition:all .2s;font-family:inherit;}
 .pub-program-btn:hover{border-color:var(--pub-primary);color:var(--pub-primary);}
 .pub-program-btn.selected{background:var(--pub-primary);color:#fff;border-color:var(--pub-primary);}
 
@@ -1985,19 +1992,50 @@ function LandingPage() {
 }
 
 function ProgramCard({ program: p, onSelect, selected }) {
+  const [open, setOpen] = useState(false);
   const precio = p.precio_anual_eur ? `${Number(p.precio_anual_eur).toLocaleString("es-ES")} €/año` : "Consultar precio";
+  const precioNoUE = p.precio_extracomunitario_eur && p.precio_extracomunitario_eur !== p.precio_anual_eur
+    ? `${Number(p.precio_extracomunitario_eur).toLocaleString("es-ES")} €/año` : null;
+
   return (
-    <div className={`pub-program ${selected ? "selected" : ""}`}>
-      <div className="pub-program-name">{p.nombre}</div>
+    <div className={`pub-program ${selected ? "selected" : ""} ${open ? "open" : ""}`}
+      onClick={() => setOpen(o => !o)}>
       <div className="pub-program-meta">
         <span className="pub-badge pub-badge-tipo">{TIPO_LABELS[p.tipo] || p.tipo}</span>
         {p.ciudad && <span className="pub-badge pub-badge-city">{p.ciudad}</span>}
-        {p.modalidad && <span className="pub-badge pub-badge-mod">{p.modalidad}</span>}
         <VisaBadge horas={p.horas_semanales} />
       </div>
-      <div className="pub-program-price">{precio}</div>
-      <div className="pub-program-area">{p.familia_area}</div>
-      {onSelect && <button className={`pub-program-btn ${selected ? "selected" : ""}`} onClick={() => onSelect(p.id)}>{selected ? "✓ Seleccionado" : "Seleccionar"}</button>}
+      <div className="pub-program-name">{p.nombre}</div>
+      <div className="pub-program-footer">
+        <span className="pub-program-price">{precio}</span>
+        <span className="pub-program-toggle">{open ? "Cerrar ↑" : "Ver más ↓"}</span>
+      </div>
+
+      {open && (
+        <div className="pub-program-expanded" onClick={e => e.stopPropagation()}>
+          {p.familia_area && <div className="pub-program-area" style={{ marginBottom: 10 }}>{p.familia_area}</div>}
+          <div className="pub-program-details">
+            {precioNoUE && <span>💰 No UE: {precioNoUE}</span>}
+            {p.horas_semanales && <span>⏱ {p.horas_semanales}h/semana</span>}
+            {p.modalidad && <span>📍 {p.modalidad}</span>}
+          </div>
+          <div className="pub-program-actions">
+            {p.url_detalle && (
+              <a href={p.url_detalle} target="_blank" rel="noopener noreferrer"
+                className="pub-btn pub-btn-primary pub-btn-sm"
+                style={{ textDecoration: "none" }}>
+                Ver programa oficial →
+              </a>
+            )}
+            {onSelect && (
+              <button className={`pub-program-btn ${selected ? "selected" : ""}`}
+                onClick={() => onSelect(p.id)}>
+                {selected ? "✓ Seleccionado" : "Seleccionar"}
+              </button>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -2133,7 +2171,7 @@ function MatchResults() {
     if (!profile.study_area) { location.hash = "#/match"; return; }
 
     (async () => {
-      const data = await publicQueryAll("programas", "id,nombre,ciudad,tipo,familia_area,modalidad,precio_anual_eur,precio_extracomunitario_eur,horas_semanales,activo", "activo=eq.true");
+      const data = await publicQueryAll("programas", "id,nombre,ciudad,tipo,familia_area,modalidad,precio_anual_eur,precio_extracomunitario_eur,horas_semanales,activo,url_detalle", "activo=eq.true");
       setMatches(computeMatches(data, profile));
       setDataReady(true);
     })();
@@ -2253,7 +2291,6 @@ function ProgramBrowser() {
   const [filterCity, setFilterCity] = useState("");
   const [filterTipo, setFilterTipo] = useState("");
   const [filterArea, setFilterArea] = useState("");
-  const [filterMod, setFilterMod] = useState("");
   const [page, setPage] = useState(0);
   const [selected, setSelected] = useState(new Set());
   const PER_PAGE = 24;
@@ -2261,7 +2298,7 @@ function ProgramBrowser() {
   useEffect(() => {
     (async () => {
       try {
-        const data = await publicQueryAll("programas", "id,nombre,ciudad,tipo,familia_area,modalidad,precio_anual_eur,precio_extracomunitario_eur,horas_semanales", "activo=eq.true&order=nombre.asc");
+        const data = await publicQueryAll("programas", "id,nombre,ciudad,tipo,familia_area,modalidad,precio_anual_eur,precio_extracomunitario_eur,horas_semanales,url_detalle", "activo=eq.true&order=nombre.asc");
         setPrograms(Array.isArray(data) ? data : []);
       } catch {}
       setLoading(false);
@@ -2270,14 +2307,12 @@ function ProgramBrowser() {
 
   const cities = [...new Set(programs.map(p => p.ciudad).filter(Boolean))].sort();
   const areas = [...new Set(programs.map(p => p.familia_area).filter(Boolean))].sort();
-  const mods = [...new Set(programs.map(p => p.modalidad).filter(Boolean))].sort();
 
   const filtered = programs.filter(p => {
     if (search && !p.nombre?.toLowerCase().includes(search.toLowerCase())) return false;
     if (filterCity && p.ciudad !== filterCity) return false;
     if (filterTipo && p.tipo !== filterTipo) return false;
     if (filterArea && p.familia_area !== filterArea) return false;
-    if (filterMod && p.modalidad !== filterMod) return false;
     return true;
   });
 
@@ -2316,10 +2351,6 @@ function ProgramBrowser() {
         <select className="pub-select" value={filterArea} onChange={e => { setFilterArea(e.target.value); setPage(0); }}>
           <option value="">Todas las áreas</option>
           {areas.map(a => <option key={a} value={a}>{a}</option>)}
-        </select>
-        <select className="pub-select" value={filterMod} onChange={e => { setFilterMod(e.target.value); setPage(0); }}>
-          <option value="">Todas las modalidades</option>
-          {mods.map(m => <option key={m} value={m}>{m}</option>)}
         </select>
       </div>
 

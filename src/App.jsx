@@ -1797,7 +1797,7 @@ const publicCss = `
 
 /* Hero */
 .pub-hero{max-width:800px;margin:0 auto;padding:80px 24px 60px;text-align:center;}
-.pub-hero h1{font-family:'Bricolage Grotesque',system-ui,sans-serif;font-size:48px;font-weight:700;line-height:1.15;margin-bottom:16px;background:linear-gradient(135deg,var(--pub-primary),var(--pub-secondary));-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+.pub-hero h1{font-family:'Bricolage Grotesque',system-ui,sans-serif;font-size:48px;font-weight:700;line-height:1.15;margin-bottom:16px;background:linear-gradient(135deg,#1e40af,#2563eb);-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
 .pub-hero p{font-size:18px;color:var(--pub-muted);max-width:560px;margin:0 auto 40px;line-height:1.6;}
 .pub-hero-btns{display:flex;gap:16px;justify-content:center;flex-wrap:wrap;}
 .pub-btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:14px 32px;border-radius:var(--pub-radius);font-size:16px;font-weight:600;cursor:pointer;transition:all .2s;border:2px solid transparent;text-decoration:none;}
@@ -1875,30 +1875,35 @@ const publicCss = `
 .pub-form-nav{display:flex;justify-content:space-between;margin-top:32px;padding-top:24px;border-top:1px solid var(--pub-border);}
 
 /* Program cards grid */
-.pub-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;}
-.pub-program{background:#fff;border:1px solid var(--pub-border);border-radius:var(--pub-radius);padding:20px;transition:all .2s;position:relative;cursor:pointer;overflow:hidden;}
-.pub-program::before{content:'';position:absolute;top:0;left:0;right:0;height:4px;background:var(--pub-primary);}
-.pub-program.pub-tipo-master::before{background:var(--pub-secondary);}
-.pub-program.pub-tipo-doctorado::before{background:#0f172a;}
-.pub-program.pub-tipo-fp::before{background:var(--pub-success);}
-.pub-program:hover{box-shadow:0 4px 12px rgba(0,0,0,.08);border-color:#cbd5e1;}
+.pub-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;align-items:start;}
+.pub-program{background:#fff;border:1px solid var(--pub-border);border-top:4px solid var(--pub-primary);border-radius:var(--pub-radius);padding:0;transition:all .2s;cursor:pointer;overflow:hidden;}
+.pub-program.pub-tipo-master{border-top-color:var(--pub-secondary);}
+.pub-program.pub-tipo-doctorado{border-top-color:#0f172a;}
+.pub-program.pub-tipo-fp{border-top-color:var(--pub-success);}
+.pub-program:hover{box-shadow:0 4px 12px rgba(0,0,0,.08);}
 .pub-program.selected{border-color:var(--pub-primary);box-shadow:0 0 0 2px rgba(37,99,235,.15);}
-.pub-program.open{border-color:var(--pub-primary);box-shadow:0 4px 16px rgba(37,99,235,.12);}
-.pub-program-header{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:10px;}
-.pub-program-logo{width:36px;height:36px;border-radius:8px;object-fit:contain;flex-shrink:0;background:var(--pub-surface);border:1px solid var(--pub-border);padding:3px;}
-.pub-program-logo-fallback{width:36px;height:36px;border-radius:8px;flex-shrink:0;background:var(--pub-surface);border:1px solid var(--pub-border);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:var(--pub-primary);font-family:'Work Sans',sans-serif;text-transform:uppercase;}
-.pub-program-name{font-family:'Work Sans',sans-serif;font-size:14px;font-weight:600;line-height:1.4;flex:1;margin-top:6px;}
-.pub-program-meta{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px;}
+.pub-program.open{box-shadow:0 4px 20px rgba(37,99,235,.14);}
+/* Image header */
+.pub-program-img{height:104px;display:flex;align-items:center;justify-content:center;position:relative;border-bottom:1px solid var(--pub-border);}
+.pub-program-img img{max-height:64px;max-width:140px;object-fit:contain;}
+.pub-program-img-fallback{font-family:'Bricolage Grotesque',sans-serif;font-size:32px;font-weight:700;opacity:.45;}
+/* Card body */
+.pub-program-body{padding:16px 18px 18px;}
+.pub-program-meta{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px;}
 .pub-badge{display:inline-flex;align-items:center;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;}
-.pub-badge-tipo{background:#dbeafe;color:var(--pub-primary);}
-.pub-badge-city{background:#dcfce7;color:#16a34a;}
+.pub-badge-tipo{background:#dbeafe;color:#1d4ed8;}
+.pub-badge-city{background:#dcfce7;color:#15803d;}
+.pub-badge-visa{background:#fef9c3;color:#a16207;}
 .pub-badge-mod{background:#fef9c3;color:#ca8a04;}
+.pub-program-name{font-family:'Work Sans',sans-serif;font-size:14px;font-weight:600;line-height:1.4;color:var(--pub-text);margin-bottom:12px;}
 .pub-program-footer{display:flex;align-items:center;justify-content:space-between;gap:8px;}
 .pub-program-price{font-family:'IBM Plex Mono',monospace;font-size:13px;font-weight:500;color:var(--pub-primary);}
-.pub-program-toggle{font-size:12px;color:var(--pub-muted);font-weight:500;white-space:nowrap;flex-shrink:0;}
-.pub-program-area{font-size:12px;color:var(--pub-muted);}
+.pub-program-toggle{font-size:11px;color:var(--pub-light);font-weight:500;white-space:nowrap;flex-shrink:0;}
 .pub-program-expanded{border-top:1px solid var(--pub-border);margin-top:14px;padding-top:14px;}
-.pub-program-details{display:flex;flex-wrap:wrap;gap:14px;font-size:12px;color:var(--pub-muted);margin-bottom:14px;}
+.pub-program-desc{font-size:13px;color:var(--pub-muted);line-height:1.6;margin-bottom:12px;}
+.pub-program-area{display:inline-block;font-size:11px;font-weight:600;color:var(--pub-primary);background:#dbeafe;padding:2px 10px;border-radius:20px;margin-bottom:10px;}
+.pub-program-details{display:flex;flex-wrap:wrap;gap:12px;font-size:12px;color:var(--pub-muted);margin-bottom:14px;}
+.pub-program-institution{font-size:11px;color:var(--pub-light);margin-bottom:10px;}
 .pub-program-actions{display:flex;gap:8px;flex-wrap:wrap;}
 .pub-program-actions .pub-btn{flex:1;min-width:120px;justify-content:center;}
 .pub-program-btn{flex:1;min-width:100px;padding:9px 12px;border:1px solid var(--pub-border);border-radius:8px;background:transparent;cursor:pointer;font-size:13px;font-weight:500;transition:all .2s;font-family:inherit;}
@@ -1998,6 +2003,20 @@ function LandingPage() {
   );
 }
 
+const TIPO_DESC = {
+  grado: "Titulación universitaria oficial de 4 años. Formación integral que combina bases teóricas y aplicación práctica para el ejercicio profesional cualificado.",
+  master: "Posgrado universitario oficial. Especialización avanzada orientada al desarrollo profesional o la investigación en el campo de conocimiento seleccionado.",
+  doctorado: "Programa de doctorado. El máximo nivel académico universitario, orientado a la investigación científica y la producción de conocimiento original.",
+  fp_superior: "Ciclo Formativo de Grado Superior. Formación profesional intensiva con fuerte componente práctico y módulo de formación en empresa (FCT) incluido.",
+};
+
+const TIPO_IMG_BG = {
+  grado: "linear-gradient(135deg,#dbeafe,#eff6ff)",
+  master: "linear-gradient(135deg,#fde8df,#fff7f5)",
+  doctorado: "linear-gradient(135deg,#e2e8f0,#f8fafc)",
+  fp_superior: "linear-gradient(135deg,#dcfce7,#f0fdf4)",
+};
+
 function ProgramCard({ program: p, onSelect, selected }) {
   const [open, setOpen] = useState(false);
   const [logoErr, setLogoErr] = useState(false);
@@ -2006,61 +2025,69 @@ function ProgramCard({ program: p, onSelect, selected }) {
     ? (p.precio_anual_eur === 0 ? "Gratuito" : `${Number(p.precio_anual_eur).toLocaleString("es-ES")} €/año`)
     : "Consultar precio";
   const precioNoUE = p.precio_extracomunitario_eur != null && p.precio_extracomunitario_eur !== p.precio_anual_eur
-    ? (p.precio_extracomunitario_eur === 0 ? "Gratuito (no UE)" : `${Number(p.precio_extracomunitario_eur).toLocaleString("es-ES")} €/año (no UE)`)
+    ? (p.precio_extracomunitario_eur === 0 ? "Gratuito (no UE)" : `${Number(p.precio_extracomunitario_eur).toLocaleString("es-ES")} €/año`)
     : null;
 
   const domain = p.url_detalle ? (() => { try { return new URL(p.url_detalle).hostname.replace(/^www\./, ""); } catch { return null; } })() : null;
   const tipoClass = p.tipo === "master" ? "pub-tipo-master" : p.tipo === "doctorado" ? "pub-tipo-doctorado" : p.tipo === "fp_superior" ? "pub-tipo-fp" : "";
-  const fallbackInitial = domain ? domain[0].toUpperCase() : (p.nombre ? p.nombre[0].toUpperCase() : "U");
+  const imgBg = TIPO_IMG_BG[p.tipo] || TIPO_IMG_BG.grado;
+  const fallbackColor = p.tipo === "master" ? "#e8531a" : p.tipo === "doctorado" ? "#0f172a" : p.tipo === "fp_superior" ? "#16a34a" : "#2563eb";
+  const fallbackInitial = p.nombre ? p.nombre[0].toUpperCase() : "U";
+  const desc = TIPO_DESC[p.tipo] || "";
+  const descArea = p.familia_area ? ` Área: ${p.familia_area}.` : "";
 
   return (
     <div className={`pub-program ${tipoClass} ${selected ? "selected" : ""} ${open ? "open" : ""}`}
       onClick={() => setOpen(o => !o)}>
-      <div className="pub-program-header">
-        <div style={{ flex: 1 }}>
-          <div className="pub-program-meta">
-            <span className="pub-badge pub-badge-tipo">{TIPO_LABELS[p.tipo] || p.tipo}</span>
-            {p.ciudad && <span className="pub-badge pub-badge-city">{p.ciudad}</span>}
-            <VisaBadge horas={p.horas_semanales} />
-          </div>
-          <div className="pub-program-name">{p.nombre}</div>
-        </div>
+
+      {/* Horizontal image header */}
+      <div className="pub-program-img" style={{ background: imgBg }}>
         {domain && !logoErr
-          ? <img src={`https://www.google.com/s2/favicons?domain=${domain}&sz=64`} className="pub-program-logo" alt={domain} onError={() => setLogoErr(true)} />
-          : <div className="pub-program-logo-fallback">{fallbackInitial}</div>
+          ? <img src={`https://logo.clearbit.com/${domain}`} alt={domain} onError={() => setLogoErr(true)} />
+          : <div className="pub-program-img-fallback" style={{ color: fallbackColor }}>{fallbackInitial}</div>
         }
       </div>
-      <div className="pub-program-footer">
-        <span className="pub-program-price">{precio}</span>
-        <span className="pub-program-toggle">{open ? "Cerrar ↑" : "Ver más ↓"}</span>
-      </div>
 
-      {open && (
-        <div className="pub-program-expanded" onClick={e => e.stopPropagation()}>
-          {p.familia_area && <div className="pub-program-area" style={{ marginBottom: 10 }}>{p.familia_area}</div>}
-          {domain && <div style={{ fontSize: 11, color: "var(--pub-light)", marginBottom: 10 }}>{domain}</div>}
-          <div className="pub-program-details">
-            {precioNoUE && <span>{precioNoUE}</span>}
-            {p.horas_semanales && <span>⏱ {p.horas_semanales}h/semana</span>}
-            {p.modalidad && <span>📍 {p.modalidad}</span>}
-          </div>
-          <div className="pub-program-actions">
-            {p.url_detalle && (
-              <a href={p.url_detalle} target="_blank" rel="noopener noreferrer"
-                className="pub-btn pub-btn-primary pub-btn-sm"
-                style={{ textDecoration: "none" }}>
-                Ver programa oficial →
-              </a>
-            )}
-            {onSelect && (
-              <button className={`pub-program-btn ${selected ? "selected" : ""}`}
-                onClick={() => onSelect(p.id)}>
-                {selected ? "✓ Seleccionado" : "Seleccionar"}
-              </button>
-            )}
-          </div>
+      {/* Card body */}
+      <div className="pub-program-body">
+        <div className="pub-program-meta">
+          <span className="pub-badge pub-badge-tipo">{TIPO_LABELS[p.tipo] || p.tipo}</span>
+          {p.ciudad && <span className="pub-badge pub-badge-city">{p.ciudad}</span>}
+          <VisaBadge horas={p.horas_semanales} />
         </div>
-      )}
+        <div className="pub-program-name">{p.nombre}</div>
+        <div className="pub-program-footer">
+          <span className="pub-program-price">{precio}</span>
+          <span className="pub-program-toggle">{open ? "Cerrar ↑" : "Ver más ↓"}</span>
+        </div>
+
+        {open && (
+          <div className="pub-program-expanded" onClick={e => e.stopPropagation()}>
+            <p className="pub-program-desc">{desc}{descArea}</p>
+            {domain && <div className="pub-program-institution">{domain}</div>}
+            <div className="pub-program-details">
+              {precioNoUE && <span>💰 No UE: {precioNoUE}</span>}
+              {p.horas_semanales && <span>⏱ {p.horas_semanales}h/sem</span>}
+              {p.modalidad && <span>📍 {p.modalidad}</span>}
+            </div>
+            <div className="pub-program-actions">
+              {p.url_detalle && (
+                <a href={p.url_detalle} target="_blank" rel="noopener noreferrer"
+                  className="pub-btn pub-btn-primary pub-btn-sm"
+                  style={{ textDecoration: "none" }}>
+                  Ver programa oficial →
+                </a>
+              )}
+              {onSelect && (
+                <button className={`pub-program-btn ${selected ? "selected" : ""}`}
+                  onClick={() => onSelect(p.id)}>
+                  {selected ? "✓ Seleccionado" : "Seleccionar"}
+                </button>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

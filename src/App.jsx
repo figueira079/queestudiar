@@ -1672,6 +1672,18 @@ async function publicQuery(table, select = "*", filters = "") {
   const res = await fetch(url, { headers: getPublicHeaders() });
   return res.json();
 }
+
+async function publicQueryAll(table, select, filters = "") {
+  // max_rows del proyecto está en 12000 — cubre los 10135 programas actuales en una sola petición
+  const LIMIT = 12000;
+  const url = `${SUPABASE_URL}/rest/v1/${table}?select=${encodeURIComponent(select)}${filters ? "&" + filters : ""}&limit=${LIMIT}`;
+  try {
+    const data = await fetch(url, { headers: getPublicHeaders() }).then(r => r.json());
+    return Array.isArray(data) ? data : [];
+  } catch {
+    return [];
+  }
+}
 async function publicInsert(table, data) {
   const res = await fetch(`${SUPABASE_URL}/rest/v1/${table}`, {
     method: "POST",
@@ -2097,10 +2109,20 @@ function MatchForm() {
   );
 }
 
+const MATCH_LOADING_STEPS = [
+  { msg: "Analizando tu perfil académico...", pct: 15, delay: 0 },
+  { msg: "Buscando programas en toda España...", pct: 35, delay: 750 },
+  { msg: "Filtrando por tus ciudades preferidas...", pct: 58, delay: 1700 },
+  { msg: "Calculando compatibilidad con cada programa...", pct: 80, delay: 2700 },
+  { msg: "Casi listo, preparando tus recomendaciones...", pct: 93, delay: 3500 },
+];
+
 function MatchResults() {
-  const [programs, setPrograms] = useState([]);
   const [matches, setMatches] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [dataReady, setDataReady] = useState(false);
+  const [animDone, setAnimDone] = useState(false);
+  const [loadingMsg, setLoadingMsg] = useState(MATCH_LOADING_STEPS[0].msg);
+  const [loadingPct, setLoadingPct] = useState(0);
   const [showModal, setShowModal] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [filterCity, setFilterCity] = useState("");
@@ -2109,17 +2131,21 @@ function MatchResults() {
 
   useEffect(() => {
     if (!profile.study_area) { location.hash = "#/match"; return; }
+
     (async () => {
-      const data = await publicQuery("programas", "id,nombre,ciudad,tipo,familia_area,modalidad,precio_anual_eur,precio_extracomunitario_eur,horas_semanales,activo", "activo=eq.true&limit=5000");
-      setPrograms(data);
-      const m = computeMatches(data, profile);
-      setMatches(m);
-      setLoading(false);
+      const data = await publicQueryAll("programas", "id,nombre,ciudad,tipo,familia_area,modalidad,precio_anual_eur,precio_extracomunitario_eur,horas_semanales,activo", "activo=eq.true");
+      setMatches(computeMatches(data, profile));
+      setDataReady(true);
     })();
+
+    const timers = MATCH_LOADING_STEPS.map(s =>
+      setTimeout(() => { setLoadingMsg(s.msg); setLoadingPct(s.pct); }, s.delay)
+    );
+    const doneTimer = setTimeout(() => setAnimDone(true), 3500 + 900);
+    return () => [...timers, doneTimer].forEach(clearTimeout);
   }, []);
 
-  const filteredMatches = filterCity ? matches.filter(m => m.ciudad === filterCity) : matches;
-  const matchCities = [...new Set(matches.map(m => m.ciudad).filter(Boolean))];
+  const showResults = dataReady && animDone;
 
   if (submitted) return (
     <div className="pub-container">
@@ -2132,7 +2158,31 @@ function MatchResults() {
     </div>
   );
 
-  if (loading) return <div className="pub-container"><div className="pub-card" style={{ textAlign: "center", padding: 60 }}><div style={{ fontSize: 36, marginBottom: 12 }}>🔍</div><p>Analizando programas...</p></div></div>;
+  if (!showResults) {
+    const waitingData = animDone && !dataReady;
+    const pct = waitingData ? 97 : loadingPct;
+    const msg = waitingData ? "Últimos ajustes..." : loadingMsg;
+    return (
+      <div className="pub-container">
+        <div className="pub-card" style={{ textAlign: "center", padding: "64px 40px" }}>
+          <div style={{ fontSize: 48, marginBottom: 20 }}>🔍</div>
+          <h2 style={{ marginBottom: 10 }}>Buscando programas para ti</h2>
+          <p style={{ color: "var(--pub-muted)", marginBottom: 36, minHeight: 26 }}>{msg}</p>
+          <div style={{ background: "#e2e8f0", borderRadius: 999, height: 10, overflow: "hidden", maxWidth: 380, margin: "0 auto 10px" }}>
+            <div style={{
+              background: "linear-gradient(90deg, var(--pub-primary), var(--pub-secondary))",
+              height: "100%", borderRadius: 999,
+              width: `${pct}%`, transition: "width 0.8s ease",
+            }} />
+          </div>
+          <div style={{ fontSize: 13, color: "var(--pub-light)" }}>{pct}%</div>
+        </div>
+      </div>
+    );
+  }
+
+  const filteredMatches = filterCity ? matches.filter(m => m.ciudad === filterCity) : matches;
+  const matchCities = [...new Set(matches.map(m => m.ciudad).filter(Boolean))];
 
   return (
     <div className="pub-container-wide">
@@ -2210,8 +2260,10 @@ function ProgramBrowser() {
 
   useEffect(() => {
     (async () => {
-      const data = await publicQuery("programas", "id,nombre,ciudad,tipo,familia_area,modalidad,precio_anual_eur,precio_extracomunitario_eur,horas_semanales", "activo=eq.true&order=nombre.asc&limit=10000");
-      setPrograms(data);
+      try {
+        const data = await publicQueryAll("programas", "id,nombre,ciudad,tipo,familia_area,modalidad,precio_anual_eur,precio_extracomunitario_eur,horas_semanales", "activo=eq.true&order=nombre.asc");
+        setPrograms(Array.isArray(data) ? data : []);
+      } catch {}
       setLoading(false);
     })();
   }, []);

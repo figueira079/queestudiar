@@ -1674,15 +1674,15 @@ async function publicQuery(table, select = "*", filters = "") {
 }
 
 async function publicQueryAll(table, select, filters = "") {
-  // max_rows del proyecto está en 12000 — cubre los 10135 programas actuales en una sola petición
-  const LIMIT = 12000;
-  const url = `${SUPABASE_URL}/rest/v1/${table}?select=${encodeURIComponent(select)}${filters ? "&" + filters : ""}&limit=${LIMIT}`;
-  try {
-    const data = await fetch(url, { headers: getPublicHeaders() }).then(r => r.json());
-    return Array.isArray(data) ? data : [];
-  } catch {
-    return [];
-  }
+  // Dos peticiones paralelas de 6000 (< max_rows) con offset para cubrir los 10135 programas
+  const hasOrder = /(?:^|&)order=/.test(filters || "");
+  const base = `${SUPABASE_URL}/rest/v1/${table}?select=${encodeURIComponent(select)}${filters ? "&" + filters : ""}${hasOrder ? "" : "&order=id.asc"}`;
+  const hdrs = getPublicHeaders();
+  const half = (offset) =>
+    fetch(`${base}&limit=6000&offset=${offset}`, { headers: hdrs })
+      .then(r => r.json()).then(d => Array.isArray(d) ? d : []).catch(() => []);
+  const [p1, p2] = await Promise.all([half(0), half(6000)]);
+  return [...p1, ...p2];
 }
 async function publicInsert(table, data) {
   const res = await fetch(`${SUPABASE_URL}/rest/v1/${table}`, {

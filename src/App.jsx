@@ -1779,7 +1779,7 @@ function computeMatches(programs, profile) {
 
 // ─── PUBLIC CSS ──────────────────────────────────────────────────────────
 const publicCss = `
-@import url('https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,700&family=Work+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,700&family=Lora:ital,wght@0,400;0,500;1,400&family=Work+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap');
 :root {
   --pub-bg:#faf6f0; --pub-surface:#f0f4ff; --pub-border:#e2e8f0;
   --pub-primary:#2563eb; --pub-primary-hover:#1d4ed8; --pub-secondary:#e8531a;
@@ -1800,8 +1800,8 @@ const publicCss = `
 
 /* Hero */
 .pub-hero{max-width:800px;margin:0 auto;padding:80px 24px 60px;text-align:center;}
-.pub-hero h1{font-family:'Bricolage Grotesque',system-ui,sans-serif;font-size:48px;font-weight:700;line-height:1.15;margin-bottom:16px;background:linear-gradient(135deg,#1e40af,#2563eb);-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
-.pub-hero p{font-size:18px;color:var(--pub-muted);max-width:560px;margin:0 auto 40px;line-height:1.6;}
+.pub-hero h1{font-family:'Bricolage Grotesque',system-ui,sans-serif;font-size:clamp(32px,5vw,52px);font-weight:700;line-height:1.12;margin-bottom:20px;color:var(--pub-text);}
+.pub-hero p{font-family:'Lora',Georgia,serif;font-size:18px;color:var(--pub-muted);max-width:560px;margin:0 auto 36px;line-height:1.7;}
 .pub-hero-btns{display:flex;gap:16px;justify-content:center;flex-wrap:wrap;}
 .pub-btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:14px 32px;border-radius:var(--pub-radius);font-size:16px;font-weight:600;cursor:pointer;transition:all .2s;border:2px solid transparent;text-decoration:none;}
 .pub-btn-primary{background:var(--pub-primary);color:#fff;border-color:var(--pub-primary);}
@@ -1821,7 +1821,7 @@ const publicCss = `
 /* Stats */
 .pub-stats{display:flex;justify-content:center;gap:60px;padding:40px 24px;background:var(--pub-surface);border-top:1px solid var(--pub-border);border-bottom:1px solid var(--pub-border);margin-bottom:60px;}
 .pub-stat{text-align:center;}
-.pub-stat-num{font-family:'Bricolage Grotesque',system-ui,sans-serif;font-size:32px;font-weight:700;color:var(--pub-primary);}
+.pub-stat-num{font-family:'IBM Plex Mono',monospace;font-size:clamp(32px,3.5vw,44px);font-weight:500;color:var(--pub-primary);}
 .pub-stat-label{font-size:13px;color:var(--pub-muted);margin-top:4px;}
 
 /* Footer */
@@ -1945,40 +1945,62 @@ const publicCss = `
 
 /* Landing — Sections */
 .pub-section{max-width:960px;margin:0 auto 72px;padding:0 24px;}
-.pub-section-label{font-family:'IBM Plex Mono',monospace;font-size:10.5px;font-weight:500;color:var(--pub-primary);text-transform:uppercase;letter-spacing:2px;margin-bottom:10px;}
-.pub-section h2{font-family:'Bricolage Grotesque',system-ui,sans-serif;font-size:28px;font-weight:700;color:var(--pub-text);margin-bottom:8px;line-height:1.2;}
-.pub-section-sub{font-size:15px;color:var(--pub-muted);margin-bottom:36px;line-height:1.6;max-width:560px;}
+.pub-section-label{font-family:'Bricolage Grotesque',system-ui,sans-serif;font-size:12px;font-weight:600;color:var(--pub-primary);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:10px;}
+.pub-section h2{font-family:'Bricolage Grotesque',system-ui,sans-serif;font-size:clamp(24px,3.5vw,36px);font-weight:600;color:var(--pub-text);margin-bottom:10px;line-height:1.2;}
+.pub-section-sub{font-family:'Lora',Georgia,serif;font-size:16px;color:var(--pub-muted);margin-bottom:40px;line-height:1.7;max-width:560px;}
 
 /* Landing — How it works */
 .pub-steps{display:grid;grid-template-columns:repeat(3,1fr);gap:40px;}
 .pub-step-num{font-family:'Bricolage Grotesque',system-ui,sans-serif;font-size:48px;font-weight:700;color:var(--pub-primary);opacity:.12;line-height:1;margin-bottom:12px;}
-.pub-step h3{font-family:'Bricolage Grotesque',system-ui,sans-serif;font-size:18px;font-weight:700;margin-bottom:8px;}
-.pub-step p{font-size:14px;color:var(--pub-muted);line-height:1.65;}
+.pub-step h3{font-family:'Bricolage Grotesque',system-ui,sans-serif;font-size:18px;font-weight:600;margin-bottom:8px;}
+.pub-step p{font-family:'Lora',Georgia,serif;font-size:15px;color:var(--pub-muted);line-height:1.7;}
 
 /* Landing — For whom */
 .pub-audience{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;}
 .pub-audience-card{background:#fff;border:1px solid var(--pub-border);border-radius:var(--pub-radius);padding:28px 24px;}
 .pub-audience-card-icon{font-size:28px;margin-bottom:14px;}
 .pub-audience-card h3{font-family:'Bricolage Grotesque',system-ui,sans-serif;font-size:16px;font-weight:700;margin-bottom:8px;}
-.pub-audience-card p{font-size:13px;color:var(--pub-muted);line-height:1.65;}
+.pub-audience-card p{font-family:'Lora',Georgia,serif;font-size:14px;color:var(--pub-muted);line-height:1.7;}
+.pub-audience-icon{width:32px;height:32px;color:var(--pub-primary);margin-bottom:14px;}
 
-/* Landing — FAQ */
+/* Landing — FAQ accordion */
 .pub-faq{border-top:1px solid var(--pub-border);}
-.pub-faq-item{border-bottom:1px solid var(--pub-border);padding:20px 0;}
-.pub-faq-q{font-family:'Work Sans',sans-serif;font-weight:700;font-size:15px;margin-bottom:8px;color:var(--pub-text);}
-.pub-faq-a{font-size:14px;color:var(--pub-muted);line-height:1.65;}
+.pub-faq-item{border-bottom:1px solid var(--pub-border);}
+.pub-faq-question{width:100%;text-align:left;padding:20px 0;display:flex;justify-content:space-between;align-items:center;cursor:pointer;font-family:'Bricolage Grotesque',system-ui,sans-serif;font-size:16px;font-weight:600;color:var(--pub-text);background:none;border:none;}
+.pub-faq-icon{font-size:22px;color:var(--pub-primary);transition:transform .2s ease;flex-shrink:0;margin-left:16px;line-height:1;}
+.pub-faq-item.open .pub-faq-icon{transform:rotate(45deg);}
+.pub-faq-answer{max-height:0;overflow:hidden;transition:max-height .35s ease;}
+.pub-faq-item.open .pub-faq-answer{max-height:500px;}
+.pub-faq-answer-inner{padding:0 0 20px;font-family:'Lora',Georgia,serif;font-size:15px;line-height:1.75;color:var(--pub-muted);}
 
 /* Landing — CTA banner */
-.pub-cta-banner{background:var(--pub-primary);padding:80px 24px;text-align:center;margin-top:auto;}
-.pub-cta-banner h2{font-family:'Bricolage Grotesque',system-ui,sans-serif;font-size:34px;font-weight:700;color:#fff;margin-bottom:12px;}
-.pub-cta-banner p{font-size:16px;color:rgba(255,255,255,.8);margin-bottom:32px;max-width:460px;margin-left:auto;margin-right:auto;}
+.pub-cta-banner{background:var(--pub-primary);padding:clamp(64px,10vw,96px) 24px;text-align:center;}
+.pub-cta-banner h2{font-family:'Bricolage Grotesque',system-ui,sans-serif;font-size:clamp(28px,4vw,36px);font-weight:600;color:#fff;margin-bottom:14px;}
+.pub-cta-banner p{font-family:'Lora',Georgia,serif;font-size:17px;color:rgba(255,255,255,.8);margin-bottom:36px;max-width:460px;margin-left:auto;margin-right:auto;line-height:1.6;}
 .pub-cta-banner .pub-btn-primary{background:#fff;color:var(--pub-primary);border-color:#fff;}
 .pub-cta-banner .pub-btn-primary:hover{background:#eff6ff;box-shadow:none;transform:none;}
 .pub-cta-banner .pub-btn-outline{border-color:rgba(255,255,255,.5);color:#fff;}
 .pub-cta-banner .pub-btn-outline:hover{background:rgba(255,255,255,.15);}
 
+/* Nav scroll shadow */
+.pub-nav.scrolled{box-shadow:0 1px 12px rgba(0,0,0,.06);border-bottom-color:transparent;}
+
+/* CTA banner button variants */
+.pub-cta-banner .pub-btn-primary{background:#fff;color:var(--pub-primary);border-color:#fff;font-family:'Bricolage Grotesque',system-ui,sans-serif;font-weight:600;}
+.pub-cta-banner .pub-btn-primary:hover{opacity:.92;background:#fff;box-shadow:none;transform:none;}
+.pub-cta-banner .pub-btn-outline{background:transparent;color:#fff;border-color:rgba(255,255,255,.6);font-family:'Bricolage Grotesque',system-ui,sans-serif;font-weight:600;}
+.pub-cta-banner .pub-btn-outline:hover{border-color:#fff;background:rgba(255,255,255,.08);}
+
 /* Card heading */
 .pub-card h2{font-family:'Bricolage Grotesque',system-ui,sans-serif;}
+
+/* Footer */
+.pub-footer{padding:40px 24px;text-align:center;border-top:1px solid var(--pub-border);margin-top:auto;}
+.pub-footer-main{font-family:'Lora',Georgia,serif;font-size:14px;color:var(--pub-light);margin-bottom:8px;}
+.pub-footer-links{display:flex;justify-content:center;gap:20px;flex-wrap:wrap;margin-bottom:16px;}
+.pub-footer-link{font-family:'Work Sans',sans-serif;font-size:13px;color:var(--pub-light);text-decoration:none;cursor:pointer;}
+.pub-footer-link:hover{color:var(--pub-primary);}
+.pub-footer-geo{font-family:'Lora',Georgia,serif;font-size:12px;color:var(--pub-light);max-width:640px;margin:0 auto;line-height:1.6;opacity:.65;}
 
 /* Form step indicator */
 .pub-step-indicator{display:flex;align-items:center;justify-content:center;gap:0;margin-bottom:32px;}
@@ -1990,10 +2012,10 @@ const publicCss = `
 
 /* Responsive */
 @media(max-width:768px){
-  .pub-hero h1{font-size:32px;}
-  .pub-hero p{font-size:16px;}
-  .pub-features{grid-template-columns:1fr;}
+  .pub-features{grid-template-columns:1fr 1fr;}
   .pub-stats{flex-direction:column;gap:24px;}
+  .pub-steps{grid-template-columns:1fr;}
+  .pub-audience{grid-template-columns:1fr;}
   .pub-grid{grid-template-columns:repeat(2,1fr);}
   .pub-area-grid{grid-template-columns:repeat(2,1fr);}
   .pub-city-grid{grid-template-columns:repeat(2,1fr);}
@@ -2017,33 +2039,75 @@ const publicCss = `
 // ─── PUBLIC COMPONENTS ───────────────────────────────────────────────────
 
 function PublicNav({ route }) {
-  const isActive = (r) => route === r || (r === "#/" && (!route || route === "#" || route === "#/"));
+  const [scrolled, setScrolled] = useState(false);
+  useEffect(() => {
+    const h = () => setScrolled(window.scrollY > 10);
+    window.addEventListener("scroll", h, { passive: true });
+    return () => window.removeEventListener("scroll", h);
+  }, []);
   return (
-    <nav className="pub-nav">
+    <nav className={`pub-nav${scrolled ? " scrolled" : ""}`}>
       <div className="pub-nav-logo" onClick={() => location.hash = "#/"}>QueEstudiar</div>
       <div className="pub-nav-links">
-        <span className={`pub-nav-link ${isActive("#/") ? "active" : ""}`} onClick={() => location.hash = "#/"}>Inicio</span>
         <span className={`pub-nav-link ${route?.startsWith("#/match") ? "active" : ""}`} onClick={() => location.hash = "#/match"}>Test vocacional</span>
-        <span className={`pub-nav-link ${route?.startsWith("#/programa") ? "active" : ""}`} onClick={() => location.hash = "#/programas"}>Explorar programas</span>
+        <button className="pub-btn pub-btn-outline" style={{ padding: "8px 18px", fontSize: 14 }} onClick={() => location.hash = "#/programas"}>Explorar programas →</button>
         {!IS_PUBLIC_DOMAIN && <span className="pub-nav-link admin" onClick={() => location.hash = "#/admin"}>Acceso equipo</span>}
       </div>
     </nav>
   );
 }
 
+function FaqItem({ q, a }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className={`pub-faq-item${open ? " open" : ""}`}>
+      <button className="pub-faq-question" onClick={() => setOpen(o => !o)}>
+        <span>{q}</span>
+        <span className="pub-faq-icon">+</span>
+      </button>
+      <div className="pub-faq-answer">
+        <div className="pub-faq-answer-inner">{a}</div>
+      </div>
+    </div>
+  );
+}
+
+const IcoBuilding = () => (
+  <svg className="pub-audience-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+    <rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 21V9h6v12"/><path d="M3 9h18"/>
+  </svg>
+);
+const IcoDiploma = () => (
+  <svg className="pub-audience-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+    <rect x="2" y="4" width="20" height="16" rx="2"/><path d="M8 10h8M8 14h5"/><circle cx="17" cy="14" r="2"/><path d="M17 16v4l-1-1-1 1v-4"/>
+  </svg>
+);
+const IcoPassport = () => (
+  <svg className="pub-audience-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+    <rect x="5" y="2" width="14" height="20" rx="2"/><circle cx="12" cy="11" r="3"/><path d="M5 7h14M9 17h6"/>
+  </svg>
+);
+
+const FAQS = [
+  { q: "¿Puedo estudiar en España si soy extranjero?", a: "Sí. España recibe cada año más de 170.000 estudiantes internacionales. Si eres ciudadano de la UE no necesitas visado. Si vienes de fuera de la UE, necesitarás solicitar un visado de estudiante antes de matricularte." },
+  { q: "¿Cuánto cuesta estudiar en España?", a: "Depende del tipo de programa y la universidad. Un grado en universidad pública para residentes UE ronda los 800–2.000 €/año. Los másteres y programas privados pueden ir de 3.000 € a más de 15.000 €/año. Los estudiantes extracomunitarios pagan tasas superiores en universidades públicas." },
+  { q: "¿Qué diferencia hay entre grado, máster, FP y doctorado?", a: "El grado es la titulación universitaria básica (4 años). El máster es una especialización de posgrado (1–2 años). La FP Superior es formación profesional intensiva (2 años), muy práctica. El doctorado es el nivel máximo, orientado a la investigación." },
+  { q: "¿Cómo funciona el test vocacional?", a: "Respondes 5 preguntas sobre tu perfil: país de origen, nivel educativo actual, áreas de interés, ciudad preferida y presupuesto. El sistema cruza tu perfil con los 10.135 programas disponibles y te muestra los que mejor encajan. Tarda menos de 5 minutos." },
+  { q: "¿Necesito homologar mi título para estudiar en España?", a: "Depende del programa. Para grados universitarios, los ciudadanos no UE generalmente necesitan homologar su título de bachillerato o pasar una prueba equivalente (PCE/UNED). Para másteres, el proceso de admisión lo gestiona cada universidad. QueEstudiar incluye los requisitos específicos de admisión en cada programa." },
+  { q: "¿En qué ciudades hay programas disponibles?", a: "Cubrimos 28 ciudades españolas. Las más demandadas son Madrid, Barcelona, Valencia, Sevilla, Bilbao, Málaga, Zaragoza y Granada. Puedes filtrar por ciudad en el explorador de programas." },
+];
+
 function LandingPage() {
   return (
     <>
       {/* HERO */}
       <div className="pub-hero">
-        <div className="pub-hero-eyebrow">
-          <span className="pub-badge pub-badge-tipo">Asesoría 100% gratuita</span>
-        </div>
-        <h1>Tu guía para estudiar en España</h1>
-        <p>QueEstudiar reúne más de 10.000 programas universitarios y de FP en un solo lugar, con un test que analiza tu perfil en minutos y asesores que te acompañan gratis hasta la matrícula.</p>
+        <div className="pub-section-label" style={{ marginBottom: 20 }}>Encuentra tu camino académico</div>
+        <h1>Estudia en España.<br/>El programa que encaja contigo.</h1>
+        <p>Más de 10.000 programas en universidades y centros de FP.<br/>Filtra por lo que ya tienes y lo que quieres estudiar.</p>
         <div className="pub-hero-btns">
-          <button className="pub-btn pub-btn-primary" onClick={() => location.hash = "#/match"}>Hacer el test (5 min)</button>
-          <button className="pub-btn pub-btn-outline" onClick={() => location.hash = "#/programas"}>Explorar programas</button>
+          <button className="pub-btn pub-btn-primary" onClick={() => location.hash = "#/match"}>Hacer el test (5 min) →</button>
+          <button className="pub-btn pub-btn-outline" onClick={() => location.hash = "#/programas"}>Ver todos los programas</button>
         </div>
         <div className="pub-hero-trust">
           <span>10.135 programas</span>
@@ -2059,29 +2123,29 @@ function LandingPage() {
         <div className="pub-stat"><div className="pub-stat-num">10.135</div><div className="pub-stat-label">Programas disponibles</div></div>
         <div className="pub-stat"><div className="pub-stat-num">28</div><div className="pub-stat-label">Ciudades en España</div></div>
         <div className="pub-stat"><div className="pub-stat-num">4</div><div className="pub-stat-label">Tipos de titulación</div></div>
-        <div className="pub-stat"><div className="pub-stat-num">0 €</div><div className="pub-stat-label">Coste de asesoría</div></div>
+        <div className="pub-stat"><div className="pub-stat-num">97</div><div className="pub-stat-label">Universidades acreditadas</div></div>
       </div>
 
       {/* HOW IT WORKS */}
       <div className="pub-section" style={{ paddingTop: 16 }}>
         <div className="pub-section-label">Cómo funciona</div>
-        <h2>De la duda al programa, en tres pasos</h2>
+        <h2>De la duda al programa, en tres pasos.</h2>
         <p className="pub-section-sub">No necesitas saber qué quieres estudiar. QueEstudiar te ayuda a descubrirlo.</p>
         <div className="pub-steps">
           <div className="pub-step">
             <div className="pub-step-num">01</div>
             <h3>Cuéntanos tu perfil</h3>
-            <p>Responde 5 preguntas sobre tu origen, nivel educativo, áreas de interés y ciudad preferida. Son menos de 5 minutos.</p>
+            <p>Responde 5 preguntas: de dónde vienes, qué nivel de estudios tienes, qué áreas te interesan y qué ciudad prefieres. Son menos de 5 minutos.</p>
           </div>
           <div className="pub-step">
             <div className="pub-step-num">02</div>
             <h3>Descubre tus matches</h3>
-            <p>Nuestro algoritmo analiza los 10.135 programas disponibles y te muestra los que mejor encajan con tu perfil y objetivos.</p>
+            <p>El sistema analiza los 10.135 programas disponibles y te muestra los que mejor encajan con tu perfil, nivel educativo y objetivos.</p>
           </div>
           <div className="pub-step">
             <div className="pub-step-num">03</div>
-            <h3>Solicita asesoría gratuita</h3>
-            <p>Un asesor especializado revisa tu expediente, resuelve tus dudas y te acompaña en el proceso de admisión sin coste alguno.</p>
+            <h3>Aplica con la información correcta</h3>
+            <p>Cada programa incluye los requisitos de admisión, plazos, costes y documentación necesaria según tu origen académico.</p>
           </div>
         </div>
       </div>
@@ -2089,21 +2153,21 @@ function LandingPage() {
       {/* FOR WHOM */}
       <div className="pub-section">
         <div className="pub-section-label">¿Para quién?</div>
-        <h2>Diseñado para estudiantes de todo el mundo</h2>
-        <p className="pub-section-sub">España es el tercer destino de estudiantes internacionales en Europa. QueEstudiar está pensado para todos ellos.</p>
+        <h2>Diseñado para estudiantes de todo el mundo.</h2>
+        <p className="pub-section-sub">España recibe más de 170.000 estudiantes internacionales cada año. Es el tercer destino universitario de Europa.</p>
         <div className="pub-audience">
           <div className="pub-audience-card">
-            <div className="pub-audience-card-icon">🇪🇺</div>
+            <IcoBuilding />
             <h3>Estudiantes europeos</h3>
             <p>Mismas condiciones que un estudiante español: mismos precios de matrícula, sin restricciones de visado. España ofrece calidad universitaria al mejor precio de Europa Occidental.</p>
           </div>
           <div className="pub-audience-card">
-            <div className="pub-audience-card-icon">🌎</div>
+            <IcoDiploma />
             <h3>Latinoamérica con convenio</h3>
             <p>Colombia, México, Argentina, Chile y otros países tienen convenios de reconocimiento de títulos con España, lo que facilita el acceso y simplifica los trámites de admisión.</p>
           </div>
           <div className="pub-audience-card">
-            <div className="pub-audience-card-icon">🌏</div>
+            <IcoPassport />
             <h3>Resto del mundo</h3>
             <p>Con visado de estudiante puedes estudiar en España. Te orientamos sobre requisitos de admisión, homologación de notas y gestión del visado paso a paso.</p>
           </div>
@@ -2113,46 +2177,47 @@ function LandingPage() {
       {/* STUDY TYPES */}
       <div className="pub-section">
         <div className="pub-section-label">Tipos de estudio</div>
-        <h2>Desde FP hasta Doctorado, todo en un lugar</h2>
+        <h2>Desde FP hasta Doctorado, todo en un lugar.</h2>
         <p className="pub-section-sub">QueEstudiar cubre todos los niveles del sistema educativo español.</p>
         <div className="pub-features">
-          <div className="pub-feature"><div className="pub-feature-icon">🎓</div><h3>Grado universitario</h3><p>Titulación oficial de 4 años (240 ECTS). Acceso desde bachillerato o equivalente. Más de 3.400 programas disponibles.</p></div>
-          <div className="pub-feature"><div className="pub-feature-icon">📐</div><h3>Máster universitario</h3><p>Especialización de posgrado (1–2 años). Para profundizar en un campo o cambiar de sector. Más de 5.000 másteres disponibles.</p></div>
-          <div className="pub-feature"><div className="pub-feature-icon">🔬</div><h3>Doctorado</h3><p>El nivel académico más alto. Orientado a la investigación científica. Acceso con máster universitario o equivalente.</p></div>
-          <div className="pub-feature"><div className="pub-feature-icon">⚙️</div><h3>FP Superior</h3><p>Formación Profesional de Grado Superior (2 años). Muy demandada por empresas, con alta tasa de inserción laboral.</p></div>
+          <div className="pub-feature">
+            <div className="pub-feature-icon">🎓</div><h3>Grado universitario</h3>
+            <p>Titulación oficial de 4 años (240 ECTS). Acceso desde bachillerato o equivalente. Más de 3.400 programas disponibles.</p>
+            <button className="pub-btn pub-btn-outline" style={{ marginTop: 16, padding: "8px 16px", fontSize: 13 }} onClick={() => { sessionStorage.setItem("filterTipo","grado"); location.hash="#/programas"; }}>Ver grados →</button>
+          </div>
+          <div className="pub-feature">
+            <div className="pub-feature-icon">📐</div><h3>Máster universitario</h3>
+            <p>Especialización de posgrado (1–2 años). Para profundizar en un campo o cambiar de sector. Más de 5.000 másteres disponibles.</p>
+            <button className="pub-btn pub-btn-outline" style={{ marginTop: 16, padding: "8px 16px", fontSize: 13 }} onClick={() => { sessionStorage.setItem("filterTipo","master"); location.hash="#/programas"; }}>Ver másteres →</button>
+          </div>
+          <div className="pub-feature">
+            <div className="pub-feature-icon">🔬</div><h3>Doctorado</h3>
+            <p>El nivel académico más alto. Orientado a la investigación científica. Acceso con máster universitario o equivalente.</p>
+            <button className="pub-btn pub-btn-outline" style={{ marginTop: 16, padding: "8px 16px", fontSize: 13 }} onClick={() => { sessionStorage.setItem("filterTipo","doctorado"); location.hash="#/programas"; }}>Ver doctorados →</button>
+          </div>
+          <div className="pub-feature">
+            <div className="pub-feature-icon">⚙️</div><h3>FP Superior</h3>
+            <p>Formación Profesional de Grado Superior (2 años). Muy demandada por empresas, con alta tasa de inserción laboral.</p>
+            <button className="pub-btn pub-btn-outline" style={{ marginTop: 16, padding: "8px 16px", fontSize: 13 }} onClick={() => { sessionStorage.setItem("filterTipo","fp_superior"); location.hash="#/programas"; }}>Ver FP Superior →</button>
+          </div>
         </div>
       </div>
 
       {/* FAQ */}
       <div className="pub-section">
         <div className="pub-section-label">Preguntas frecuentes</div>
-        <h2>Lo que más nos preguntan</h2>
+        <h2>Lo que más nos preguntan.</h2>
         <div className="pub-faq">
-          <div className="pub-faq-item">
-            <div className="pub-faq-q">¿Puedo estudiar en España si soy extranjero?</div>
-            <div className="pub-faq-a">Sí. España recibe cada año más de 170.000 estudiantes internacionales. Si eres ciudadano de la UE no necesitas visado. Si vienes de fuera de la UE, necesitarás solicitar un visado de estudiante antes de matricularte.</div>
-          </div>
-          <div className="pub-faq-item">
-            <div className="pub-faq-q">¿Cuánto cuesta estudiar en España?</div>
-            <div className="pub-faq-a">Depende del tipo de programa y la universidad. Un grado en universidad pública para residentes UE ronda los 800–2.000 €/año. Los másteres y programas privados pueden ir de 3.000 € a más de 15.000 €/año. Los estudiantes extracomunitarios pagan tasas superiores en universidades públicas.</div>
-          </div>
-          <div className="pub-faq-item">
-            <div className="pub-faq-q">¿Es gratuita la asesoría de QueEstudiar?</div>
-            <div className="pub-faq-a">Sí, completamente. Nuestro equipo te ayuda a elegir el programa, preparar la documentación y gestionar tu admisión sin ningún coste para ti.</div>
-          </div>
-          <div className="pub-faq-item">
-            <div className="pub-faq-q">¿Qué diferencia hay entre grado, máster, FP y doctorado?</div>
-            <div className="pub-faq-a">El grado es la titulación universitaria básica (4 años). El máster es una especialización de posgrado (1–2 años). La FP Superior es formación profesional intensiva (2 años), muy práctica. El doctorado es el nivel máximo, orientado a la investigación.</div>
-          </div>
+          {FAQS.map((f, i) => <FaqItem key={i} q={f.q} a={f.a} />)}
         </div>
       </div>
 
       {/* CTA BANNER */}
       <div className="pub-cta-banner">
         <h2>¿Listo para encontrar tu programa?</h2>
-        <p>Miles de estudiantes ya han descubierto su opción ideal. El test tarda menos de 5 minutos.</p>
+        <p>10.135 programas. Filtra por lo que necesitas, en 5 minutos.</p>
         <div className="pub-hero-btns">
-          <button className="pub-btn pub-btn-primary" onClick={() => location.hash = "#/match"}>Hacer el test</button>
+          <button className="pub-btn pub-btn-primary" onClick={() => location.hash = "#/match"}>Hacer el test →</button>
           <button className="pub-btn pub-btn-outline" onClick={() => location.hash = "#/programas"}>Explorar programas</button>
         </div>
       </div>
@@ -2535,7 +2600,7 @@ function ProgramBrowser() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [filterCity, setFilterCity] = useState("");
-  const [filterTipo, setFilterTipo] = useState("");
+  const [filterTipo, setFilterTipo] = useState(() => { const v = sessionStorage.getItem("filterTipo"); sessionStorage.removeItem("filterTipo"); return v || ""; });
   const [filterArea, setFilterArea] = useState("");
   const [page, setPage] = useState(0);
   const [selected, setSelected] = useState(new Set());
@@ -3431,7 +3496,15 @@ function PublicApp({ route }) {
       <style>{publicCss}</style>
       <PublicNav route={route} />
       <main style={{ flex: 1 }}>{getPage()}</main>
-      <footer className="pub-footer">© 2026 QueEstudiar · Asesoría educativa para estudiantes en España</footer>
+      <footer className="pub-footer">
+        <div className="pub-footer-links">
+          <span className="pub-footer-link">Política de privacidad</span>
+          <span className="pub-footer-link">Aviso legal</span>
+          <span className="pub-footer-link">Contacto</span>
+        </div>
+        <div className="pub-footer-main">© 2026 QueEstudiar · Búsqueda de programas académicos en España</div>
+        <div className="pub-footer-geo">QueEstudiar indexa los programas oficiales del Registro de Universidades, Centros y Títulos (RUCT) del Ministerio de Educación de España y del catálogo TodaFP de Formación Profesional. Todos los programas listados son titulaciones oficiales con validez académica en España y la Unión Europea.</div>
+      </footer>
     </div>
   );
 }

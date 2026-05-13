@@ -1767,7 +1767,10 @@ function computeMatches(programs, profile) {
     const areaMatch = familias.includes(p.familia_area);
     const tipoMatch = tipos.includes(p.tipo);
     const visaOk = !isNonEU || p.visa_eligible !== 'no_elegible';
-    return areaMatch && tipoMatch && visaOk;
+    if (!areaMatch || !tipoMatch || !visaOk) return false;
+    if (profile.budget === "bajo" && p.precio_anual_eur != null && p.precio_anual_eur > 5000) return false;
+    if (profile.budget === "medio" && p.precio_anual_eur != null && p.precio_anual_eur > 12000) return false;
+    return true;
   });
   const scored = candidates.map(p => ({ ...p, score: 10 + (cities.includes(p.ciudad) ? 30 : 5) + (p.activo ? 2 : 0) + (p.visa_eligible === 'elegible' ? 10 : 0) }));
   scored.sort((a, b) => b.score - a.score);
@@ -1809,7 +1812,7 @@ const publicCss = `
 .pub-btn:disabled{opacity:.5;cursor:not-allowed;transform:none !important;}
 
 /* Features */
-.pub-features{display:grid;grid-template-columns:repeat(3,1fr);gap:24px;max-width:960px;margin:0 auto 80px;padding:0 24px;}
+.pub-features{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:20px;max-width:960px;margin:0 auto;padding:0;}
 .pub-feature{background:var(--pub-surface);border:1px solid var(--pub-border);border-radius:var(--pub-radius);padding:32px 24px;text-align:center;}
 .pub-feature-icon{font-size:36px;margin-bottom:16px;}
 .pub-feature h3{font-size:16px;font-weight:700;margin-bottom:8px;}
@@ -1884,9 +1887,9 @@ const publicCss = `
 .pub-program.selected{border-color:var(--pub-primary);box-shadow:0 0 0 2px rgba(37,99,235,.15);}
 .pub-program.open{box-shadow:0 4px 20px rgba(37,99,235,.14);}
 /* Image header */
-.pub-program-img{height:104px;display:flex;align-items:center;justify-content:center;position:relative;border-bottom:1px solid var(--pub-border);}
-.pub-program-img img{max-height:64px;max-width:140px;object-fit:contain;}
-.pub-program-img-fallback{font-family:'Bricolage Grotesque',sans-serif;font-size:32px;font-weight:700;opacity:.45;}
+.pub-program-img{height:100px;display:flex;align-items:center;justify-content:center;position:relative;border-bottom:1px solid var(--pub-border);overflow:hidden;}
+.pub-program-img-abbr{font-family:'Bricolage Grotesque',system-ui,sans-serif;font-size:34px;font-weight:700;letter-spacing:-1.5px;opacity:.18;position:absolute;pointer-events:none;user-select:none;}
+.pub-program-img-logo{max-height:60px;max-width:128px;object-fit:contain;position:relative;z-index:1;}
 /* Card body */
 .pub-program-body{padding:16px 18px 18px;}
 .pub-program-meta{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px;}
@@ -1935,6 +1938,56 @@ const publicCss = `
 .pub-success h2{font-size:28px;font-weight:700;margin-bottom:12px;color:var(--pub-success);}
 .pub-success p{font-size:16px;color:var(--pub-muted);max-width:400px;margin:0 auto 32px;line-height:1.6;}
 
+/* Landing — Hero trust bar */
+.pub-hero-eyebrow{margin-bottom:20px;}
+.pub-hero-trust{display:flex;align-items:center;justify-content:center;gap:12px;flex-wrap:wrap;margin-top:24px;font-size:13px;color:var(--pub-muted);font-family:'IBM Plex Mono',monospace;}
+.pub-trust-dot{color:var(--pub-border);}
+
+/* Landing — Sections */
+.pub-section{max-width:960px;margin:0 auto 72px;padding:0 24px;}
+.pub-section-label{font-family:'IBM Plex Mono',monospace;font-size:10.5px;font-weight:500;color:var(--pub-primary);text-transform:uppercase;letter-spacing:2px;margin-bottom:10px;}
+.pub-section h2{font-family:'Bricolage Grotesque',system-ui,sans-serif;font-size:28px;font-weight:700;color:var(--pub-text);margin-bottom:8px;line-height:1.2;}
+.pub-section-sub{font-size:15px;color:var(--pub-muted);margin-bottom:36px;line-height:1.6;max-width:560px;}
+
+/* Landing — How it works */
+.pub-steps{display:grid;grid-template-columns:repeat(3,1fr);gap:40px;}
+.pub-step-num{font-family:'Bricolage Grotesque',system-ui,sans-serif;font-size:48px;font-weight:700;color:var(--pub-primary);opacity:.12;line-height:1;margin-bottom:12px;}
+.pub-step h3{font-family:'Bricolage Grotesque',system-ui,sans-serif;font-size:18px;font-weight:700;margin-bottom:8px;}
+.pub-step p{font-size:14px;color:var(--pub-muted);line-height:1.65;}
+
+/* Landing — For whom */
+.pub-audience{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;}
+.pub-audience-card{background:#fff;border:1px solid var(--pub-border);border-radius:var(--pub-radius);padding:28px 24px;}
+.pub-audience-card-icon{font-size:28px;margin-bottom:14px;}
+.pub-audience-card h3{font-family:'Bricolage Grotesque',system-ui,sans-serif;font-size:16px;font-weight:700;margin-bottom:8px;}
+.pub-audience-card p{font-size:13px;color:var(--pub-muted);line-height:1.65;}
+
+/* Landing — FAQ */
+.pub-faq{border-top:1px solid var(--pub-border);}
+.pub-faq-item{border-bottom:1px solid var(--pub-border);padding:20px 0;}
+.pub-faq-q{font-family:'Work Sans',sans-serif;font-weight:700;font-size:15px;margin-bottom:8px;color:var(--pub-text);}
+.pub-faq-a{font-size:14px;color:var(--pub-muted);line-height:1.65;}
+
+/* Landing — CTA banner */
+.pub-cta-banner{background:var(--pub-primary);padding:80px 24px;text-align:center;margin-top:auto;}
+.pub-cta-banner h2{font-family:'Bricolage Grotesque',system-ui,sans-serif;font-size:34px;font-weight:700;color:#fff;margin-bottom:12px;}
+.pub-cta-banner p{font-size:16px;color:rgba(255,255,255,.8);margin-bottom:32px;max-width:460px;margin-left:auto;margin-right:auto;}
+.pub-cta-banner .pub-btn-primary{background:#fff;color:var(--pub-primary);border-color:#fff;}
+.pub-cta-banner .pub-btn-primary:hover{background:#eff6ff;box-shadow:none;transform:none;}
+.pub-cta-banner .pub-btn-outline{border-color:rgba(255,255,255,.5);color:#fff;}
+.pub-cta-banner .pub-btn-outline:hover{background:rgba(255,255,255,.15);}
+
+/* Card heading */
+.pub-card h2{font-family:'Bricolage Grotesque',system-ui,sans-serif;}
+
+/* Form step indicator */
+.pub-step-indicator{display:flex;align-items:center;justify-content:center;gap:0;margin-bottom:32px;}
+.pub-step-dot{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;transition:all .3s;flex-shrink:0;border:2px solid var(--pub-border);color:var(--pub-light);background:#fff;}
+.pub-step-dot.done{background:var(--pub-primary);border-color:var(--pub-primary);color:#fff;}
+.pub-step-dot.current{background:var(--pub-primary);border-color:var(--pub-primary);color:#fff;box-shadow:0 0 0 4px rgba(37,99,235,.15);}
+.pub-step-line{flex:1;height:2px;background:var(--pub-border);transition:background .3s;max-width:28px;}
+.pub-step-line.done{background:var(--pub-primary);}
+
 /* Responsive */
 @media(max-width:768px){
   .pub-hero h1{font-size:32px;}
@@ -1981,23 +2034,127 @@ function PublicNav({ route }) {
 function LandingPage() {
   return (
     <>
+      {/* HERO */}
       <div className="pub-hero">
-        <h1>Encuentra tu programa ideal en España</h1>
-        <p>Más de 10.000 programas universitarios y de FP para todo tipo de estudiantes: españoles, europeos e internacionales. Te ayudamos a encontrar el tuyo.</p>
+        <div className="pub-hero-eyebrow">
+          <span className="pub-badge pub-badge-tipo">Asesoría 100% gratuita</span>
+        </div>
+        <h1>Tu guía para estudiar en España</h1>
+        <p>QueEstudiar reúne más de 10.000 programas universitarios y de FP en un solo lugar, con un test que analiza tu perfil en minutos y asesores que te acompañan gratis hasta la matrícula.</p>
         <div className="pub-hero-btns">
-          <button className="pub-btn pub-btn-primary" onClick={() => location.hash = "#/match"}>No sé qué estudiar</button>
-          <button className="pub-btn pub-btn-outline" onClick={() => location.hash = "#/programas"}>Ya sé qué quiero</button>
+          <button className="pub-btn pub-btn-primary" onClick={() => location.hash = "#/match"}>Hacer el test (5 min)</button>
+          <button className="pub-btn pub-btn-outline" onClick={() => location.hash = "#/programas"}>Explorar programas</button>
+        </div>
+        <div className="pub-hero-trust">
+          <span>10.135 programas</span>
+          <span className="pub-trust-dot">·</span>
+          <span>28 ciudades</span>
+          <span className="pub-trust-dot">·</span>
+          <span>Grados · Másteres · FP · Doctorado</span>
         </div>
       </div>
-      <div className="pub-features">
-        <div className="pub-feature"><div className="pub-feature-icon">🎯</div><h3>Match personalizado</h3><p>Nuestro algoritmo analiza tu perfil y te recomienda los programas que mejor encajan contigo.</p></div>
-        <div className="pub-feature"><div className="pub-feature-icon">🔍</div><h3>Búsqueda avanzada</h3><p>Filtra por ciudad, tipo de estudio, precio y modalidad entre miles de programas.</p></div>
-        <div className="pub-feature"><div className="pub-feature-icon">📋</div><h3>Revisión de expediente</h3><p>Un asesor experto revisa tu documentación y te guía en el proceso de admisión.</p></div>
-      </div>
+
+      {/* STATS */}
       <div className="pub-stats">
         <div className="pub-stat"><div className="pub-stat-num">10.135</div><div className="pub-stat-label">Programas disponibles</div></div>
         <div className="pub-stat"><div className="pub-stat-num">28</div><div className="pub-stat-label">Ciudades en España</div></div>
-        <div className="pub-stat"><div className="pub-stat-num">100%</div><div className="pub-stat-label">Asesoría gratuita</div></div>
+        <div className="pub-stat"><div className="pub-stat-num">4</div><div className="pub-stat-label">Tipos de titulación</div></div>
+        <div className="pub-stat"><div className="pub-stat-num">0 €</div><div className="pub-stat-label">Coste de asesoría</div></div>
+      </div>
+
+      {/* HOW IT WORKS */}
+      <div className="pub-section" style={{ paddingTop: 16 }}>
+        <div className="pub-section-label">Cómo funciona</div>
+        <h2>De la duda al programa, en tres pasos</h2>
+        <p className="pub-section-sub">No necesitas saber qué quieres estudiar. QueEstudiar te ayuda a descubrirlo.</p>
+        <div className="pub-steps">
+          <div className="pub-step">
+            <div className="pub-step-num">01</div>
+            <h3>Cuéntanos tu perfil</h3>
+            <p>Responde 5 preguntas sobre tu origen, nivel educativo, áreas de interés y ciudad preferida. Son menos de 5 minutos.</p>
+          </div>
+          <div className="pub-step">
+            <div className="pub-step-num">02</div>
+            <h3>Descubre tus matches</h3>
+            <p>Nuestro algoritmo analiza los 10.135 programas disponibles y te muestra los que mejor encajan con tu perfil y objetivos.</p>
+          </div>
+          <div className="pub-step">
+            <div className="pub-step-num">03</div>
+            <h3>Solicita asesoría gratuita</h3>
+            <p>Un asesor especializado revisa tu expediente, resuelve tus dudas y te acompaña en el proceso de admisión sin coste alguno.</p>
+          </div>
+        </div>
+      </div>
+
+      {/* FOR WHOM */}
+      <div className="pub-section">
+        <div className="pub-section-label">¿Para quién?</div>
+        <h2>Diseñado para estudiantes de todo el mundo</h2>
+        <p className="pub-section-sub">España es el tercer destino de estudiantes internacionales en Europa. QueEstudiar está pensado para todos ellos.</p>
+        <div className="pub-audience">
+          <div className="pub-audience-card">
+            <div className="pub-audience-card-icon">🇪🇺</div>
+            <h3>Estudiantes europeos</h3>
+            <p>Mismas condiciones que un estudiante español: mismos precios de matrícula, sin restricciones de visado. España ofrece calidad universitaria al mejor precio de Europa Occidental.</p>
+          </div>
+          <div className="pub-audience-card">
+            <div className="pub-audience-card-icon">🌎</div>
+            <h3>Latinoamérica con convenio</h3>
+            <p>Colombia, México, Argentina, Chile y otros países tienen convenios de reconocimiento de títulos con España, lo que facilita el acceso y simplifica los trámites de admisión.</p>
+          </div>
+          <div className="pub-audience-card">
+            <div className="pub-audience-card-icon">🌏</div>
+            <h3>Resto del mundo</h3>
+            <p>Con visado de estudiante puedes estudiar en España. Te orientamos sobre requisitos de admisión, homologación de notas y gestión del visado paso a paso.</p>
+          </div>
+        </div>
+      </div>
+
+      {/* STUDY TYPES */}
+      <div className="pub-section">
+        <div className="pub-section-label">Tipos de estudio</div>
+        <h2>Desde FP hasta Doctorado, todo en un lugar</h2>
+        <p className="pub-section-sub">QueEstudiar cubre todos los niveles del sistema educativo español.</p>
+        <div className="pub-features">
+          <div className="pub-feature"><div className="pub-feature-icon">🎓</div><h3>Grado universitario</h3><p>Titulación oficial de 4 años (240 ECTS). Acceso desde bachillerato o equivalente. Más de 3.400 programas disponibles.</p></div>
+          <div className="pub-feature"><div className="pub-feature-icon">📐</div><h3>Máster universitario</h3><p>Especialización de posgrado (1–2 años). Para profundizar en un campo o cambiar de sector. Más de 5.000 másteres disponibles.</p></div>
+          <div className="pub-feature"><div className="pub-feature-icon">🔬</div><h3>Doctorado</h3><p>El nivel académico más alto. Orientado a la investigación científica. Acceso con máster universitario o equivalente.</p></div>
+          <div className="pub-feature"><div className="pub-feature-icon">⚙️</div><h3>FP Superior</h3><p>Formación Profesional de Grado Superior (2 años). Muy demandada por empresas, con alta tasa de inserción laboral.</p></div>
+        </div>
+      </div>
+
+      {/* FAQ */}
+      <div className="pub-section">
+        <div className="pub-section-label">Preguntas frecuentes</div>
+        <h2>Lo que más nos preguntan</h2>
+        <div className="pub-faq">
+          <div className="pub-faq-item">
+            <div className="pub-faq-q">¿Puedo estudiar en España si soy extranjero?</div>
+            <div className="pub-faq-a">Sí. España recibe cada año más de 170.000 estudiantes internacionales. Si eres ciudadano de la UE no necesitas visado. Si vienes de fuera de la UE, necesitarás solicitar un visado de estudiante antes de matricularte.</div>
+          </div>
+          <div className="pub-faq-item">
+            <div className="pub-faq-q">¿Cuánto cuesta estudiar en España?</div>
+            <div className="pub-faq-a">Depende del tipo de programa y la universidad. Un grado en universidad pública para residentes UE ronda los 800–2.000 €/año. Los másteres y programas privados pueden ir de 3.000 € a más de 15.000 €/año. Los estudiantes extracomunitarios pagan tasas superiores en universidades públicas.</div>
+          </div>
+          <div className="pub-faq-item">
+            <div className="pub-faq-q">¿Es gratuita la asesoría de QueEstudiar?</div>
+            <div className="pub-faq-a">Sí, completamente. Nuestro equipo te ayuda a elegir el programa, preparar la documentación y gestionar tu admisión sin ningún coste para ti.</div>
+          </div>
+          <div className="pub-faq-item">
+            <div className="pub-faq-q">¿Qué diferencia hay entre grado, máster, FP y doctorado?</div>
+            <div className="pub-faq-a">El grado es la titulación universitaria básica (4 años). El máster es una especialización de posgrado (1–2 años). La FP Superior es formación profesional intensiva (2 años), muy práctica. El doctorado es el nivel máximo, orientado a la investigación.</div>
+          </div>
+        </div>
+      </div>
+
+      {/* CTA BANNER */}
+      <div className="pub-cta-banner">
+        <h2>¿Listo para encontrar tu programa?</h2>
+        <p>Miles de estudiantes ya han descubierto su opción ideal. El test tarda menos de 5 minutos.</p>
+        <div className="pub-hero-btns">
+          <button className="pub-btn pub-btn-primary" onClick={() => location.hash = "#/match"}>Hacer el test</button>
+          <button className="pub-btn pub-btn-outline" onClick={() => location.hash = "#/programas"}>Explorar programas</button>
+        </div>
       </div>
     </>
   );
@@ -2021,18 +2178,16 @@ function ProgramCard({ program: p, onSelect, selected }) {
   const [open, setOpen] = useState(false);
   const [logoErr, setLogoErr] = useState(false);
 
-  const precio = p.precio_anual_eur != null
-    ? (p.precio_anual_eur === 0 ? "Gratuito" : `${Number(p.precio_anual_eur).toLocaleString("es-ES")} €/año`)
-    : "Consultar precio";
-  const precioNoUE = p.precio_extracomunitario_eur != null && p.precio_extracomunitario_eur !== p.precio_anual_eur
-    ? (p.precio_extracomunitario_eur === 0 ? "Gratuito (no UE)" : `${Number(p.precio_extracomunitario_eur).toLocaleString("es-ES")} €/año`)
-    : null;
+  const fmtPrice = (v) => v === 0 ? "Gratuito" : `${Number(v).toLocaleString("es-ES")} €/año`;
+  const precioEU = p.precio_anual_eur != null ? fmtPrice(p.precio_anual_eur) : "Consultar precio";
+  const hasIntl = p.precio_extracomunitario_eur != null && p.precio_extracomunitario_eur !== p.precio_anual_eur;
+  const precioIntl = hasIntl ? fmtPrice(p.precio_extracomunitario_eur) : null;
 
   const domain = p.url_detalle ? (() => { try { return new URL(p.url_detalle).hostname.replace(/^www\./, ""); } catch { return null; } })() : null;
+  const domainAbbr = domain ? domain.split(".")[0].toUpperCase().slice(0, 5) : (p.nombre ? p.nombre.slice(0, 3).toUpperCase() : "?");
   const tipoClass = p.tipo === "master" ? "pub-tipo-master" : p.tipo === "doctorado" ? "pub-tipo-doctorado" : p.tipo === "fp_superior" ? "pub-tipo-fp" : "";
   const imgBg = TIPO_IMG_BG[p.tipo] || TIPO_IMG_BG.grado;
-  const fallbackColor = p.tipo === "master" ? "#e8531a" : p.tipo === "doctorado" ? "#0f172a" : p.tipo === "fp_superior" ? "#16a34a" : "#2563eb";
-  const fallbackInitial = p.nombre ? p.nombre[0].toUpperCase() : "U";
+  const abbrColor = p.tipo === "master" ? "#e8531a" : p.tipo === "doctorado" ? "#0f172a" : p.tipo === "fp_superior" ? "#16a34a" : "#2563eb";
   const desc = TIPO_DESC[p.tipo] || "";
   const descArea = p.familia_area ? ` Área: ${p.familia_area}.` : "";
 
@@ -2040,12 +2195,13 @@ function ProgramCard({ program: p, onSelect, selected }) {
     <div className={`pub-program ${tipoClass} ${selected ? "selected" : ""} ${open ? "open" : ""}`}
       onClick={() => setOpen(o => !o)}>
 
-      {/* Horizontal image header */}
+      {/* Image header: gradient bg + domain abbr watermark + Clearbit logo */}
       <div className="pub-program-img" style={{ background: imgBg }}>
-        {domain && !logoErr
-          ? <img src={`https://logo.clearbit.com/${domain}`} alt={domain} onError={() => setLogoErr(true)} />
-          : <div className="pub-program-img-fallback" style={{ color: fallbackColor }}>{fallbackInitial}</div>
-        }
+        <span className="pub-program-img-abbr" style={{ color: abbrColor }}>{domainAbbr}</span>
+        {domain && !logoErr && (
+          <img className="pub-program-img-logo" src={`https://logo.clearbit.com/${domain}`}
+            alt="" onError={() => setLogoErr(true)} />
+        )}
       </div>
 
       {/* Card body */}
@@ -2057,7 +2213,7 @@ function ProgramCard({ program: p, onSelect, selected }) {
         </div>
         <div className="pub-program-name">{p.nombre}</div>
         <div className="pub-program-footer">
-          <span className="pub-program-price">{precio}</span>
+          <span className="pub-program-price">{precioEU}{hasIntl ? <span style={{ fontSize: 10, fontFamily: "Work Sans", color: "var(--pub-light)", marginLeft: 4 }}>· v. intl.</span> : null}</span>
           <span className="pub-program-toggle">{open ? "Cerrar ↑" : "Ver más ↓"}</span>
         </div>
 
@@ -2065,8 +2221,13 @@ function ProgramCard({ program: p, onSelect, selected }) {
           <div className="pub-program-expanded" onClick={e => e.stopPropagation()}>
             <p className="pub-program-desc">{desc}{descArea}</p>
             {domain && <div className="pub-program-institution">{domain}</div>}
+            {hasIntl && (
+              <div className="pub-program-details" style={{ marginBottom: 10 }}>
+                <span>Residentes UE: {precioEU}</span>
+                <span>Internacionales: {precioIntl}</span>
+              </div>
+            )}
             <div className="pub-program-details">
-              {precioNoUE && <span>💰 No UE: {precioNoUE}</span>}
               {p.horas_semanales && <span>⏱ {p.horas_semanales}h/sem</span>}
               {p.modalidad && <span>📍 {p.modalidad}</span>}
             </div>
@@ -2092,6 +2253,8 @@ function ProgramCard({ program: p, onSelect, selected }) {
   );
 }
 
+const TOTAL_STEPS = 5;
+
 function MatchForm() {
   const [step, setStep] = useState(1);
   const [origin, setOrigin] = useState("");
@@ -2099,64 +2262,82 @@ function MatchForm() {
   const [eduLevel, setEduLevel] = useState("");
   const [studyArea, setStudyArea] = useState("");
   const [cities, setCities] = useState([]);
+  const [budget, setBudget] = useState("");
 
   const toggleCity = (c) => setCities(prev => prev.includes(c) ? prev.filter(x => x !== c) : [...prev, c]);
 
   const canNext = () => {
-    if (step === 1) return origin && country;
+    if (step === 1) return origin && country.trim();
     if (step === 2) return eduLevel;
     if (step === 3) return studyArea;
     if (step === 4) return cities.length > 0;
+    if (step === 5) return budget;
     return false;
   };
 
   const handleFinish = () => {
-    sessionStorage.setItem("matchProfile", JSON.stringify({ student_origin: origin, country_of_origin: country, education_level: eduLevel, study_area: studyArea, preferred_cities: cities }));
+    sessionStorage.setItem("matchProfile", JSON.stringify({ student_origin: origin, country_of_origin: country, education_level: eduLevel, study_area: studyArea, preferred_cities: cities, budget }));
     location.hash = "#/match/resultados";
   };
 
   const origins = [
-    { value: "eu", label: "Unión Europea / EEE", desc: "Ciudadano de un país de la UE o Espacio Económico Europeo" },
-    { value: "latam_convenio", label: "Latinoamérica (con convenio)", desc: "País con convenio de reconocimiento de títulos" },
-    { value: "extracomunitario", label: "Extracomunitario", desc: "Resto de países fuera de la UE" },
+    { value: "eu", label: "Unión Europea / EEE", desc: "Ciudadano de un país de la UE o del Espacio Económico Europeo" },
+    { value: "latam_convenio", label: "Latinoamérica (con convenio)", desc: "Colombia, México, Argentina, Chile y otros países con convenio de títulos" },
+    { value: "extracomunitario", label: "Resto del mundo", desc: "Necesitarás visado de estudiante para estudiar en España" },
   ];
   const eduOptions = [
-    { value: "bachillerato", label: "Bachillerato / Secundaria", desc: "He completado la educación secundaria" },
-    { value: "fp_superior", label: "FP Superior / Técnico", desc: "Tengo un título de formación profesional" },
-    { value: "grado", label: "Grado / Licenciatura", desc: "Tengo un título universitario de grado" },
-    { value: "master", label: "Máster", desc: "Tengo un máster universitario" },
+    { value: "bachillerato", label: "Bachillerato / Secundaria", desc: "He completado la educación secundaria o equivalente" },
+    { value: "fp_superior", label: "FP Superior / Técnico Superior", desc: "Tengo un título de formación profesional de grado superior" },
+    { value: "grado", label: "Grado / Licenciatura", desc: "Tengo un título universitario de grado o licenciatura" },
+    { value: "master", label: "Máster universitario", desc: "Tengo un máster y quiero hacer el doctorado" },
+  ];
+  const budgetOptions = [
+    { value: "bajo", label: "Menos de 5.000 €/año", desc: "Principalmente universidades públicas y programas con beca" },
+    { value: "medio", label: "De 5.000 € a 12.000 €/año", desc: "Amplia variedad de programas públicos y privados" },
+    { value: "alto", label: "Más de 12.000 €/año", desc: "Programas especializados y universidades privadas premium" },
+    { value: "indiferente", label: "El precio no es determinante", desc: "Quiero ver todas las opciones disponibles" },
   ];
 
   return (
     <div className="pub-container">
       <div className="pub-card">
-        <div className="pub-progress">
-          {[1,2,3,4].map(s => <div key={s} className={`pub-progress-step ${s < step ? "done" : s === step ? "current" : ""}`} />)}
+        {/* Numbered step indicator */}
+        <div className="pub-step-indicator">
+          {Array.from({ length: TOTAL_STEPS }, (_, i) => i + 1).map((s, i) => (
+            <React.Fragment key={s}>
+              {i > 0 && <div className={`pub-step-line ${s <= step ? "done" : ""}`} />}
+              <div className={`pub-step-dot ${s < step ? "done" : s === step ? "current" : "pending"}`}>
+                {s < step ? "✓" : s}
+              </div>
+            </React.Fragment>
+          ))}
         </div>
 
         {step === 1 && <>
           <h2>¿De dónde eres?</h2>
-          <p className="pub-card-sub">Tu origen determina los requisitos de admisión y precios</p>
+          <p className="pub-card-sub">Tu origen determina los requisitos de admisión y los precios de matrícula</p>
           <div className="pub-options">
             {origins.map(o => (
               <div key={o.value} className={`pub-option ${origin === o.value ? "selected" : ""}`} onClick={() => setOrigin(o.value)}>
-                <div className="pub-option-dot" /><div><div className="pub-option-label">{o.label}</div><div className="pub-option-desc">{o.desc}</div></div>
+                <div className="pub-option-dot" />
+                <div><div className="pub-option-label">{o.label}</div><div className="pub-option-desc">{o.desc}</div></div>
               </div>
             ))}
           </div>
           <div className="pub-field" style={{ marginTop: 20 }}>
-            <label className="pub-label">País de origen</label>
+            <label className="pub-label">¿De qué país eres?</label>
             <input className="pub-input" placeholder="Ej: Colombia, México, Francia..." value={country} onChange={e => setCountry(e.target.value)} />
           </div>
         </>}
 
         {step === 2 && <>
           <h2>¿Cuál es tu nivel educativo actual?</h2>
-          <p className="pub-card-sub">Esto determina qué tipo de programas puedes cursar</p>
+          <p className="pub-card-sub">Esto determina qué tipos de programas puedes cursar en España</p>
           <div className="pub-options">
             {eduOptions.map(o => (
               <div key={o.value} className={`pub-option ${eduLevel === o.value ? "selected" : ""}`} onClick={() => setEduLevel(o.value)}>
-                <div className="pub-option-dot" /><div><div className="pub-option-label">{o.label}</div><div className="pub-option-desc">{o.desc}</div></div>
+                <div className="pub-option-dot" />
+                <div><div className="pub-option-label">{o.label}</div><div className="pub-option-desc">{o.desc}</div></div>
               </div>
             ))}
           </div>
@@ -2164,7 +2345,7 @@ function MatchForm() {
 
         {step === 3 && <>
           <h2>¿Qué área te interesa?</h2>
-          <p className="pub-card-sub">Selecciona el campo de estudio que más te atraiga</p>
+          <p className="pub-card-sub">Selecciona el campo de estudio que más te atrae</p>
           <div className="pub-area-grid">
             {Object.keys(STUDY_AREA_TO_FAMILIA).map(area => (
               <div key={area} className={`pub-area-card ${studyArea === area ? "selected" : ""}`} onClick={() => setStudyArea(area)}>
@@ -2177,7 +2358,7 @@ function MatchForm() {
 
         {step === 4 && <>
           <h2>¿Dónde te gustaría estudiar?</h2>
-          <p className="pub-card-sub">Selecciona una o más ciudades (puedes elegir varias)</p>
+          <p className="pub-card-sub">Puedes elegir una o varias ciudades</p>
           <div className="pub-city-grid">
             {CITIES_LIST.map(c => (
               <div key={c} className={`pub-city ${cities.includes(c) ? "selected" : ""}`} onClick={() => toggleCity(c)}>
@@ -2187,11 +2368,24 @@ function MatchForm() {
           </div>
         </>}
 
+        {step === 5 && <>
+          <h2>¿Cuál es tu presupuesto anual?</h2>
+          <p className="pub-card-sub">Esto nos ayuda a mostrarte opciones realistas y ajustadas a ti</p>
+          <div className="pub-options">
+            {budgetOptions.map(o => (
+              <div key={o.value} className={`pub-option ${budget === o.value ? "selected" : ""}`} onClick={() => setBudget(o.value)}>
+                <div className="pub-option-dot" />
+                <div><div className="pub-option-label">{o.label}</div><div className="pub-option-desc">{o.desc}</div></div>
+              </div>
+            ))}
+          </div>
+        </>}
+
         <div className="pub-form-nav">
           {step > 1 ? <button className="pub-btn pub-btn-outline pub-btn-sm" onClick={() => setStep(s => s - 1)}>← Anterior</button> : <div />}
-          {step < 4
+          {step < TOTAL_STEPS
             ? <button className="pub-btn pub-btn-primary pub-btn-sm" disabled={!canNext()} onClick={() => setStep(s => s + 1)}>Siguiente →</button>
-            : <button className="pub-btn pub-btn-primary pub-btn-sm" disabled={!canNext()} onClick={handleFinish}>Ver resultados →</button>
+            : <button className="pub-btn pub-btn-primary pub-btn-sm" disabled={!canNext()} onClick={handleFinish}>Ver mis resultados →</button>
           }
         </div>
       </div>

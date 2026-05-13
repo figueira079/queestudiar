@@ -1,4 +1,8 @@
 User-agent: *
 Allow: /
 
+# No indexar el panel de administración (subdominio separado, pero por si acaso)
+Disallow: /admin
+
+# Sitemap
 Sitemap: https://queestudiar.es/sitemap.xml

@@ -1948,13 +1948,13 @@ const publicCss = `
 
 /* Landing — Sections */
 .pub-section{max-width:960px;margin:0 auto 72px;padding:0 24px;}
-.pub-section-label{font-family:'Bricolage Grotesque',system-ui,sans-serif;font-size:12px;font-weight:600;color:var(--pub-primary);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:10px;}
+.pub-section-label{font-family:'Bricolage Grotesque',system-ui,sans-serif;font-size:12px;font-weight:600;color:var(--pub-primary);letter-spacing:0.04em;margin-bottom:10px;}
 .pub-section h2{font-family:'Bricolage Grotesque',system-ui,sans-serif;font-size:clamp(24px,3.5vw,36px);font-weight:600;color:var(--pub-text);margin-bottom:10px;line-height:1.2;}
 .pub-section-sub{font-family:'Lora',Georgia,serif;font-size:16px;color:var(--pub-muted);margin-bottom:40px;line-height:1.7;max-width:560px;}
 
 /* Landing — How it works */
 .pub-steps{display:grid;grid-template-columns:repeat(3,1fr);gap:40px;}
-.pub-step-num{font-family:'Bricolage Grotesque',system-ui,sans-serif;font-size:72px;font-weight:700;color:var(--linea);line-height:1;margin-bottom:8px;display:block;}
+.pub-step-num{font-family:'Bricolage Grotesque',system-ui,sans-serif;font-size:72px;font-weight:700;color:var(--pizarra);line-height:1;margin-bottom:8px;display:block;}
 .pub-step h3{font-family:'Bricolage Grotesque',system-ui,sans-serif;font-size:18px;font-weight:600;margin-bottom:8px;}
 .pub-step p{font-family:'Lora',Georgia,serif;font-size:15px;color:var(--pub-muted);line-height:1.7;}
 
@@ -2129,11 +2129,10 @@ function LandingPage() {
     <>
       {/* HERO */}
       <div className="pub-hero">
-        <div className="pub-section-label" style={{ marginBottom: 20 }}>Encuentra tu camino académico</div>
         <h1>Encuentra tu programa<br/>académico en España.</h1>
         <p>Más de 10.000 programas en universidades y centros de FP.<br/>Filtra por lo que ya tienes y lo que quieres estudiar.</p>
         <div className="pub-hero-btns">
-          <button className="pub-btn pub-btn-primary" onClick={() => location.hash = "#/match"}>Hacer el test (5 min) →</button>
+          <button className="pub-btn pub-btn-primary" onClick={() => location.hash = "#/match"}>Hacer el test →</button>
           <button className="pub-btn pub-btn-outline" onClick={() => location.hash = "#/programas"}>Ver todos los programas</button>
         </div>
         <div className="pub-hero-trust">

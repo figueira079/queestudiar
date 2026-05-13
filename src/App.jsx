@@ -1785,6 +1785,9 @@ const publicCss = `
   --pub-primary:#2563eb; --pub-primary-hover:#1d4ed8; --pub-secondary:#e8531a;
   --pub-text:#0f172a; --pub-muted:#334155; --pub-light:#94a3b8;
   --pub-success:#16a34a; --pub-radius:12px;
+  --azure:#2563eb; --terracota:#e8531a; --salvia:#16a34a;
+  --grafito:#0f172a; --grafito-s:#334155; --pizarra:#94a3b8;
+  --linea:#e2e8f0; --pergamino:#faf6f0; --hielo:#f0f4ff;
 }
 *{box-sizing:border-box;margin:0;padding:0;}
 .pub-app{font-family:'Work Sans',system-ui,sans-serif;color:var(--pub-text);background:var(--pub-bg);min-height:100vh;display:flex;flex-direction:column;}
@@ -1800,14 +1803,14 @@ const publicCss = `
 
 /* Hero */
 .pub-hero{max-width:800px;margin:0 auto;padding:80px 24px 60px;text-align:center;}
-.pub-hero h1{font-family:'Bricolage Grotesque',system-ui,sans-serif;font-size:clamp(32px,5vw,52px);font-weight:700;line-height:1.12;margin-bottom:20px;color:var(--pub-text);}
+.pub-hero h1{font-family:'Bricolage Grotesque',system-ui,sans-serif;font-size:clamp(36px,5vw,56px);font-weight:700;line-height:1.05;margin-bottom:20px;color:var(--pub-text);letter-spacing:-0.02em;}
 .pub-hero p{font-family:'Lora',Georgia,serif;font-size:18px;color:var(--pub-muted);max-width:560px;margin:0 auto 36px;line-height:1.7;}
 .pub-hero-btns{display:flex;gap:16px;justify-content:center;flex-wrap:wrap;}
-.pub-btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:14px 32px;border-radius:var(--pub-radius);font-size:16px;font-weight:600;cursor:pointer;transition:all .2s;border:2px solid transparent;text-decoration:none;}
+.pub-btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:14px 32px;border-radius:var(--pub-radius);font-size:16px;font-weight:600;cursor:pointer;transition:all .2s;border:2px solid transparent;text-decoration:none;font-family:'Bricolage Grotesque',system-ui,sans-serif;}
 .pub-btn-primary{background:var(--pub-primary);color:#fff;border-color:var(--pub-primary);}
 .pub-btn-primary:hover{background:var(--pub-primary-hover);border-color:var(--pub-primary-hover);transform:translateY(-1px);box-shadow:0 4px 12px rgba(37,99,235,.3);}
 .pub-btn-outline{background:transparent;color:var(--pub-primary);border-color:var(--pub-primary);}
-.pub-btn-outline:hover{background:var(--pub-primary);color:#fff;}
+.pub-btn-outline:hover{background:var(--pub-surface);}
 .pub-btn-sm{padding:10px 20px;font-size:14px;}
 .pub-btn:disabled{opacity:.5;cursor:not-allowed;transform:none !important;}
 
@@ -1951,7 +1954,7 @@ const publicCss = `
 
 /* Landing — How it works */
 .pub-steps{display:grid;grid-template-columns:repeat(3,1fr);gap:40px;}
-.pub-step-num{font-family:'Bricolage Grotesque',system-ui,sans-serif;font-size:48px;font-weight:700;color:var(--pub-primary);opacity:.12;line-height:1;margin-bottom:12px;}
+.pub-step-num{font-family:'Bricolage Grotesque',system-ui,sans-serif;font-size:72px;font-weight:700;color:var(--linea);line-height:1;margin-bottom:8px;display:block;}
 .pub-step h3{font-family:'Bricolage Grotesque',system-ui,sans-serif;font-size:18px;font-weight:600;margin-bottom:8px;}
 .pub-step p{font-family:'Lora',Georgia,serif;font-size:15px;color:var(--pub-muted);line-height:1.7;}
 
@@ -1962,6 +1965,20 @@ const publicCss = `
 .pub-audience-card h3{font-family:'Bricolage Grotesque',system-ui,sans-serif;font-size:16px;font-weight:700;margin-bottom:8px;}
 .pub-audience-card p{font-family:'Lora',Georgia,serif;font-size:14px;color:var(--pub-muted);line-height:1.7;}
 .pub-audience-icon{width:32px;height:32px;color:var(--pub-primary);margin-bottom:14px;}
+
+/* Landing — Section wrappers for full-width background stripes */
+.pub-section-white{background:#ffffff;padding:72px 0;margin-bottom:0;}
+.pub-section-ice{background:var(--pub-surface);padding:72px 0;margin-bottom:0;}
+.pub-section-white .pub-section,.pub-section-ice .pub-section{margin-bottom:0;}
+
+/* Landing — Study type cards */
+.pub-tipos-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;}
+.pub-tipo-card{background:#fff;border:1px solid var(--pub-border);border-radius:12px;padding:24px 20px;display:flex;flex-direction:column;align-items:center;text-align:center;gap:12px;min-height:260px;}
+.pub-tipo-card-body{flex:1;display:flex;flex-direction:column;gap:8px;}
+.pub-tipo-card h3{font-family:'Bricolage Grotesque',system-ui,sans-serif;font-size:15px;font-weight:600;color:var(--pub-text);margin:0;}
+.pub-tipo-card p{font-family:'Lora',Georgia,serif;font-size:13px;color:var(--pub-muted);line-height:1.65;margin:0;}
+.pub-tipo-btn{margin-top:auto;font-family:'Bricolage Grotesque',system-ui,sans-serif;font-size:13px;font-weight:600;color:var(--pub-primary);border:1.5px solid var(--pub-primary);background:transparent;padding:8px 16px;border-radius:6px;cursor:pointer;transition:background .15s ease;}
+.pub-tipo-btn:hover{background:var(--pub-surface);}
 
 /* Landing — FAQ accordion */
 .pub-faq{border-top:1px solid var(--pub-border);}
@@ -2000,7 +2017,7 @@ const publicCss = `
 .pub-footer-links{display:flex;justify-content:center;gap:20px;flex-wrap:wrap;margin-bottom:16px;}
 .pub-footer-link{font-family:'Work Sans',sans-serif;font-size:13px;color:var(--pub-light);text-decoration:none;cursor:pointer;}
 .pub-footer-link:hover{color:var(--pub-primary);}
-.pub-footer-geo{font-family:'Lora',Georgia,serif;font-size:12px;color:var(--pub-light);max-width:640px;margin:0 auto;line-height:1.6;opacity:.65;}
+.pub-footer-geo{font-family:'Lora',Georgia,serif;font-size:12px;color:var(--pub-light);max-width:640px;margin:8px auto 0;line-height:1.6;border-top:1px solid var(--pub-border);padding-top:16px;}
 
 /* Form step indicator */
 .pub-step-indicator{display:flex;align-items:center;justify-content:center;gap:0;margin-bottom:32px;}
@@ -2013,6 +2030,7 @@ const publicCss = `
 /* Responsive */
 @media(max-width:768px){
   .pub-features{grid-template-columns:1fr 1fr;}
+  .pub-tipos-grid{grid-template-columns:repeat(2,1fr);}
   .pub-stats{flex-direction:column;gap:24px;}
   .pub-steps{grid-template-columns:1fr;}
   .pub-audience{grid-template-columns:1fr;}
@@ -2030,6 +2048,7 @@ const publicCss = `
   .pub-hero-btns{flex-direction:column;}
   .pub-btn{width:100%;}
   .pub-grid{grid-template-columns:1fr;}
+  .pub-tipos-grid{grid-template-columns:1fr;}
   .pub-area-grid{grid-template-columns:1fr;}
   .pub-city-grid{grid-template-columns:1fr 1fr;}
   .pub-container{padding:24px 16px 60px;}
@@ -2072,19 +2091,27 @@ function FaqItem({ q, a }) {
   );
 }
 
-const IcoBuilding = () => (
-  <svg className="pub-audience-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-    <rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 21V9h6v12"/><path d="M3 9h18"/>
+const IcoEU = () => (
+  <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    <rect width="32" height="32" rx="8" fill="#EFF6FF"/>
+    <path d="M16 7l1.5 4.5H22l-3.75 2.75 1.5 4.5L16 16l-3.75 2.75 1.5-4.5L10 11.5h4.5L16 7z" fill="#2563EB"/>
+    <path d="M10 20h12M10 23h12" stroke="#2563EB" strokeWidth="1.5" strokeLinecap="round"/>
   </svg>
 );
-const IcoDiploma = () => (
-  <svg className="pub-audience-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-    <rect x="2" y="4" width="20" height="16" rx="2"/><path d="M8 10h8M8 14h5"/><circle cx="17" cy="14" r="2"/><path d="M17 16v4l-1-1-1 1v-4"/>
+const IcoLatam = () => (
+  <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    <rect width="32" height="32" rx="8" fill="#EFF6FF"/>
+    <path d="M9 18l4-4 3 3 4-4 3 3" stroke="#2563EB" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+    <path d="M9 22h14" stroke="#2563EB" strokeWidth="1.5" strokeLinecap="round"/>
+    <circle cx="16" cy="11" r="3" stroke="#2563EB" strokeWidth="1.5"/>
   </svg>
 );
 const IcoPassport = () => (
-  <svg className="pub-audience-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-    <rect x="5" y="2" width="14" height="20" rx="2"/><circle cx="12" cy="11" r="3"/><path d="M5 7h14M9 17h6"/>
+  <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    <rect width="32" height="32" rx="8" fill="#EFF6FF"/>
+    <rect x="9" y="8" width="14" height="16" rx="2" stroke="#2563EB" strokeWidth="1.5"/>
+    <circle cx="16" cy="14" r="2.5" stroke="#2563EB" strokeWidth="1.3"/>
+    <path d="M12 20h8M12 22.5h5" stroke="#2563EB" strokeWidth="1.3" strokeLinecap="round"/>
   </svg>
 );
 
@@ -2103,7 +2130,7 @@ function LandingPage() {
       {/* HERO */}
       <div className="pub-hero">
         <div className="pub-section-label" style={{ marginBottom: 20 }}>Encuentra tu camino académico</div>
-        <h1>Estudia en España.<br/>El programa que encaja contigo.</h1>
+        <h1>Encuentra tu programa<br/>académico en España.</h1>
         <p>Más de 10.000 programas en universidades y centros de FP.<br/>Filtra por lo que ya tienes y lo que quieres estudiar.</p>
         <div className="pub-hero-btns">
           <button className="pub-btn pub-btn-primary" onClick={() => location.hash = "#/match"}>Hacer el test (5 min) →</button>
@@ -2151,54 +2178,91 @@ function LandingPage() {
       </div>
 
       {/* FOR WHOM */}
-      <div className="pub-section">
-        <div className="pub-section-label">¿Para quién?</div>
-        <h2>Diseñado para estudiantes de todo el mundo.</h2>
-        <p className="pub-section-sub">España recibe más de 170.000 estudiantes internacionales cada año. Es el tercer destino universitario de Europa.</p>
-        <div className="pub-audience">
-          <div className="pub-audience-card">
-            <IcoBuilding />
-            <h3>Estudiantes europeos</h3>
-            <p>Mismas condiciones que un estudiante español: mismos precios de matrícula, sin restricciones de visado. España ofrece calidad universitaria al mejor precio de Europa Occidental.</p>
-          </div>
-          <div className="pub-audience-card">
-            <IcoDiploma />
-            <h3>Latinoamérica con convenio</h3>
-            <p>Colombia, México, Argentina, Chile y otros países tienen convenios de reconocimiento de títulos con España, lo que facilita el acceso y simplifica los trámites de admisión.</p>
-          </div>
-          <div className="pub-audience-card">
-            <IcoPassport />
-            <h3>Resto del mundo</h3>
-            <p>Con visado de estudiante puedes estudiar en España. Te orientamos sobre requisitos de admisión, homologación de notas y gestión del visado paso a paso.</p>
+      <div className="pub-section-white">
+        <div className="pub-section">
+          <div className="pub-section-label">¿Para quién?</div>
+          <h2>Diseñado para estudiantes de todo el mundo.</h2>
+          <p className="pub-section-sub">España recibe más de 170.000 estudiantes internacionales cada año. Es el tercer destino universitario de Europa.</p>
+          <div className="pub-audience">
+            <div className="pub-audience-card">
+              <IcoEU />
+              <h3>Estudiantes europeos</h3>
+              <p>Mismas condiciones que un estudiante español: mismos precios de matrícula, sin restricciones de visado. España ofrece calidad universitaria al mejor precio de Europa Occidental.</p>
+            </div>
+            <div className="pub-audience-card">
+              <IcoLatam />
+              <h3>Latinoamérica con convenio</h3>
+              <p>Colombia, México, Argentina, Chile y otros países tienen convenios de reconocimiento de títulos con España, lo que facilita el acceso y simplifica los trámites de admisión.</p>
+            </div>
+            <div className="pub-audience-card">
+              <IcoPassport />
+              <h3>Resto del mundo</h3>
+              <p>Con visado de estudiante puedes estudiar en España. Te orientamos sobre requisitos de admisión, homologación de notas y gestión del visado paso a paso.</p>
+            </div>
           </div>
         </div>
       </div>
 
       {/* STUDY TYPES */}
-      <div className="pub-section">
-        <div className="pub-section-label">Tipos de estudio</div>
-        <h2>Desde FP hasta Doctorado, todo en un lugar.</h2>
-        <p className="pub-section-sub">QueEstudiar cubre todos los niveles del sistema educativo español.</p>
-        <div className="pub-features">
-          <div className="pub-feature">
-            <div className="pub-feature-icon">🎓</div><h3>Grado universitario</h3>
-            <p>Titulación oficial de 4 años (240 ECTS). Acceso desde bachillerato o equivalente. Más de 3.400 programas disponibles.</p>
-            <button className="pub-btn pub-btn-outline" style={{ marginTop: 16, padding: "8px 16px", fontSize: 13 }} onClick={() => { sessionStorage.setItem("filterTipo","grado"); location.hash="#/programas"; }}>Ver grados →</button>
-          </div>
-          <div className="pub-feature">
-            <div className="pub-feature-icon">📐</div><h3>Máster universitario</h3>
-            <p>Especialización de posgrado (1–2 años). Para profundizar en un campo o cambiar de sector. Más de 5.000 másteres disponibles.</p>
-            <button className="pub-btn pub-btn-outline" style={{ marginTop: 16, padding: "8px 16px", fontSize: 13 }} onClick={() => { sessionStorage.setItem("filterTipo","master"); location.hash="#/programas"; }}>Ver másteres →</button>
-          </div>
-          <div className="pub-feature">
-            <div className="pub-feature-icon">🔬</div><h3>Doctorado</h3>
-            <p>El nivel académico más alto. Orientado a la investigación científica. Acceso con máster universitario o equivalente.</p>
-            <button className="pub-btn pub-btn-outline" style={{ marginTop: 16, padding: "8px 16px", fontSize: 13 }} onClick={() => { sessionStorage.setItem("filterTipo","doctorado"); location.hash="#/programas"; }}>Ver doctorados →</button>
-          </div>
-          <div className="pub-feature">
-            <div className="pub-feature-icon">⚙️</div><h3>FP Superior</h3>
-            <p>Formación Profesional de Grado Superior (2 años). Muy demandada por empresas, con alta tasa de inserción laboral.</p>
-            <button className="pub-btn pub-btn-outline" style={{ marginTop: 16, padding: "8px 16px", fontSize: 13 }} onClick={() => { sessionStorage.setItem("filterTipo","fp_superior"); location.hash="#/programas"; }}>Ver FP Superior →</button>
+      <div className="pub-section-ice">
+        <div className="pub-section">
+          <div className="pub-section-label">Tipos de estudio</div>
+          <h2>Desde FP hasta Doctorado, todo en un lugar.</h2>
+          <p className="pub-section-sub">QueEstudiar cubre todos los niveles del sistema educativo español.</p>
+          <div className="pub-tipos-grid">
+            <div className="pub-tipo-card">
+              <svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                <rect width="40" height="40" rx="10" fill="#EFF6FF"/>
+                <path d="M20 12l12 6-12 6-12-6 12-6z" stroke="#2563EB" strokeWidth="1.8" strokeLinejoin="round" fill="none"/>
+                <path d="M12 22v6c0 0 3 3 8 3s8-3 8-3v-6" stroke="#2563EB" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+                <path d="M32 18v6" stroke="#2563EB" strokeWidth="1.8" strokeLinecap="round"/>
+              </svg>
+              <div className="pub-tipo-card-body">
+                <h3>Grado universitario</h3>
+                <p>Titulación oficial de 4 años (240 ECTS). Acceso desde bachillerato o equivalente. Más de 3.400 programas disponibles.</p>
+              </div>
+              <button className="pub-tipo-btn" onClick={() => { sessionStorage.setItem("filterTipo","grado"); location.hash="#/programas"; }}>Ver grados →</button>
+            </div>
+            <div className="pub-tipo-card">
+              <svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                <rect width="40" height="40" rx="10" fill="#EFF6FF"/>
+                <rect x="12" y="11" width="16" height="18" rx="2" stroke="#2563EB" strokeWidth="1.8"/>
+                <path d="M16 17h8M16 21h8M16 25h5" stroke="#2563EB" strokeWidth="1.5" strokeLinecap="round"/>
+                <path d="M24 8l2 3" stroke="#2563EB" strokeWidth="1.5" strokeLinecap="round"/>
+              </svg>
+              <div className="pub-tipo-card-body">
+                <h3>Máster universitario</h3>
+                <p>Especialización de posgrado (1–2 años). Para profundizar en un campo o cambiar de sector. Más de 5.000 másteres disponibles.</p>
+              </div>
+              <button className="pub-tipo-btn" onClick={() => { sessionStorage.setItem("filterTipo","master"); location.hash="#/programas"; }}>Ver másteres →</button>
+            </div>
+            <div className="pub-tipo-card">
+              <svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                <rect width="40" height="40" rx="10" fill="#EFF6FF"/>
+                <circle cx="20" cy="19" r="7" stroke="#2563EB" strokeWidth="1.8"/>
+                <path d="M20 15v4l3 2" stroke="#2563EB" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+                <path d="M20 12V9M25 13.5l2-2M28 19h3M25 24.5l2 2M20 26v3M15 24.5l-2 2M12 19H9M15 13.5l-2-2" stroke="#2563EB" strokeWidth="1.3" strokeLinecap="round"/>
+              </svg>
+              <div className="pub-tipo-card-body">
+                <h3>Doctorado</h3>
+                <p>El nivel académico más alto. Orientado a la investigación científica. Acceso con máster universitario o equivalente.</p>
+              </div>
+              <button className="pub-tipo-btn" onClick={() => { sessionStorage.setItem("filterTipo","doctorado"); location.hash="#/programas"; }}>Ver doctorados →</button>
+            </div>
+            <div className="pub-tipo-card">
+              <svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                <rect width="40" height="40" rx="10" fill="#EFF6FF"/>
+                <rect x="10" y="14" width="20" height="14" rx="2" stroke="#2563EB" strokeWidth="1.8"/>
+                <path d="M15 14v-3h10v3" stroke="#2563EB" strokeWidth="1.8" strokeLinejoin="round"/>
+                <path d="M15 21h4M15 24h6" stroke="#2563EB" strokeWidth="1.5" strokeLinecap="round"/>
+                <circle cx="24" cy="22" r="2" fill="#2563EB"/>
+              </svg>
+              <div className="pub-tipo-card-body">
+                <h3>FP Superior</h3>
+                <p>Formación Profesional de Grado Superior (2 años). Muy demandada por empresas, con alta tasa de inserción laboral.</p>
+              </div>
+              <button className="pub-tipo-btn" onClick={() => { sessionStorage.setItem("filterTipo","fp_superior"); location.hash="#/programas"; }}>Ver FP Superior →</button>
+            </div>
           </div>
         </div>
       </div>
@@ -2214,8 +2278,8 @@ function LandingPage() {
 
       {/* CTA BANNER */}
       <div className="pub-cta-banner">
-        <h2>¿Listo para encontrar tu programa?</h2>
-        <p>10.135 programas. Filtra por lo que necesitas, en 5 minutos.</p>
+        <h2>El programa que buscas está aquí.</h2>
+        <p>10.135 programas. Filtra por tu perfil y encuentra el que encaja en menos de 5 minutos.</p>
         <div className="pub-hero-btns">
           <button className="pub-btn pub-btn-primary" onClick={() => location.hash = "#/match"}>Hacer el test →</button>
           <button className="pub-btn pub-btn-outline" onClick={() => location.hash = "#/programas"}>Explorar programas</button>

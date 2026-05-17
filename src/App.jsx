@@ -2051,9 +2051,10 @@ const publicCss = `
 /* ── Explorer layout ── */
 .pub-explorer-layout{display:grid;grid-template-columns:1fr;min-height:calc(100vh - 64px);background:var(--blanco);}
 .pub-explorer-layout.drawer-open{grid-template-columns:55% 45%;}
-.pub-cards-panel{overflow-y:auto;padding:0;background:var(--blanco);}
+.pub-cards-panel{display:flex;flex-direction:column;height:calc(100vh - 64px);position:sticky;top:64px;overflow:hidden;background:var(--blanco);}
 .pub-explorer-layout.drawer-open .pub-cards-panel{border-right:1px solid var(--linea);}
-.pub-filters-bar{display:flex;gap:8px;flex-wrap:wrap;padding:16px var(--padding-x);border-bottom:1px solid var(--linea);background:var(--blanco);position:sticky;top:64px;z-index:50;}
+.pub-cards-scroll{flex:1;overflow-y:auto;scrollbar-width:thin;scrollbar-color:var(--linea) transparent;}
+.pub-filters-bar{display:flex;gap:8px;flex-wrap:wrap;padding:16px var(--padding-x);border-bottom:1px solid var(--linea);background:var(--blanco);flex-shrink:0;}
 .pub-filter-search,.pub-filter-select{font-size:13px;padding:9px 14px;border:1.5px solid var(--linea);border-radius:8px;background:var(--blanco);color:var(--grafito-s);transition:border-color var(--dur-micro) var(--ease-out);}
 .pub-filter-search{font-family:'Lora',serif;min-width:180px;}
 .pub-filter-search:focus,.pub-filter-select:focus{outline:none;border-color:var(--azure);}
@@ -2114,6 +2115,8 @@ const publicCss = `
   .pub-explorer-layout.drawer-open{grid-template-columns:1fr;}
   .pub-drawer-desktop{display:none;}
   .pub-compact-grid{grid-template-columns:repeat(2,1fr);}
+  .pub-cards-panel{height:auto;position:static;}
+  .pub-cards-scroll{overflow-y:visible;}
   .pub-steps{grid-template-columns:1fr;}
   .pub-audience{grid-template-columns:1fr;}
   .pub-grid{grid-template-columns:repeat(2,1fr);}
@@ -2931,43 +2934,45 @@ function ProgramBrowser() {
             </select>
           </div>
 
-          <div style={{ padding:"24px var(--padding-x) 0" }}>
-            <p style={{ fontFamily:"'Lora',serif", fontSize:13, color:"var(--pizarra)", marginBottom:12 }}>
-              {filtered.length.toLocaleString("es-ES")} programas
-            </p>
-            {selected.size > 0 && (
-              <div className="pub-selected-bar" style={{ marginBottom:12 }}>
-                <span>{selected.size} guardado{selected.size > 1 ? "s" : ""}</span>
-                <button className="pub-btn pub-btn-primary pub-btn-sm" onClick={handleSolicitar}>Solicitar revisión →</button>
+          <div className="pub-cards-scroll">
+            <div style={{ padding:"24px var(--padding-x) 0" }}>
+              <p style={{ fontFamily:"'Lora',serif", fontSize:13, color:"var(--pizarra)", marginBottom:12 }}>
+                {filtered.length.toLocaleString("es-ES")} programas
+              </p>
+              {selected.size > 0 && (
+                <div className="pub-selected-bar" style={{ marginBottom:12 }}>
+                  <span>{selected.size} guardado{selected.size > 1 ? "s" : ""}</span>
+                  <button className="pub-btn pub-btn-primary pub-btn-sm" onClick={handleSolicitar}>Solicitar revisión →</button>
+                </div>
+              )}
+            </div>
+
+            <div className="pub-compact-grid" style={{ padding:"8px var(--padding-x) 32px" }}>
+              {paged.map(p => (
+                <ProgramCardCompact key={p.id} program={p}
+                  selected={selected.has(p.id)}
+                  isDrawerOpen={drawerProgram?.id === p.id || sheetProgram?.id === p.id}
+                  onClick={() => openCard(p)} />
+              ))}
+            </div>
+
+            {filtered.length === 0 && (
+              <div style={{ textAlign:"center", padding:60, color:"var(--pizarra)", fontFamily:"'Lora',serif" }}>
+                No se encontraron programas con esos filtros.
+              </div>
+            )}
+
+            {totalPages > 1 && (
+              <div className="pub-pagination" style={{ padding:"0 var(--padding-x) 32px" }}>
+                {page > 0 && <button className="pub-page-btn" onClick={() => setPage(p => p-1)}>← Anterior</button>}
+                {Array.from({ length: Math.min(totalPages, 7) }, (_, i) => {
+                  const p = totalPages<=7 ? i : page<=3 ? i : page>=totalPages-4 ? totalPages-7+i : page-3+i;
+                  return <button key={p} className={`pub-page-btn${p===page?" active":""}`} onClick={() => setPage(p)}>{p+1}</button>;
+                })}
+                {page < totalPages-1 && <button className="pub-page-btn" onClick={() => setPage(p => p+1)}>Siguiente →</button>}
               </div>
             )}
           </div>
-
-          <div className="pub-compact-grid" style={{ padding:"0 var(--padding-x) 32px" }}>
-            {paged.map(p => (
-              <ProgramCardCompact key={p.id} program={p}
-                selected={selected.has(p.id)}
-                isDrawerOpen={drawerProgram?.id === p.id || sheetProgram?.id === p.id}
-                onClick={() => openCard(p)} />
-            ))}
-          </div>
-
-          {filtered.length === 0 && (
-            <div style={{ textAlign:"center", padding:60, color:"var(--pizarra)", fontFamily:"'Lora',serif" }}>
-              No se encontraron programas con esos filtros.
-            </div>
-          )}
-
-          {totalPages > 1 && (
-            <div className="pub-pagination" style={{ padding:"0 var(--padding-x) 32px" }}>
-              {page > 0 && <button className="pub-page-btn" onClick={() => setPage(p => p-1)}>← Anterior</button>}
-              {Array.from({ length: Math.min(totalPages, 7) }, (_, i) => {
-                const p = totalPages<=7 ? i : page<=3 ? i : page>=totalPages-4 ? totalPages-7+i : page-3+i;
-                return <button key={p} className={`pub-page-btn${p===page?" active":""}`} onClick={() => setPage(p)}>{p+1}</button>;
-              })}
-              {page < totalPages-1 && <button className="pub-page-btn" onClick={() => setPage(p => p+1)}>Siguiente →</button>}
-            </div>
-          )}
         </div>
 
         {/* RIGHT PANEL — desktop drawer */}

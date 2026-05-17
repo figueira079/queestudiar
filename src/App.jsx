@@ -1781,19 +1781,36 @@ function computeMatches(programs, profile) {
 const publicCss = `
 @import url('https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,700&family=Lora:ital,wght@0,400;0,500;1,400&family=Work+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap');
 :root {
+  /* Legacy aliases — keep for existing admin/form CSS */
   --pub-bg:#faf6f0; --pub-surface:#f0f4ff; --pub-border:#e2e8f0;
   --pub-primary:#2563eb; --pub-primary-hover:#1d4ed8; --pub-secondary:#e8531a;
   --pub-text:#0f172a; --pub-muted:#334155; --pub-light:#94a3b8;
   --pub-success:#16a34a; --pub-radius:12px;
+  /* Brand tokens */
   --azure:#2563eb; --terracota:#e8531a; --salvia:#16a34a;
   --grafito:#0f172a; --grafito-s:#334155; --pizarra:#94a3b8;
-  --linea:#e2e8f0; --pergamino:#faf6f0; --hielo:#f0f4ff;
+  --linea:#e2e8f0; --pergamino:#faf6f0; --hielo:#f0f4ff; --blanco:#ffffff;
+  /* Semantic */
+  --ok:#16a34a; --rota:#dc2626; --generica:#f59e0b; --pendiente:#94a3b8;
+  /* Spacing & layout */
+  --max-width:1100px; --padding-x:clamp(20px,5vw,80px); --section-py:clamp(64px,10vw,120px);
+  --card-radius:12px; --btn-radius:8px; --tag-radius:4px;
+  /* Motion */
+  --ease-out:cubic-bezier(0.0,0.0,0.2,1);
+  --ease-in:cubic-bezier(0.4,0.0,1,1);
+  --ease-inout:cubic-bezier(0.4,0.0,0.2,1);
+  --spring:cubic-bezier(0.34,1.56,0.64,1);
+  --dur-micro:80ms; --dur-short:180ms; --dur-medium:280ms; --dur-long:380ms; --dur-xl:500ms;
 }
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important;}}
+:focus-visible{outline:2px solid var(--azure);outline-offset:3px;border-radius:4px;}
+.skip-link{position:absolute;top:-40px;left:0;background:var(--azure);color:#fff;padding:8px 16px;font-family:'Bricolage Grotesque',sans-serif;font-size:14px;z-index:999;border-radius:0 0 8px 0;transition:top .1s;}
+.skip-link:focus{top:0;}
 *{box-sizing:border-box;margin:0;padding:0;}
 .pub-app{font-family:'Work Sans',system-ui,sans-serif;color:var(--pub-text);background:var(--pub-bg);min-height:100vh;display:flex;flex-direction:column;}
 
 /* Nav */
-.pub-nav{display:flex;align-items:center;justify-content:space-between;padding:0 32px;height:64px;background:#fff;border-bottom:1px solid var(--pub-border);position:sticky;top:0;z-index:100;}
+.pub-nav{display:flex;align-items:center;justify-content:space-between;padding:0 var(--padding-x);height:64px;background:var(--blanco);border-bottom:1px solid var(--linea);position:sticky;top:0;z-index:100;transition:box-shadow var(--dur-short) var(--ease-out);}
 .pub-nav-logo{font-family:'Bricolage Grotesque',system-ui,sans-serif;font-size:20px;font-weight:700;color:var(--pub-primary);cursor:pointer;letter-spacing:-0.5px;}
 .pub-nav-links{display:flex;gap:24px;align-items:center;}
 .pub-nav-link{font-size:14px;font-weight:500;color:var(--pub-muted);text-decoration:none;cursor:pointer;padding:8px 0;border-bottom:2px solid transparent;transition:all .2s;}
@@ -1806,9 +1823,10 @@ const publicCss = `
 .pub-hero h1{font-family:'Bricolage Grotesque',system-ui,sans-serif;font-size:clamp(36px,5vw,56px);font-weight:700;line-height:1.05;margin-bottom:20px;color:var(--pub-text);letter-spacing:-0.02em;}
 .pub-hero p{font-family:'Lora',Georgia,serif;font-size:18px;color:var(--pub-muted);max-width:560px;margin:0 auto 36px;line-height:1.7;}
 .pub-hero-btns{display:flex;gap:16px;justify-content:center;flex-wrap:wrap;}
-.pub-btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:14px 32px;border-radius:var(--pub-radius);font-size:16px;font-weight:600;cursor:pointer;transition:all .2s;border:2px solid transparent;text-decoration:none;font-family:'Bricolage Grotesque',system-ui,sans-serif;}
+.pub-btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:13px 26px;border-radius:var(--btn-radius);font-size:15px;font-weight:600;cursor:pointer;transition:background var(--dur-micro) var(--ease-out),border-color var(--dur-micro) var(--ease-out),transform var(--dur-micro) var(--ease-out),box-shadow var(--dur-short) var(--ease-out);border:2px solid transparent;text-decoration:none;font-family:'Bricolage Grotesque',system-ui,sans-serif;white-space:nowrap;line-height:1;-webkit-font-smoothing:antialiased;}
+.pub-btn:active{transform:translateY(1px)!important;}
 .pub-btn-primary{background:var(--pub-primary);color:#fff;border-color:var(--pub-primary);}
-.pub-btn-primary:hover{background:var(--pub-primary-hover);border-color:var(--pub-primary-hover);transform:translateY(-1px);box-shadow:0 4px 12px rgba(37,99,235,.3);}
+.pub-btn-primary:hover{background:#1d4ed8;border-color:#1d4ed8;transform:translateY(-1px);box-shadow:0 4px 14px rgba(37,99,235,.30);}
 .pub-btn-outline{background:transparent;color:var(--pub-primary);border-color:var(--pub-primary);}
 .pub-btn-outline:hover{background:var(--pub-surface);}
 .pub-btn-sm{padding:10px 20px;font-size:14px;}
@@ -1882,7 +1900,7 @@ const publicCss = `
 
 /* Program cards grid */
 .pub-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;align-items:start;}
-.pub-program{background:#fff;border:1px solid var(--pub-border);border-top:4px solid var(--pub-primary);border-radius:var(--pub-radius);padding:0;transition:all .2s;cursor:pointer;overflow:hidden;}
+.pub-program{background:var(--blanco);border:1.5px solid var(--linea);border-top:4px solid var(--azure);border-radius:var(--card-radius);padding:0;transition:border-color var(--dur-micro) var(--ease-out),box-shadow var(--dur-short) var(--ease-out);cursor:pointer;overflow:hidden;}
 .pub-program.pub-tipo-master{border-top-color:var(--pub-secondary);}
 .pub-program.pub-tipo-doctorado{border-top-color:#0f172a;}
 .pub-program.pub-tipo-fp{border-top-color:var(--pub-success);}
@@ -1898,9 +1916,12 @@ const publicCss = `
 .pub-program-meta{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px;}
 .pub-badge{display:inline-flex;align-items:center;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;}
 .pub-badge-tipo{background:#dbeafe;color:#1d4ed8;}
-.pub-badge-city{background:#dcfce7;color:#15803d;}
-.pub-badge-visa{background:#fef9c3;color:#a16207;}
-.pub-badge-mod{background:#fef9c3;color:#ca8a04;}
+.pub-badge-tipo.master{background:#ede9fe;color:#6d28d9;}
+.pub-badge-tipo.fp_superior{background:#d1fae5;color:#065f46;}
+.pub-badge-tipo.doctorado{background:#fee2e2;color:#991b1b;}
+.pub-badge-city{background:var(--hielo);color:var(--azure);}
+.pub-badge-visa{background:#fef3c7;color:#92400e;}
+.pub-badge-mod{background:#fef3c7;color:#92400e;}
 .pub-program-name{font-family:'Work Sans',sans-serif;font-size:14px;font-weight:600;line-height:1.4;color:var(--pub-text);margin-bottom:12px;}
 .pub-program-footer{display:flex;align-items:center;justify-content:space-between;gap:8px;}
 .pub-program-price{font-family:'IBM Plex Mono',monospace;font-size:13px;font-weight:500;color:var(--pub-primary);}
@@ -1947,7 +1968,7 @@ const publicCss = `
 .pub-trust-dot{color:var(--pub-border);}
 
 /* Landing — Sections */
-.pub-section{max-width:960px;margin:0 auto 72px;padding:0 24px;}
+.pub-section{max-width:var(--max-width);margin:0 auto 72px;padding:0 var(--padding-x);}
 .pub-section-label{font-family:'Bricolage Grotesque',system-ui,sans-serif;font-size:12px;font-weight:600;color:var(--pub-primary);letter-spacing:0.04em;margin-bottom:10px;}
 .pub-section h2{font-family:'Bricolage Grotesque',system-ui,sans-serif;font-size:clamp(24px,3.5vw,36px);font-weight:600;color:var(--pub-text);margin-bottom:10px;line-height:1.2;}
 .pub-section-sub{font-family:'Lora',Georgia,serif;font-size:16px;color:var(--pub-muted);margin-bottom:40px;line-height:1.7;max-width:560px;}
@@ -1986,8 +2007,8 @@ const publicCss = `
 .pub-faq-question{width:100%;text-align:left;padding:20px 0;display:flex;justify-content:space-between;align-items:center;cursor:pointer;font-family:'Bricolage Grotesque',system-ui,sans-serif;font-size:16px;font-weight:600;color:var(--pub-text);background:none;border:none;}
 .pub-faq-icon{font-size:22px;color:var(--pub-primary);transition:transform .2s ease;flex-shrink:0;margin-left:16px;line-height:1;}
 .pub-faq-item.open .pub-faq-icon{transform:rotate(45deg);}
-.pub-faq-answer{max-height:0;overflow:hidden;transition:max-height .35s ease;}
-.pub-faq-item.open .pub-faq-answer{max-height:500px;}
+.pub-faq-answer{max-height:0;overflow:hidden;transition:max-height var(--dur-medium) var(--ease-inout);}
+.pub-faq-item.open .pub-faq-answer{max-height:600px;}
 .pub-faq-answer-inner{padding:0 0 20px;font-family:'Lora',Georgia,serif;font-size:15px;line-height:1.75;color:var(--pub-muted);}
 
 /* Landing — CTA banner */
@@ -2000,7 +2021,7 @@ const publicCss = `
 .pub-cta-banner .pub-btn-outline:hover{background:rgba(255,255,255,.15);}
 
 /* Nav scroll shadow */
-.pub-nav.scrolled{box-shadow:0 1px 12px rgba(0,0,0,.06);border-bottom-color:transparent;}
+.pub-nav.scrolled{box-shadow:0 1px 16px rgba(15,23,42,.06);border-bottom-color:transparent;}
 
 /* CTA banner button variants */
 .pub-cta-banner .pub-btn-primary{background:#fff;color:var(--pub-primary);border-color:#fff;font-family:'Bricolage Grotesque',system-ui,sans-serif;font-weight:600;}
@@ -2027,11 +2048,68 @@ const publicCss = `
 .pub-step-line{flex:1;height:2px;background:var(--pub-border);transition:background .3s;max-width:28px;}
 .pub-step-line.done{background:var(--pub-primary);}
 
+/* ── Explorer layout ── */
+.pub-explorer-layout{display:grid;grid-template-columns:1fr;min-height:calc(100vh - 64px);background:var(--blanco);}
+.pub-explorer-layout.drawer-open{grid-template-columns:55% 45%;}
+.pub-cards-panel{overflow-y:auto;padding:20px var(--padding-x);background:var(--blanco);}
+.pub-explorer-layout.drawer-open .pub-cards-panel{border-right:1px solid var(--linea);}
+.pub-filters-bar{display:flex;gap:8px;flex-wrap:wrap;padding:16px var(--padding-x);border-bottom:1px solid var(--linea);background:var(--blanco);position:sticky;top:64px;z-index:50;}
+.pub-filter-search,.pub-filter-select{font-size:13px;padding:9px 14px;border:1.5px solid var(--linea);border-radius:8px;background:var(--blanco);color:var(--grafito-s);transition:border-color var(--dur-micro) var(--ease-out);}
+.pub-filter-search{font-family:'Lora',serif;min-width:180px;}
+.pub-filter-search:focus,.pub-filter-select:focus{outline:none;border-color:var(--azure);}
+.pub-filter-select{font-family:'Bricolage Grotesque',system-ui,sans-serif;font-weight:500;cursor:pointer;-webkit-appearance:none;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M2 4l4 4 4-4' stroke='%2394A3B8' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round' fill='none'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;padding-right:30px;}
+.pub-compact-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;padding:20px 0;}
+/* Compact program card */
+.pub-card-compact{background:var(--blanco);border:1.5px solid var(--linea);border-radius:var(--card-radius);padding:14px;cursor:pointer;transition:border-color var(--dur-micro) var(--ease-out),box-shadow var(--dur-short) var(--ease-out);}
+.pub-card-compact:hover{border-color:var(--azure);box-shadow:0 2px 12px rgba(37,99,235,.08);}
+.pub-card-compact.selected{border-color:var(--azure);border-width:2px;background:var(--hielo);box-shadow:0 2px 12px rgba(37,99,235,.12);}
+.pub-card-compact-img{height:64px;background:var(--hielo);border-radius:8px;display:flex;align-items:center;justify-content:center;font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:500;color:var(--azure);opacity:.35;letter-spacing:.12em;text-transform:uppercase;margin-bottom:10px;overflow:hidden;position:relative;}
+.pub-card-compact-img img{max-height:40px;max-width:100px;object-fit:contain;position:absolute;opacity:1;}
+.pub-card-compact-tags{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:6px;}
+.pub-card-compact-title{font-family:'Bricolage Grotesque',system-ui,sans-serif;font-size:13px;font-weight:600;color:var(--grafito);line-height:1.35;margin-bottom:6px;}
+.pub-card-compact-price{font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:500;color:var(--azure);}
+/* Drawer desktop */
+.pub-drawer-desktop{display:flex;flex-direction:column;height:calc(100vh - 64px);position:sticky;top:64px;overflow:hidden;background:var(--blanco);}
+.pub-drawer-empty{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:12px;color:var(--pizarra);padding:40px;text-align:center;}
+.pub-drawer-empty-icon{font-family:'IBM Plex Mono',monospace;font-size:28px;opacity:.25;letter-spacing:.1em;}
+.pub-drawer-empty-text{font-family:'Lora',serif;font-size:14px;color:var(--pizarra);max-width:200px;line-height:1.55;}
+.pub-drawer-content{display:flex;flex-direction:column;height:100%;animation:drawerIn var(--dur-medium) var(--ease-out);}
+@keyframes drawerIn{from{opacity:0;transform:translateX(12px);}to{opacity:1;transform:translateX(0);}}
+.pub-drawer-img{width:100%;height:100px;background:var(--hielo);display:flex;align-items:center;justify-content:center;font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--azure);opacity:.30;letter-spacing:.12em;text-transform:uppercase;flex-shrink:0;position:relative;}
+.pub-drawer-img img{max-height:60px;max-width:140px;object-fit:contain;position:absolute;opacity:1;}
+.pub-drawer-body{padding:20px 24px;flex:1;overflow-y:auto;scrollbar-width:thin;scrollbar-color:var(--linea) transparent;}
+.pub-drawer-section-title{font-family:'Bricolage Grotesque',system-ui,sans-serif;font-size:10px;font-weight:700;color:var(--azure);text-transform:uppercase;letter-spacing:.1em;margin:16px 0 8px;}
+.pub-drawer-title{font-family:'Bricolage Grotesque',system-ui,sans-serif;font-size:15px;font-weight:700;color:var(--grafito);line-height:1.35;margin-bottom:4px;}
+.pub-drawer-univ{font-family:'Lora',serif;font-size:12px;color:var(--pizarra);margin-bottom:8px;}
+.pub-drawer-desc{font-family:'Lora',serif;font-size:13px;line-height:1.65;color:var(--grafito-s);margin-bottom:14px;}
+.pub-drawer-data-row{display:flex;justify-content:space-between;align-items:baseline;padding:6px 0;border-bottom:1px solid var(--linea);gap:8px;}
+.pub-drawer-data-row:last-child{border-bottom:none;}
+.pub-drawer-data-label{font-family:'Lora',serif;font-size:12px;color:var(--grafito-s);}
+.pub-drawer-data-value{font-family:'IBM Plex Mono',monospace;font-size:13px;font-weight:500;color:var(--azure);white-space:nowrap;}
+.pub-drawer-footer{padding:14px 20px;border-top:1px solid var(--linea);display:flex;gap:10px;flex-shrink:0;background:var(--blanco);}
+.pub-btn-oficial{flex:1;background:var(--azure);color:#fff;font-family:'Bricolage Grotesque',system-ui,sans-serif;font-size:13px;font-weight:600;padding:11px 16px;border-radius:var(--btn-radius);border:none;cursor:pointer;text-align:center;text-decoration:none;display:flex;align-items:center;justify-content:center;transition:background var(--dur-micro) var(--ease-out),transform var(--dur-micro);}
+.pub-btn-oficial:hover{background:#1d4ed8;transform:translateY(-1px);}
+.pub-btn-guardar{background:transparent;color:var(--azure);font-family:'Bricolage Grotesque',system-ui,sans-serif;font-size:13px;font-weight:600;padding:11px 16px;border-radius:var(--btn-radius);border:1.5px solid var(--azure);cursor:pointer;white-space:nowrap;transition:background var(--dur-micro) var(--ease-out);}
+.pub-btn-guardar:hover{background:var(--hielo);}
+.pub-btn-guardar.saved{background:var(--salvia);color:#fff;border-color:var(--salvia);}
+/* Bottom sheet (mobile) */
+.pub-bs-overlay{position:fixed;inset:0;background:rgba(15,23,42,.45);z-index:199;opacity:0;pointer-events:none;transition:opacity var(--dur-medium) var(--ease-out);-webkit-backdrop-filter:blur(2px);backdrop-filter:blur(2px);}
+.pub-bs-overlay.visible{opacity:1;pointer-events:all;}
+.pub-bottom-sheet{position:fixed;bottom:0;left:0;right:0;background:var(--blanco);border-radius:18px 18px 0 0;box-shadow:0 -8px 40px rgba(15,23,42,.14);transform:translateY(100%);transition:transform var(--dur-long) var(--spring);display:flex;flex-direction:column;max-height:87dvh;z-index:200;will-change:transform;}
+.pub-bottom-sheet.open{transform:translateY(0);}
+.pub-bs-handle{width:40px;height:4px;background:var(--linea);border-radius:2px;margin:12px auto 6px;flex-shrink:0;}
+.pub-bs-body{padding:0 18px;overflow-y:auto;flex:1;-webkit-overflow-scrolling:touch;scrollbar-width:none;}
+.pub-bs-body::-webkit-scrollbar{display:none;}
+.pub-bs-footer{padding:12px 18px max(18px,env(safe-area-inset-bottom));display:flex;gap:8px;border-top:1px solid var(--linea);flex-shrink:0;background:var(--blanco);}
+
 /* Responsive */
 @media(max-width:768px){
   .pub-features{grid-template-columns:1fr 1fr;}
   .pub-tipos-grid{grid-template-columns:repeat(2,1fr);}
   .pub-stats{flex-direction:column;gap:24px;}
+  .pub-explorer-layout.drawer-open{grid-template-columns:1fr;}
+  .pub-drawer-desktop{display:none;}
+  .pub-compact-grid{grid-template-columns:repeat(2,1fr);}
   .pub-steps{grid-template-columns:1fr;}
   .pub-audience{grid-template-columns:1fr;}
   .pub-grid{grid-template-columns:repeat(2,1fr);}
@@ -2076,15 +2154,15 @@ function PublicNav({ route }) {
   );
 }
 
-function FaqItem({ q, a }) {
-  const [open, setOpen] = useState(false);
+function FaqItem({ q, a, open, onToggle, id }) {
   return (
     <div className={`pub-faq-item${open ? " open" : ""}`}>
-      <button className="pub-faq-question" onClick={() => setOpen(o => !o)}>
+      <button className="pub-faq-question" onClick={onToggle}
+        aria-expanded={open} aria-controls={`faq-answer-${id}`}>
         <span>{q}</span>
-        <span className="pub-faq-icon">+</span>
+        <span className="pub-faq-icon" aria-hidden="true">+</span>
       </button>
-      <div className="pub-faq-answer">
+      <div id={`faq-answer-${id}`} className="pub-faq-answer" role="region">
         <div className="pub-faq-answer-inner">{a}</div>
       </div>
     </div>
@@ -2092,26 +2170,26 @@ function FaqItem({ q, a }) {
 }
 
 const IcoEU = () => (
-  <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-    <rect width="32" height="32" rx="8" fill="#EFF6FF"/>
-    <path d="M16 7l1.5 4.5H22l-3.75 2.75 1.5 4.5L16 16l-3.75 2.75 1.5-4.5L10 11.5h4.5L16 7z" fill="#2563EB"/>
-    <path d="M10 20h12M10 23h12" stroke="#2563EB" strokeWidth="1.5" strokeLinecap="round"/>
+  <svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    <rect width="40" height="40" rx="10" fill="#EFF6FF"/>
+    <circle cx="20" cy="13" r="5" stroke="#2563EB" strokeWidth="1.8"/>
+    <path d="M20 9l1 3h3l-2.5 1.8 1 3L20 15l-2.5 1.8 1-3L16 12h3l1-3z" fill="#2563EB"/>
+    <path d="M11 28c0-5 4.03-9 9-9s9 4 9 9" stroke="#2563EB" strokeWidth="1.8" strokeLinecap="round"/>
   </svg>
 );
 const IcoLatam = () => (
-  <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-    <rect width="32" height="32" rx="8" fill="#EFF6FF"/>
-    <path d="M9 18l4-4 3 3 4-4 3 3" stroke="#2563EB" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
-    <path d="M9 22h14" stroke="#2563EB" strokeWidth="1.5" strokeLinecap="round"/>
-    <circle cx="16" cy="11" r="3" stroke="#2563EB" strokeWidth="1.5"/>
+  <svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    <rect width="40" height="40" rx="10" fill="#EFF6FF"/>
+    <circle cx="20" cy="20" r="8" stroke="#2563EB" strokeWidth="1.8"/>
+    <path d="M12 20h16M20 12c-3 2.5-5 5-5 8s2 5.5 5 8M20 12c3 2.5 5 5 5 8s-2 5.5-5 8" stroke="#2563EB" strokeWidth="1.5" strokeLinecap="round"/>
   </svg>
 );
 const IcoPassport = () => (
-  <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-    <rect width="32" height="32" rx="8" fill="#EFF6FF"/>
-    <rect x="9" y="8" width="14" height="16" rx="2" stroke="#2563EB" strokeWidth="1.5"/>
-    <circle cx="16" cy="14" r="2.5" stroke="#2563EB" strokeWidth="1.3"/>
-    <path d="M12 20h8M12 22.5h5" stroke="#2563EB" strokeWidth="1.3" strokeLinecap="round"/>
+  <svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    <rect width="40" height="40" rx="10" fill="#EFF6FF"/>
+    <rect x="12" y="10" width="16" height="20" rx="2.5" stroke="#2563EB" strokeWidth="1.8"/>
+    <circle cx="20" cy="17" r="3" stroke="#2563EB" strokeWidth="1.5"/>
+    <path d="M15 24h10M15 27h6" stroke="#2563EB" strokeWidth="1.5" strokeLinecap="round"/>
   </svg>
 );
 
@@ -2125,6 +2203,8 @@ const FAQS = [
 ];
 
 function LandingPage() {
+  const [openFaq, setOpenFaq] = useState(null);
+  const toggleFaq = (i) => setOpenFaq(prev => prev === i ? null : i);
   return (
     <>
       {/* HERO */}
@@ -2212,9 +2292,9 @@ function LandingPage() {
             <div className="pub-tipo-card">
               <svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
                 <rect width="40" height="40" rx="10" fill="#EFF6FF"/>
-                <path d="M20 12l12 6-12 6-12-6 12-6z" stroke="#2563EB" strokeWidth="1.8" strokeLinejoin="round" fill="none"/>
-                <path d="M12 22v6c0 0 3 3 8 3s8-3 8-3v-6" stroke="#2563EB" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
-                <path d="M32 18v6" stroke="#2563EB" strokeWidth="1.8" strokeLinecap="round"/>
+                <path d="M20 11l13 6.5-13 6.5-13-6.5L20 11z" stroke="#2563EB" strokeWidth="1.8" strokeLinejoin="round" fill="none"/>
+                <path d="M13 21v7s3.5 3 7 3 7-3 7-3v-7" stroke="#2563EB" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+                <path d="M33 17.5v6" stroke="#2563EB" strokeWidth="1.8" strokeLinecap="round"/>
               </svg>
               <div className="pub-tipo-card-body">
                 <h3>Grado universitario</h3>
@@ -2225,9 +2305,9 @@ function LandingPage() {
             <div className="pub-tipo-card">
               <svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
                 <rect width="40" height="40" rx="10" fill="#EFF6FF"/>
-                <rect x="12" y="11" width="16" height="18" rx="2" stroke="#2563EB" strokeWidth="1.8"/>
+                <rect x="12" y="10" width="16" height="20" rx="2" stroke="#2563EB" strokeWidth="1.8"/>
                 <path d="M16 17h8M16 21h8M16 25h5" stroke="#2563EB" strokeWidth="1.5" strokeLinecap="round"/>
-                <path d="M24 8l2 3" stroke="#2563EB" strokeWidth="1.5" strokeLinecap="round"/>
+                <path d="M25 8l2 2" stroke="#2563EB" strokeWidth="1.5" strokeLinecap="round"/>
               </svg>
               <div className="pub-tipo-card-body">
                 <h3>Máster universitario</h3>
@@ -2238,9 +2318,9 @@ function LandingPage() {
             <div className="pub-tipo-card">
               <svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
                 <rect width="40" height="40" rx="10" fill="#EFF6FF"/>
-                <circle cx="20" cy="19" r="7" stroke="#2563EB" strokeWidth="1.8"/>
-                <path d="M20 15v4l3 2" stroke="#2563EB" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
-                <path d="M20 12V9M25 13.5l2-2M28 19h3M25 24.5l2 2M20 26v3M15 24.5l-2 2M12 19H9M15 13.5l-2-2" stroke="#2563EB" strokeWidth="1.3" strokeLinecap="round"/>
+                <circle cx="20" cy="20" r="7" stroke="#2563EB" strokeWidth="1.8"/>
+                <path d="M20 16v4l2.5 2.5" stroke="#2563EB" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+                <path d="M20 11V9M27 13l1.5-1.5M29 20h2M27 27l1.5 1.5M20 29v2M13 27l-1.5 1.5M11 20H9M13 13l-1.5-1.5" stroke="#2563EB" strokeWidth="1.3" strokeLinecap="round"/>
               </svg>
               <div className="pub-tipo-card-body">
                 <h3>Doctorado</h3>
@@ -2251,10 +2331,10 @@ function LandingPage() {
             <div className="pub-tipo-card">
               <svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
                 <rect width="40" height="40" rx="10" fill="#EFF6FF"/>
-                <rect x="10" y="14" width="20" height="14" rx="2" stroke="#2563EB" strokeWidth="1.8"/>
-                <path d="M15 14v-3h10v3" stroke="#2563EB" strokeWidth="1.8" strokeLinejoin="round"/>
-                <path d="M15 21h4M15 24h6" stroke="#2563EB" strokeWidth="1.5" strokeLinecap="round"/>
-                <circle cx="24" cy="22" r="2" fill="#2563EB"/>
+                <rect x="10" y="15" width="20" height="14" rx="2" stroke="#2563EB" strokeWidth="1.8"/>
+                <path d="M15 15v-3h10v3" stroke="#2563EB" strokeWidth="1.8" strokeLinejoin="round"/>
+                <path d="M14 22h5M14 25h8" stroke="#2563EB" strokeWidth="1.5" strokeLinecap="round"/>
+                <circle cx="24" cy="23" r="2.5" fill="#2563EB"/>
               </svg>
               <div className="pub-tipo-card-body">
                 <h3>FP Superior</h3>
@@ -2271,7 +2351,7 @@ function LandingPage() {
         <div className="pub-section-label">Preguntas frecuentes</div>
         <h2>Lo que más nos preguntan.</h2>
         <div className="pub-faq">
-          {FAQS.map((f, i) => <FaqItem key={i} q={f.q} a={f.a} />)}
+          {FAQS.map((f, i) => <FaqItem key={i} id={i} q={f.q} a={f.a} open={openFaq === i} onToggle={() => toggleFaq(i)} />)}
         </div>
       </div>
 
@@ -2658,6 +2738,80 @@ function LeadCaptureModal({ profile, onClose, onSuccess }) {
   );
 }
 
+// ── Compact card for the explorer left panel ─────────────────────────────
+function ProgramCardCompact({ program: p, selected, isDrawerOpen, onClick }) {
+  const [logoErr, setLogoErr] = useState(false);
+  const fmtPrice = (v) => v === 0 ? "Gratuito" : `${Number(v).toLocaleString("es-ES")} €/año`;
+  const precioEU = p.precio_anual_eur != null ? fmtPrice(p.precio_anual_eur) : "Consultar precio";
+  const hasIntl = p.precio_extracomunitario_eur != null && p.precio_extracomunitario_eur !== p.precio_anual_eur;
+  const domain = p.url_detalle ? (() => { try { return new URL(p.url_detalle).hostname.replace(/^www\./,""); } catch { return null; } })() : null;
+  const abbr = domain ? domain.split(".")[0].toUpperCase().slice(0,5) : (p.nombre || "?").slice(0,4).toUpperCase();
+  const tipoCls = p.tipo === "master" ? "master" : p.tipo === "fp_superior" ? "fp_superior" : p.tipo === "doctorado" ? "doctorado" : "";
+  return (
+    <div className={`pub-card-compact${isDrawerOpen ? " selected" : ""}`} onClick={onClick}>
+      <div className="pub-card-compact-img">
+        <span style={{ position:"relative", zIndex:0 }}>{abbr}</span>
+        {domain && !logoErr && <img src={`https://logo.clearbit.com/${domain}`} alt="" onError={() => setLogoErr(true)} />}
+      </div>
+      <div className="pub-card-compact-tags">
+        <span className={`pub-badge pub-badge-tipo ${tipoCls}`}>{TIPO_LABELS[p.tipo] || p.tipo}</span>
+        {p.ciudad && <span className="pub-badge pub-badge-city">{p.ciudad}</span>}
+      </div>
+      <div className="pub-card-compact-title">{p.nombre}</div>
+      <div className="pub-card-compact-price">{precioEU}{hasIntl && <span style={{ fontFamily:"Work Sans",fontSize:10,color:"var(--pizarra)",marginLeft:4 }}>· v. intl.</span>}</div>
+    </div>
+  );
+}
+
+// ── Drawer / sheet program detail ────────────────────────────────────────
+function DrawerProgramDetail({ program: p, selected, onToggleSelect, compact }) {
+  const [logoErr, setLogoErr] = useState(false);
+  const fmtPrice = (v) => v === 0 ? "Gratuito" : `${Number(v).toLocaleString("es-ES")} €/año`;
+  const precioEU = p.precio_anual_eur != null ? fmtPrice(p.precio_anual_eur) : null;
+  const hasIntl = p.precio_extracomunitario_eur != null && p.precio_extracomunitario_eur !== p.precio_anual_eur;
+  const precioIntl = hasIntl ? fmtPrice(p.precio_extracomunitario_eur) : null;
+  const domain = p.url_detalle ? (() => { try { return new URL(p.url_detalle).hostname.replace(/^www\./,""); } catch { return null; } })() : null;
+  const abbr = domain ? domain.split(".")[0].toUpperCase().slice(0,5) : (p.nombre || "?").slice(0,4).toUpperCase();
+  const desc = TIPO_DESC[p.tipo] || "";
+  const tipoCls = p.tipo === "master" ? "master" : p.tipo === "fp_superior" ? "fp_superior" : p.tipo === "doctorado" ? "doctorado" : "";
+  return (
+    <>
+      <div className="pub-drawer-img">
+        <span>{abbr}</span>
+        {domain && !logoErr && <img src={`https://logo.clearbit.com/${domain}`} alt="" onError={() => setLogoErr(true)} />}
+      </div>
+      <div className={compact ? "pub-bs-body" : "pub-drawer-body"}>
+        <div style={{ display:"flex", gap:6, flexWrap:"wrap", marginBottom:10 }}>
+          <span className={`pub-badge pub-badge-tipo ${tipoCls}`}>{TIPO_LABELS[p.tipo] || p.tipo}</span>
+          {p.ciudad && <span className="pub-badge pub-badge-city">{p.ciudad}</span>}
+          <VisaBadge horas={p.horas_semanales} />
+        </div>
+        <div className="pub-drawer-title">{p.nombre}</div>
+        {domain && <div className="pub-drawer-univ">{domain}</div>}
+        {p.familia_area && <div className="pub-drawer-section-title">{p.familia_area}</div>}
+        <p className="pub-drawer-desc">{desc}</p>
+        <div className="pub-drawer-section-title">Precio de matrícula</div>
+        <div>
+          {precioEU && <div className="pub-drawer-data-row"><span className="pub-drawer-data-label">Residentes UE</span><span className="pub-drawer-data-value">{precioEU}</span></div>}
+          {precioIntl && <div className="pub-drawer-data-row"><span className="pub-drawer-data-label">Internacionales</span><span className="pub-drawer-data-value">{precioIntl}</span></div>}
+          {!precioEU && <div className="pub-drawer-data-row"><span className="pub-drawer-data-label">Precio</span><span className="pub-drawer-data-value">Consultar</span></div>}
+        </div>
+        {(p.horas_semanales || p.modalidad) && <>
+          <div className="pub-drawer-section-title">Detalles</div>
+          <div>
+            {p.horas_semanales && <div className="pub-drawer-data-row"><span className="pub-drawer-data-label">Carga semanal</span><span className="pub-drawer-data-value">{p.horas_semanales}h/sem</span></div>}
+            {p.modalidad && <div className="pub-drawer-data-row"><span className="pub-drawer-data-label">Modalidad</span><span className="pub-drawer-data-value">{p.modalidad}</span></div>}
+          </div>
+        </>}
+      </div>
+      <div className={compact ? "pub-bs-footer" : "pub-drawer-footer"}>
+        {p.url_detalle && <a href={p.url_detalle} target="_blank" rel="noopener noreferrer" className="pub-btn-oficial">Ver programa oficial →</a>}
+        {onToggleSelect && <button className={`pub-btn-guardar${selected ? " saved" : ""}`} onClick={() => onToggleSelect(p.id)}>{selected ? "✓ Guardado" : "Guardar"}</button>}
+      </div>
+    </>
+  );
+}
+
 function ProgramBrowser() {
   const [programs, setPrograms] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -2667,6 +2821,9 @@ function ProgramBrowser() {
   const [filterArea, setFilterArea] = useState("");
   const [page, setPage] = useState(0);
   const [selected, setSelected] = useState(new Set());
+  const [drawerProgram, setDrawerProgram] = useState(null);
+  const [sheetOpen, setSheetOpen] = useState(false);
+  const [sheetProgram, setSheetProgram] = useState(null);
   const PER_PAGE = 24;
 
   useEffect(() => {
@@ -2677,6 +2834,13 @@ function ProgramBrowser() {
       } catch {}
       setLoading(false);
     })();
+  }, []);
+
+  // Close sheet on Escape
+  useEffect(() => {
+    const onKey = (e) => { if (e.key === "Escape") closeSheet(); };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
   }, []);
 
   const cities = [...new Set(programs.map(p => p.ciudad).filter(Boolean))].sort();
@@ -2694,9 +2858,7 @@ function ProgramBrowser() {
   const paged = filtered.slice(page * PER_PAGE, (page + 1) * PER_PAGE);
 
   const toggleSelect = (id) => setSelected(prev => {
-    const s = new Set(prev);
-    s.has(id) ? s.delete(id) : s.add(id);
-    return s;
+    const s = new Set(prev); s.has(id) ? s.delete(id) : s.add(id); return s;
   });
 
   const handleSolicitar = () => {
@@ -2705,53 +2867,127 @@ function ProgramBrowser() {
     location.hash = "#/solicitud";
   };
 
-  if (loading) return <div className="pub-container"><div className="pub-card" style={{ textAlign: "center", padding: 60 }}><div style={{ fontSize: 36, marginBottom: 12 }}>📚</div><p>Cargando programas...</p></div></div>;
+  const openCard = (p) => {
+    if (window.innerWidth <= 768) {
+      setSheetProgram(p); setSheetOpen(true);
+      document.body.style.overflow = "hidden";
+    } else {
+      setDrawerProgram(p);
+    }
+  };
+
+  const closeSheet = () => {
+    setSheetOpen(false);
+    document.body.style.overflow = "";
+    setTimeout(() => setSheetProgram(null), 400);
+  };
+
+  // Swipe-to-dismiss refs
+  const touchStartY = React.useRef(0);
+  const sheetRef = React.useRef(null);
+
+  if (loading) return (
+    <div className="pub-container">
+      <div className="pub-card" style={{ textAlign:"center", padding:60 }}>
+        <div style={{ fontSize:36, marginBottom:12 }}>📚</div>
+        <p>Cargando programas...</p>
+      </div>
+    </div>
+  );
 
   return (
-    <div className="pub-container-wide">
-      <h2 style={{ marginBottom: 8 }}>Explorar programas</h2>
-      <p style={{ color: "var(--pub-muted)", marginBottom: 24 }}>{filtered.length.toLocaleString("es-ES")} programas encontrados</p>
+    <>
+      <div className={`pub-explorer-layout${drawerProgram ? " drawer-open" : ""}`}>
+        {/* LEFT PANEL — filters + compact cards */}
+        <div className="pub-cards-panel">
+          <div className="pub-filters-bar">
+            <input className="pub-filter-search" placeholder="Buscar programa…" value={search}
+              onChange={e => { setSearch(e.target.value); setPage(0); }} />
+            <select className="pub-filter-select" value={filterCity}
+              onChange={e => { setFilterCity(e.target.value); setPage(0); }}>
+              <option value="">Todas las ciudades</option>
+              {cities.map(c => <option key={c} value={c}>{c}</option>)}
+            </select>
+            <select className="pub-filter-select" value={filterTipo}
+              onChange={e => { setFilterTipo(e.target.value); setPage(0); }}>
+              <option value="">Todos los tipos</option>
+              {Object.entries(TIPO_LABELS).map(([k,v]) => <option key={k} value={k}>{v}</option>)}
+            </select>
+            <select className="pub-filter-select" value={filterArea}
+              onChange={e => { setFilterArea(e.target.value); setPage(0); }}>
+              <option value="">Todas las áreas</option>
+              {areas.map(a => <option key={a} value={a}>{a}</option>)}
+            </select>
+          </div>
 
-      <div className="pub-filters">
-        <input className="pub-input" placeholder="Buscar programa..." value={search} onChange={e => { setSearch(e.target.value); setPage(0); }} />
-        <select className="pub-select" value={filterCity} onChange={e => { setFilterCity(e.target.value); setPage(0); }}>
-          <option value="">Todas las ciudades</option>
-          {cities.map(c => <option key={c} value={c}>{c}</option>)}
-        </select>
-        <select className="pub-select" value={filterTipo} onChange={e => { setFilterTipo(e.target.value); setPage(0); }}>
-          <option value="">Todos los tipos</option>
-          {Object.entries(TIPO_LABELS).map(([k,v]) => <option key={k} value={k}>{v}</option>)}
-        </select>
-        <select className="pub-select" value={filterArea} onChange={e => { setFilterArea(e.target.value); setPage(0); }}>
-          <option value="">Todas las áreas</option>
-          {areas.map(a => <option key={a} value={a}>{a}</option>)}
-        </select>
+          <div style={{ padding:"12px var(--padding-x) 0" }}>
+            <p style={{ fontFamily:"'Lora',serif", fontSize:13, color:"var(--pizarra)", marginBottom:12 }}>
+              {filtered.length.toLocaleString("es-ES")} programas
+            </p>
+            {selected.size > 0 && (
+              <div className="pub-selected-bar" style={{ marginBottom:12 }}>
+                <span>{selected.size} guardado{selected.size > 1 ? "s" : ""}</span>
+                <button className="pub-btn pub-btn-primary pub-btn-sm" onClick={handleSolicitar}>Solicitar revisión →</button>
+              </div>
+            )}
+          </div>
+
+          <div className="pub-compact-grid" style={{ padding:"0 var(--padding-x)" }}>
+            {paged.map(p => (
+              <ProgramCardCompact key={p.id} program={p}
+                selected={selected.has(p.id)}
+                isDrawerOpen={drawerProgram?.id === p.id || sheetProgram?.id === p.id}
+                onClick={() => openCard(p)} />
+            ))}
+          </div>
+
+          {filtered.length === 0 && (
+            <div style={{ textAlign:"center", padding:60, color:"var(--pizarra)", fontFamily:"'Lora',serif" }}>
+              No se encontraron programas con esos filtros.
+            </div>
+          )}
+
+          {totalPages > 1 && (
+            <div className="pub-pagination" style={{ padding:"0 var(--padding-x) 32px" }}>
+              {page > 0 && <button className="pub-page-btn" onClick={() => setPage(p => p-1)}>← Anterior</button>}
+              {Array.from({ length: Math.min(totalPages, 7) }, (_, i) => {
+                const p = totalPages<=7 ? i : page<=3 ? i : page>=totalPages-4 ? totalPages-7+i : page-3+i;
+                return <button key={p} className={`pub-page-btn${p===page?" active":""}`} onClick={() => setPage(p)}>{p+1}</button>;
+              })}
+              {page < totalPages-1 && <button className="pub-page-btn" onClick={() => setPage(p => p+1)}>Siguiente →</button>}
+            </div>
+          )}
+        </div>
+
+        {/* RIGHT PANEL — desktop drawer */}
+        <div className="pub-drawer-desktop">
+          {drawerProgram ? (
+            <div className="pub-drawer-content">
+              <DrawerProgramDetail program={drawerProgram} selected={selected.has(drawerProgram.id)}
+                onToggleSelect={toggleSelect} compact={false} />
+            </div>
+          ) : (
+            <div className="pub-drawer-empty">
+              <div className="pub-drawer-empty-icon">◎</div>
+              <div className="pub-drawer-empty-text">Selecciona un programa para ver sus detalles</div>
+            </div>
+          )}
+        </div>
       </div>
 
-      {selected.size > 0 && (
-        <div className="pub-selected-bar">
-          <span>{selected.size} programa{selected.size > 1 ? "s" : ""} seleccionado{selected.size > 1 ? "s" : ""}</span>
-          <button className="pub-btn pub-btn-primary pub-btn-sm" onClick={handleSolicitar}>Solicitar revisión de expediente →</button>
-        </div>
-      )}
-
-      <div className="pub-grid">
-        {paged.map(p => <ProgramCard key={p.id} program={p} selected={selected.has(p.id)} onSelect={toggleSelect} />)}
+      {/* MOBILE — bottom sheet overlay + sheet */}
+      <div className={`pub-bs-overlay${sheetOpen ? " visible" : ""}`} onClick={closeSheet} />
+      <div ref={sheetRef} className={`pub-bottom-sheet${sheetOpen ? " open" : ""}`}
+        role="dialog" aria-modal="true" aria-label="Detalle del programa"
+        onTouchStart={e => { touchStartY.current = e.touches[0].clientY; }}
+        onTouchEnd={e => { if (e.changedTouches[0].clientY - touchStartY.current > 80) closeSheet(); }}>
+        <div className="pub-bs-handle" />
+        {sheetProgram && (
+          <DrawerProgramDetail program={sheetProgram} selected={selected.has(sheetProgram.id)}
+            onToggleSelect={toggleSelect} compact={true} />
+        )}
       </div>
-
-      {filtered.length === 0 && <div style={{ textAlign: "center", padding: 60, color: "var(--pub-muted)" }}>No se encontraron programas con esos filtros</div>}
-
-      {totalPages > 1 && (
-        <div className="pub-pagination">
-          {page > 0 && <button className="pub-page-btn" onClick={() => setPage(p => p - 1)}>← Anterior</button>}
-          {Array.from({ length: Math.min(totalPages, 7) }, (_, i) => {
-            const p = totalPages <= 7 ? i : page <= 3 ? i : page >= totalPages - 4 ? totalPages - 7 + i : page - 3 + i;
-            return <button key={p} className={`pub-page-btn ${p === page ? "active" : ""}`} onClick={() => setPage(p)}>{p + 1}</button>;
-          })}
-          {page < totalPages - 1 && <button className="pub-page-btn" onClick={() => setPage(p => p + 1)}>Siguiente →</button>}
-        </div>
-      )}
-    </div>
+    </>
   );
 }
 

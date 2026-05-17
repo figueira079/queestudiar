@@ -2644,7 +2644,7 @@ function MatchResults() {
       <div className="pub-success">
         <div className="pub-success-icon">🎉</div>
         <h2>¡Solicitud enviada!</h2>
-        <p>Un asesor de QueEstudiar se pondrá en contacto contigo pronto para guiarte en el proceso de admisión.</p>
+        <p>Hemos recibido tu solicitud. Revisaremos tu perfil y te contactaremos por email en los próximos días.</p>
         <button className="pub-btn pub-btn-primary" onClick={() => location.hash = "#/"}>Volver al inicio</button>
       </div>
     </div>
@@ -2724,8 +2724,8 @@ function LeadCaptureModal({ profile, onClose, onSuccess }) {
   return (
     <div className="pub-overlay" onClick={onClose}>
       <div className="pub-modal" onClick={e => e.stopPropagation()}>
-        <h2>Solicitar asesoría gratuita</h2>
-        <p className="pub-card-sub">Un asesor te contactará para ayudarte con la admisión</p>
+        <h2>Contactar con QueEstudiar</h2>
+        <p className="pub-card-sub">Déjanos tus datos y te contactaremos por email</p>
         <div className="pub-field"><label className="pub-label">Nombre completo *</label><input className="pub-input" value={name} onChange={e => setName(e.target.value)} placeholder="Tu nombre" /></div>
         <div className="pub-field"><label className="pub-label">Email *</label><input className="pub-input" type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="tu@email.com" /></div>
         <div className="pub-field"><label className="pub-label">Teléfono (con prefijo)</label><input className="pub-input" value={phone} onChange={e => setPhone(e.target.value)} placeholder="+34 600 000 000" /></div>
@@ -3049,7 +3049,7 @@ function SolicitudForm() {
       <div className="pub-success">
         <div className="pub-success-icon">🎉</div>
         <h2>¡Solicitud enviada!</h2>
-        <p>Hemos recibido tu solicitud de revisión de expediente. Un asesor te contactará pronto para revisar tu documentación.</p>
+        <p>Hemos recibido tu solicitud de revisión de expediente. La revisaremos y te contactaremos por email pronto.</p>
         <button className="pub-btn pub-btn-primary" onClick={() => location.hash = "#/"}>Volver al inicio</button>
       </div>
     </div>
@@ -3793,8 +3793,9 @@ function PublicApp({ route }) {
   return (
     <div className="pub-app">
       <style>{publicCss}</style>
+      <a href="#main" className="skip-link">Saltar al contenido principal</a>
       <PublicNav route={route} />
-      <main style={{ flex: 1 }}>{getPage()}</main>
+      <main id="main" style={{ flex: 1 }}>{getPage()}</main>
       <footer className="pub-footer">
         <div className="pub-footer-links">
           <span className="pub-footer-link">Política de privacidad</span>

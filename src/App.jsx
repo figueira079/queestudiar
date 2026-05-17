@@ -1355,7 +1355,7 @@ function StudentDetail({ student, onStatusChange, onNotesSave, currentUser, onAs
                 Puedes buscar programas manualmente y añadirlos, o esperar a que la automatización los genere.
               </div>
               <a
-                href="https://queestudiar.es/#/programas"
+                href="https://queestudiar.es/programas"
                 target="_blank"
                 rel="noreferrer"
                 style={{ fontSize: 11, padding: "6px 14px", borderRadius: 6, border: "1px solid var(--accent)", color: "var(--accent)", textDecoration: "none", fontFamily: "var(--mono)" }}
@@ -2151,10 +2151,10 @@ function PublicNav({ route }) {
   }, []);
   return (
     <nav className={`pub-nav${scrolled ? " scrolled" : ""}`}>
-      <div className="pub-nav-logo" onClick={() => location.hash = "#/"}>QueEstudiar</div>
+      <div className="pub-nav-logo" onClick={() => navigate("/")}>QueEstudiar</div>
       <div className="pub-nav-links">
-        <span className={`pub-nav-link ${route?.startsWith("#/match") ? "active" : ""}`} onClick={() => location.hash = "#/match"}>Test vocacional</span>
-        <button className="pub-btn pub-btn-outline" style={{ padding: "8px 18px", fontSize: 14 }} onClick={() => location.hash = "#/programas"}>Explorar programas →</button>
+        <span className={`pub-nav-link ${route?.startsWith("/match") || route?.startsWith("#/match") ? "active" : ""}`} onClick={() => navigate("/match")}>Test vocacional</span>
+        <button className="pub-btn pub-btn-outline" style={{ padding: "8px 18px", fontSize: 14 }} onClick={() => navigate("/programas")}>Explorar programas →</button>
         {!IS_PUBLIC_DOMAIN && <span className="pub-nav-link admin" onClick={() => location.hash = "#/admin"}>Acceso equipo</span>}
       </div>
     </nav>
@@ -2219,8 +2219,8 @@ function LandingPage() {
         <h1>Encuentra tu programa<br/>académico en España.</h1>
         <p>Más de 10.000 programas en universidades y centros de FP.<br/>Filtra por lo que ya tienes y lo que quieres estudiar.</p>
         <div className="pub-hero-btns">
-          <button className="pub-btn pub-btn-primary" onClick={() => location.hash = "#/match"}>Hacer el test →</button>
-          <button className="pub-btn pub-btn-outline" onClick={() => location.hash = "#/programas"}>Ver todos los programas</button>
+          <button className="pub-btn pub-btn-primary" onClick={() => navigate("/match")}>Hacer el test →</button>
+          <button className="pub-btn pub-btn-outline" onClick={() => navigate("/programas")}>Ver todos los programas</button>
         </div>
         <div className="pub-hero-trust">
           <span>10.135 programas</span>
@@ -2307,7 +2307,7 @@ function LandingPage() {
                 <h3>Grado universitario</h3>
                 <p>Titulación oficial de 4 años (240 ECTS). Acceso desde bachillerato o equivalente. Más de 3.400 programas disponibles.</p>
               </div>
-              <button className="pub-tipo-btn" onClick={() => { sessionStorage.setItem("filterTipo","grado"); location.hash="#/programas"; }}>Ver grados →</button>
+              <button className="pub-tipo-btn" onClick={() => { sessionStorage.setItem("filterTipo","grado"); navigate("/programas"); }}>Ver grados →</button>
             </div>
             <div className="pub-tipo-card">
               <svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
@@ -2320,7 +2320,7 @@ function LandingPage() {
                 <h3>Máster universitario</h3>
                 <p>Especialización de posgrado (1–2 años). Para profundizar en un campo o cambiar de sector. Más de 5.000 másteres disponibles.</p>
               </div>
-              <button className="pub-tipo-btn" onClick={() => { sessionStorage.setItem("filterTipo","master"); location.hash="#/programas"; }}>Ver másteres →</button>
+              <button className="pub-tipo-btn" onClick={() => { sessionStorage.setItem("filterTipo","master"); navigate("/programas"); }}>Ver másteres →</button>
             </div>
             <div className="pub-tipo-card">
               <svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
@@ -2333,7 +2333,7 @@ function LandingPage() {
                 <h3>Doctorado</h3>
                 <p>El nivel académico más alto. Orientado a la investigación científica. Acceso con máster universitario o equivalente.</p>
               </div>
-              <button className="pub-tipo-btn" onClick={() => { sessionStorage.setItem("filterTipo","doctorado"); location.hash="#/programas"; }}>Ver doctorados →</button>
+              <button className="pub-tipo-btn" onClick={() => { sessionStorage.setItem("filterTipo","doctorado"); navigate("/programas"); }}>Ver doctorados →</button>
             </div>
             <div className="pub-tipo-card">
               <svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
@@ -2347,7 +2347,7 @@ function LandingPage() {
                 <h3>FP Superior</h3>
                 <p>Formación Profesional de Grado Superior (2 años). Muy demandada por empresas, con alta tasa de inserción laboral.</p>
               </div>
-              <button className="pub-tipo-btn" onClick={() => { sessionStorage.setItem("filterTipo","fp_superior"); location.hash="#/programas"; }}>Ver FP Superior →</button>
+              <button className="pub-tipo-btn" onClick={() => { sessionStorage.setItem("filterTipo","fp_superior"); navigate("/programas"); }}>Ver FP Superior →</button>
             </div>
           </div>
         </div>
@@ -2367,8 +2367,8 @@ function LandingPage() {
         <h2>El programa que buscas está aquí.</h2>
         <p>10.135 programas. Filtra por tu perfil y encuentra el que encaja en menos de 5 minutos.</p>
         <div className="pub-hero-btns">
-          <button className="pub-btn pub-btn-primary" onClick={() => location.hash = "#/match"}>Hacer el test →</button>
-          <button className="pub-btn pub-btn-outline" onClick={() => location.hash = "#/programas"}>Explorar programas</button>
+          <button className="pub-btn pub-btn-primary" onClick={() => navigate("/match")}>Hacer el test →</button>
+          <button className="pub-btn pub-btn-outline" onClick={() => navigate("/programas")}>Explorar programas</button>
         </div>
       </div>
     </>
@@ -2492,7 +2492,7 @@ function MatchForm() {
 
   const handleFinish = () => {
     sessionStorage.setItem("matchProfile", JSON.stringify({ student_origin: origin, country_of_origin: country, education_level: eduLevel, study_area: studyArea, preferred_cities: cities, budget }));
-    location.hash = "#/match/resultados";
+    navigate("/match/resultados");
   };
 
   const origins = [
@@ -2629,7 +2629,7 @@ function MatchResults() {
   const profile = JSON.parse(sessionStorage.getItem("matchProfile") || "{}");
 
   useEffect(() => {
-    if (!profile.study_area) { location.hash = "#/match"; return; }
+    if (!profile.study_area) { navigate("/match"); return; }
 
     (async () => {
       const data = await publicQueryAll("programas", "id,nombre,ciudad,tipo,familia_area,modalidad,precio_anual_eur,precio_extracomunitario_eur,horas_semanales,activo,url_detalle", "activo=eq.true");
@@ -2652,7 +2652,7 @@ function MatchResults() {
         <div className="pub-success-icon">🎉</div>
         <h2>¡Solicitud enviada!</h2>
         <p>Hemos recibido tu solicitud. Revisaremos tu perfil y te contactaremos por email en los próximos días.</p>
-        <button className="pub-btn pub-btn-primary" onClick={() => location.hash = "#/"}>Volver al inicio</button>
+        <button className="pub-btn pub-btn-primary" onClick={() => navigate("/")}>Volver al inicio</button>
       </div>
     </div>
   );
@@ -2877,7 +2877,7 @@ function ProgramBrowser() {
   const handleSolicitar = () => {
     sessionStorage.setItem("selectedProgramIds", JSON.stringify([...selected]));
     sessionStorage.setItem("selectedPrograms", JSON.stringify(programs.filter(p => selected.has(p.id))));
-    location.hash = "#/solicitud";
+    navigate("/solicitud");
   };
 
   const openCard = (p) => {
@@ -3031,7 +3031,7 @@ function SolicitudForm() {
   const selectedIds = JSON.parse(sessionStorage.getItem("selectedProgramIds") || "[]");
 
   useEffect(() => {
-    if (selectedIds.length === 0) location.hash = "#/programas";
+    if (selectedIds.length === 0) navigate("/programas");
   }, []);
 
   const handleSubmit = async () => {
@@ -3073,7 +3073,7 @@ function SolicitudForm() {
         <div className="pub-success-icon">🎉</div>
         <h2>¡Solicitud enviada!</h2>
         <p>Hemos recibido tu solicitud de revisión de expediente. La revisaremos y te contactaremos por email pronto.</p>
-        <button className="pub-btn pub-btn-primary" onClick={() => location.hash = "#/"}>Volver al inicio</button>
+        <button className="pub-btn pub-btn-primary" onClick={() => navigate("/")}>Volver al inicio</button>
       </div>
     </div>
   );
@@ -3143,7 +3143,7 @@ function SolicitudForm() {
         )}
 
         <div style={{ display: "flex", gap: 12, marginTop: 24 }}>
-          <button className="pub-btn pub-btn-outline pub-btn-sm" onClick={() => location.hash = "#/programas"} style={{ flex: 1 }}>← Volver</button>
+          <button className="pub-btn pub-btn-outline pub-btn-sm" onClick={() => navigate("/programas")} style={{ flex: 1 }}>← Volver</button>
           <button className="pub-btn pub-btn-primary pub-btn-sm" onClick={handleSubmit} disabled={!name || !email || !studentOrigin || !educationLevel || sending} style={{ flex: 1 }}>{sending ? "Enviando..." : "Enviar solicitud"}</button>
         </div>
       </div>
@@ -3807,10 +3807,11 @@ function ExpedientesDashboard({ students, teamMembers, onSelectStudent, onClose 
 
 function PublicApp({ route }) {
   const getPage = () => {
-    if (route === "#/match/resultados") return <MatchResults />;
-    if (route?.startsWith("#/match")) return <MatchForm />;
-    if (route === "#/solicitud") return <SolicitudForm />;
-    if (route?.startsWith("#/programa")) return <ProgramBrowser />;
+    const r = route;
+    if (r === "/match/resultados" || r === "#/match/resultados") return <MatchResults />;
+    if (r?.startsWith("/match") || r?.startsWith("#/match")) return <MatchForm />;
+    if (r === "/solicitud" || r === "#/solicitud") return <SolicitudForm />;
+    if (r?.startsWith("/programa") || r?.startsWith("#/programa")) return <ProgramBrowser />;
     return <LandingPage />;
   };
   return (
@@ -3838,6 +3839,19 @@ function PublicApp({ route }) {
 const HOST = window.location.hostname;
 const IS_PUBLIC_DOMAIN = HOST === "queestudiar.es" || HOST === "www.queestudiar.es";
 const IS_ADMIN_DOMAIN = HOST === "app.queestudiar.es";
+
+// Navigation helper — history routing on public domain, hash on admin/localhost
+function navigate(path) {
+  if (IS_PUBLIC_DOMAIN) {
+    history.pushState(null, '', path);
+    // Update canonical tag
+    const canonical = document.querySelector('link[rel="canonical"]');
+    if (canonical) canonical.href = 'https://queestudiar.es' + path;
+    window.dispatchEvent(new PopStateEvent('popstate'));
+  } else {
+    location.hash = path.startsWith('#') ? path : '#' + path;
+  }
+}
 
 // ═══════════════════════════════════════════════════════════════════════════
 // ADMIN DASHBOARD
@@ -3964,9 +3978,12 @@ function AdminDashboard({ students, docsPendientes, user, onNavigate }) {
 // ═══════════════════════════════════════════════════════════════════════════
 
 export default function App() {
-  // On admin domain, default to #/admin if no hash is set
-  const defaultRoute = IS_ADMIN_DOMAIN && !window.location.hash ? "#/admin" : (window.location.hash || "#/");
-  const [route, setRoute] = useState(defaultRoute);
+  // Public domain uses pathname; admin/localhost use hash
+  const getInitialRoute = () => {
+    if (IS_PUBLIC_DOMAIN) return location.pathname || "/";
+    return IS_ADMIN_DOMAIN && !window.location.hash ? "#/admin" : (window.location.hash || "#/");
+  };
+  const [route, setRoute] = useState(getInitialRoute);
   const [user, setUser] = useState(null);
   const [students, setStudents] = useState([]);
   const [selected, setSelected] = useState(null);
@@ -3980,11 +3997,17 @@ export default function App() {
   const [matchCounts, setMatchCounts] = useState({});
   const [matchCountsLoaded, setMatchCountsLoaded] = useState(false);
 
-  // Hash routing
+  // Routing: popstate on public domain, hashchange on admin/localhost
   useEffect(() => {
-    const onHash = () => setRoute(window.location.hash || "#/");
-    window.addEventListener("hashchange", onHash);
-    return () => window.removeEventListener("hashchange", onHash);
+    if (IS_PUBLIC_DOMAIN) {
+      const onPop = () => setRoute(location.pathname || "/");
+      window.addEventListener("popstate", onPop);
+      return () => window.removeEventListener("popstate", onPop);
+    } else {
+      const onHash = () => setRoute(window.location.hash || "#/");
+      window.addEventListener("hashchange", onHash);
+      return () => window.removeEventListener("hashchange", onHash);
+    }
   }, []);
 
   // Restaurar sesión al cargar
@@ -4100,22 +4123,21 @@ export default function App() {
 
   // ── DOMAIN-BASED ROUTING ──
   // On public domain (queestudiar.es): redirect admin attempts to app.queestudiar.es
-  if (IS_PUBLIC_DOMAIN && route.startsWith("#/admin")) {
+  if (IS_PUBLIC_DOMAIN && (route.startsWith("#/admin") || route.startsWith("/admin"))) {
     window.location.href = "https://app.queestudiar.es/#/admin";
     return null;
   }
 
   // Portal route — available on all domains
-  if (route === "#/portal") {
+  if (route === "#/portal" || route === "/portal") {
     if (!user) return <><style>{css}</style><Login onLogin={handleLogin} /></>;
     if (user.role === 'cliente') return <PortalCliente currentUser={user} onLogout={handleLogout} />;
-    // admin/team accidentally on #/portal → send to admin
     location.hash = "#/admin";
     return null;
   }
 
-  // Public routes
-  if (!route.startsWith("#/admin")) {
+  // Public routes (pathname on public domain, hash on admin/localhost)
+  if (IS_PUBLIC_DOMAIN || !route.startsWith("#/admin")) {
     return <PublicApp route={route} />;
   }
 

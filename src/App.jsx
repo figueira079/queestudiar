@@ -2075,6 +2075,10 @@ const publicCss = `
 .pub-drawer-empty-text{font-family:'Lora',serif;font-size:14px;color:var(--pizarra);max-width:200px;line-height:1.55;}
 .pub-drawer-content{display:flex;flex-direction:column;height:100%;animation:drawerIn var(--dur-medium) var(--ease-out);}
 @keyframes drawerIn{from{opacity:0;transform:translateX(12px);}to{opacity:1;transform:translateX(0);}}
+.pub-drawer-header{display:flex;justify-content:flex-end;padding:10px 14px 0;flex-shrink:0;}
+.pub-drawer-close{width:32px;height:32px;border-radius:6px;border:none;background:transparent;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background var(--dur-micro) var(--ease-out);}
+.pub-drawer-close:hover{background:#f1f5f9;}
+.pub-drawer-close:hover path{stroke:var(--grafito-s);}
 .pub-drawer-img{width:100%;height:100px;background:var(--hielo);display:flex;align-items:center;justify-content:center;font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--azure);opacity:.30;letter-spacing:.12em;text-transform:uppercase;flex-shrink:0;position:relative;}
 .pub-drawer-img img{max-height:60px;max-width:140px;object-fit:contain;position:absolute;opacity:1;}
 .pub-drawer-body{padding:20px 24px;flex:1;overflow-y:auto;scrollbar-width:thin;scrollbar-color:var(--linea) transparent;}
@@ -2836,12 +2840,18 @@ function ProgramBrowser() {
     })();
   }, []);
 
-  // Close sheet on Escape
+  const closeDrawer = () => setDrawerProgram(null);
+
+  // Close sheet or drawer on Escape
   useEffect(() => {
-    const onKey = (e) => { if (e.key === "Escape") closeSheet(); };
+    const onKey = (e) => {
+      if (e.key !== "Escape") return;
+      if (sheetOpen) { closeSheet(); return; }
+      closeDrawer();
+    };
     document.addEventListener("keydown", onKey);
     return () => document.removeEventListener("keydown", onKey);
-  }, []);
+  }, [sheetOpen]);
 
   const cities = [...new Set(programs.map(p => p.ciudad).filter(Boolean))].sort();
   const areas = [...new Set(programs.map(p => p.familia_area).filter(Boolean))].sort();
@@ -2872,7 +2882,8 @@ function ProgramBrowser() {
       setSheetProgram(p); setSheetOpen(true);
       document.body.style.overflow = "hidden";
     } else {
-      setDrawerProgram(p);
+      // Toggle: click en la misma card la cierra
+      setDrawerProgram(prev => prev?.id === p.id ? null : p);
     }
   };
 
@@ -2963,6 +2974,13 @@ function ProgramBrowser() {
         <div className="pub-drawer-desktop">
           {drawerProgram ? (
             <div className="pub-drawer-content">
+              <div className="pub-drawer-header">
+                <button className="pub-drawer-close" onClick={closeDrawer} aria-label="Cerrar detalle">
+                  <svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true">
+                    <path d="M3 3l12 12M15 3L3 15" stroke="#94A3B8" strokeWidth="1.8" strokeLinecap="round"/>
+                  </svg>
+                </button>
+              </div>
               <DrawerProgramDetail program={drawerProgram} selected={selected.has(drawerProgram.id)}
                 onToggleSelect={toggleSelect} compact={false} />
             </div>

@@ -2051,7 +2051,7 @@ const publicCss = `
 /* ── Explorer layout ── */
 .pub-explorer-layout{display:grid;grid-template-columns:1fr;min-height:calc(100vh - 64px);background:var(--blanco);}
 .pub-explorer-layout.drawer-open{grid-template-columns:55% 45%;}
-.pub-cards-panel{overflow-y:auto;padding:20px var(--padding-x);background:var(--blanco);}
+.pub-cards-panel{overflow-y:auto;padding:0;background:var(--blanco);}
 .pub-explorer-layout.drawer-open .pub-cards-panel{border-right:1px solid var(--linea);}
 .pub-filters-bar{display:flex;gap:8px;flex-wrap:wrap;padding:16px var(--padding-x);border-bottom:1px solid var(--linea);background:var(--blanco);position:sticky;top:64px;z-index:50;}
 .pub-filter-search,.pub-filter-select{font-size:13px;padding:9px 14px;border:1.5px solid var(--linea);border-radius:8px;background:var(--blanco);color:var(--grafito-s);transition:border-color var(--dur-micro) var(--ease-out);}
@@ -2931,7 +2931,7 @@ function ProgramBrowser() {
             </select>
           </div>
 
-          <div style={{ padding:"12px var(--padding-x) 0" }}>
+          <div style={{ padding:"24px var(--padding-x) 0" }}>
             <p style={{ fontFamily:"'Lora',serif", fontSize:13, color:"var(--pizarra)", marginBottom:12 }}>
               {filtered.length.toLocaleString("es-ES")} programas
             </p>
@@ -2943,7 +2943,7 @@ function ProgramBrowser() {
             )}
           </div>
 
-          <div className="pub-compact-grid" style={{ padding:"0 var(--padding-x)" }}>
+          <div className="pub-compact-grid" style={{ padding:"0 var(--padding-x) 32px" }}>
             {paged.map(p => (
               <ProgramCardCompact key={p.id} program={p}
                 selected={selected.has(p.id)}

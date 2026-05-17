@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 
 // ─── CONFIG ────────────────────────────────────────────────────────────────
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
@@ -2883,8 +2883,8 @@ function ProgramBrowser() {
   };
 
   // Swipe-to-dismiss refs
-  const touchStartY = React.useRef(0);
-  const sheetRef = React.useRef(null);
+  const touchStartY = useRef(0);
+  const sheetRef = useRef(null);
 
   if (loading) return (
     <div className="pub-container">

@@ -185,6 +185,27 @@
 
 ---
 
+### [2026-05-17] Migración hash routing → history routing
+
+**Qué se hizo:**
+- `vercel.json` creado con rewrite catch-all `/* → /index.html` (sin esto, refrescar `/programas` daba 404)
+- `navigate(path)` helper global: usa `history.pushState` en public domain y `location.hash` en admin/localhost. También actualiza el `<link rel="canonical">` dinámicamente.
+- Router en `App()`: lee `location.pathname` en public domain, `location.hash` en admin. Listener `popstate` en public, `hashchange` en admin.
+- `PublicApp` route matching: acepta `/match`, `/programas`, `/solicitud` (y los `#/` como fallback para localhost)
+- 18 ocurrencias de `location.hash = "#/X"` en UI pública → `navigate("/X")`
+- Admin y portal routes (`#/admin`, `#/portal`) intactos — app.queestudiar.es sigue con hash routing
+
+**Por qué:**
+- `queestudiar.es/#/programas` era invisible para Google (ignora todo tras `#`)
+- Con history routing, `/programas` y futuras páginas `/programas/[id]` son indexables independientemente
+
+**Impacto SEO:**
+- `/programas` indexable como página independiente
+- Base técnica para `/programas/[id]` con Schema.org por programa
+- El sitemap.xml con 10.135 URLs será efectivo cuando se implemente
+
+---
+
 ### [2026-05-17] DESIGN NUEVO — Sistema de diseño completo aplicado
 
 **Qué se implementó:**
@@ -368,6 +389,7 @@ sheet.addEventListener('touchend', e => {
 - [ ] Filtros mobile en scroll horizontal
 
 ### Prioridad 3 — Expansión de funcionalidad
+- [x] History routing migrado ✅ — base para indexación
 - [ ] Páginas de detalle por programa (`/programas/[id]`) — SEO
 - [ ] Sitemap.xml automático (10.135 URLs indexables)
 - [ ] Formulario Tally: añadir `desired_program_type` y `base_degree`

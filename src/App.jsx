@@ -435,7 +435,7 @@ function daysSince(dateStr) {
 }
 
 function getOriginLabel(origin) {
-  const map = { eu: "UE / EEE", latam_convenio: "LATAM Convenio", extracomunitario: "Extracomunitario" };
+  const map = { eu: "UE / EEE", latam_convenio: "LATAM Convenio", convenio: "LATAM · Convenio", extracomunitario: "Extracomunitario" };
   return map[origin] || origin;
 }
 
@@ -844,7 +844,7 @@ function FeedbackReview({ onClose }) {
 
 function generateExpedienteReport(student, matches, requirements, regionData) {
   const now = new Date().toLocaleDateString("es-ES", { day: "2-digit", month: "long", year: "numeric" });
-  const originMap = { eu: "UE / EEE", latam_convenio: "LATAM Convenio", extracomunitario: "Extracomunitario" };
+  const originMap = { eu: "UE / EEE", latam_convenio: "LATAM Convenio", convenio: "LATAM · Convenio", extracomunitario: "Extracomunitario" };
   const typeMap = { grado: "Grado", master: "Máster", fp_superior: "FP Superior", doctorado: "Doctorado", bachillerato: "Bachillerato" };
   const cities = Array.isArray(student.preferred_cities) ? student.preferred_cities.join(", ") : (student.preferred_cities || "—");
   const programType = typeMap[student.desired_program_type] || typeMap[student.education_level] || "—";
@@ -1366,7 +1366,7 @@ function StudentDetail({ student, onStatusChange, onNotesSave, currentUser, onAs
           )
           : (() => {
               const areas = ["all", ...Array.from(new Set(matches.map(m => m.programas?.familia_area).filter(Boolean))).sort()];
-              const isNonEUStudent = student.student_origin === "extracomunitario" || student.student_origin === "latam_convenio";
+              const isNonEUStudent = student.student_origin === "extracomunitario" || student.student_origin === "latam_convenio" || student.student_origin === "convenio";
               const areaFiltered = filterArea === "all" ? matches : matches.filter(m => m.programas?.familia_area === filterArea);
               const stageFiltered = filterStage === "all" ? areaFiltered : areaFiltered.filter(m => (m.match_stage || 'informe') === filterStage);
               const filtered = isNonEUStudent
@@ -1410,7 +1410,7 @@ function StudentDetail({ student, onStatusChange, onNotesSave, currentUser, onAs
                   )}
                   <div className="program-grid">{filtered.map((m, i) => { const p = m.programas || {};
                     const isNonEU = student.student_origin === "extracomunitario";
-                    const isConvenio = student.student_origin === "latam_convenio";
+                    const isConvenio = student.student_origin === "latam_convenio" || student.student_origin === "convenio";
                     const price = isNonEU && p.precio_extracomunitario_eur != null ? p.precio_extracomunitario_eur : p.precio_anual_eur;
                     const priceLabel = isNonEU && p.precio_extracomunitario_eur !== p.precio_anual_eur ? "no-UE" : isConvenio ? "convenio" : "UE/residente";
                     return (
@@ -1694,61 +1694,35 @@ async function publicInsert(table, data) {
 }
 
 // ─── MATCH ALGORITHM ─────────────────────────────────────────────────────
-const STUDY_AREA_TO_FAMILIA = {
-  "Administración, Economía y Empresa": [
-    "Administración y Dirección de Empresas","Comercio Internacional y Logística",
-    "Finanzas y Contabilidad","Fiscalidad y Tributación",
-    "Marketing y Comunicación Empresarial","Recursos Humanos",
-    "Turismo y Hostelería","Gastronomía y Artes Culinarias",
-  ],
-  "Arte, Diseño y Comunicación": [
-    "Arquitectura y Diseño de Interiores","Artes Visuales y Diseño",
-    "Cine y Producción Audiovisual","Fotografía y Medios Digitales",
-    "Gestión Cultural y Eventos","Moda y Diseño Textil",
-    "Música y Artes Escénicas","Periodismo y Comunicación",
-    "Publicidad y Relaciones Públicas",
-  ],
-  "Derecho y Ciencias Políticas": [
-    "Derecho Civil y Privado","Derecho Internacional",
-    "Derecho Público y Administrativo",
-  ],
-  "Educación y Ciencias Sociales": [
-    "Educación y Pedagogía","Filosofía y Ética",
-    "Geografía y Urbanismo","Historia y Patrimonio",
-    "Lingüística y Traducción","Psicología y Salud Mental",
-    "Sociología y Antropología","Trabajo Social y Servicios Sociales",
-  ],
-  "Ingeniería y Tecnología": [
-    "Astronomía y Astrofísica","Ciberseguridad e Inteligencia Digital",
-    "Energía y Medioambiente","Informática y Desarrollo de Software",
-    "Ingeniería Civil y Construcción","Ingeniería Eléctrica y Electrónica",
-    "Ingeniería Industrial y Manufactura","Ingeniería Química y de Materiales",
-    "Inteligencia Artificial y Datos","Matemáticas y Estadística",
-    "Química y Física","Telecomunicaciones y Redes",
-  ],
-  "Salud y Ciencias de la Vida": [
-    "Agricultura y Ciencias Agrarias","Biología y Ciencias Naturales",
-    "Biotecnología y Biomedicina","Ciencias del Mar y Acuicultura",
-    "Deporte y Ciencias del Ejercicio","Enfermería y Cuidados",
-    "Farmacia y Nutrición","Fisioterapia y Rehabilitación",
-    "Geología y Ciencias de la Tierra","Medicina y Ciencias Clínicas",
-    "Medioambiente y Sostenibilidad","Odontología",
-    "Salud Pública y Epidemiología","Veterinaria y Ciencias Animales",
-  ],
-};
+const AREAS_FORMULARIO = [
+  { id: "negocios", label: "Negocios y Empresa", emoji: "💼", descripcion: "Administración, finanzas, marketing, comercio",
+    familia_areas: ["Administración y Dirección de Empresas","Finanzas y Contabilidad","Marketing y Comunicación Empresarial","Recursos Humanos","Comercio Internacional y Logística","Fiscalidad y Tributación"] },
+  { id: "tecnologia", label: "Tecnología e Informática", emoji: "💻", descripcion: "Programación, IA, datos, ciberseguridad, redes",
+    familia_areas: ["Informática y Desarrollo de Software","Inteligencia Artificial y Datos","Ciberseguridad e Inteligencia Digital","Telecomunicaciones y Redes","Fotografía y Medios Digitales"] },
+  { id: "ingenieria", label: "Ingeniería", emoji: "⚙️", descripcion: "Industrial, civil, química, eléctrica, mecánica",
+    familia_areas: ["Ingeniería Industrial y Manufactura","Ingeniería Civil y Construcción","Ingeniería Química y de Materiales","Ingeniería Eléctrica y Electrónica","Energía y Medioambiente","Arquitectura y Diseño de Interiores"] },
+  { id: "salud", label: "Salud y Ciencias de la Vida", emoji: "🩺", descripcion: "Medicina, enfermería, farmacia, fisioterapia",
+    familia_areas: ["Medicina y Ciencias Clínicas","Enfermería y Cuidados","Farmacia y Nutrición","Fisioterapia y Rehabilitación","Odontología","Psicología y Salud Mental","Salud Pública y Epidemiología","Biotecnología y Biomedicina"] },
+  { id: "ciencias", label: "Ciencias", emoji: "🔬", descripcion: "Biología, química, física, matemáticas, geología",
+    familia_areas: ["Química y Física","Biología y Ciencias Naturales","Matemáticas y Estadística","Geología y Ciencias de la Tierra","Astronomía y Astrofísica","Ciencias del Mar y Acuicultura","Veterinaria y Ciencias Animales","Agricultura y Ciencias Agrarias"] },
+  { id: "derecho", label: "Derecho y Ciencias Políticas", emoji: "⚖️", descripcion: "Derecho, política, relaciones internacionales",
+    familia_areas: ["Derecho Civil y Privado","Derecho Público y Administrativo","Derecho Internacional"] },
+  { id: "educacion", label: "Educación y Ciencias Sociales", emoji: "📚", descripcion: "Pedagogía, trabajo social, sociología, psicología",
+    familia_areas: ["Educación y Pedagogía","Trabajo Social y Servicios Sociales","Sociología y Antropología","Filosofía y Ética","Geografía y Urbanismo"] },
+  { id: "humanidades", label: "Humanidades e Idiomas", emoji: "🌍", descripcion: "Historia, lingüística, traducción, literatura",
+    familia_areas: ["Historia y Patrimonio","Lingüística y Traducción"] },
+  { id: "comunicacion", label: "Comunicación y Medios", emoji: "📡", descripcion: "Periodismo, publicidad, relaciones públicas",
+    familia_areas: ["Periodismo y Comunicación","Publicidad y Relaciones Públicas","Cine y Producción Audiovisual","Gestión Cultural y Eventos"] },
+  { id: "arte", label: "Arte y Diseño", emoji: "🎨", descripcion: "Diseño gráfico, bellas artes, moda, música",
+    familia_areas: ["Artes Visuales y Diseño","Música y Artes Escénicas","Moda y Diseño Textil"] },
+  { id: "turismo", label: "Turismo, Deporte y Gastronomía", emoji: "✈️", descripcion: "Hostelería, turismo, deporte, nutrición deportiva",
+    familia_areas: ["Turismo y Hostelería","Deporte y Ciencias del Ejercicio","Gastronomía y Artes Culinarias"] },
+];
 const EDUCATION_TO_TIPO = {
   bachillerato: ["grado", "fp_superior"],
   fp_superior: ["grado"],
   grado: ["master"],
   master: ["doctorado"],
-};
-const STUDY_AREA_ICONS = {
-  "Administración, Economía y Empresa": "💼",
-  "Arte, Diseño y Comunicación": "🎨",
-  "Derecho y Ciencias Políticas": "⚖️",
-  "Educación y Ciencias Sociales": "📚",
-  "Ingeniería y Tecnología": "⚙️",
-  "Salud y Ciencias de la Vida": "🧬",
 };
 const CITIES_LIST = [
   "Madrid","Barcelona","Valencia","Sevilla","Málaga","Granada",
@@ -1759,10 +1733,10 @@ const CITIES_LIST = [
 const TIPO_LABELS = { grado: "Grado", fp_superior: "FP Superior", master: "Máster", doctorado: "Doctorado" };
 
 function computeMatches(programs, profile) {
-  const familias = STUDY_AREA_TO_FAMILIA[profile.study_area] || [];
+  const familias = AREAS_FORMULARIO.find(a => a.id === profile.study_area)?.familia_areas || [];
   const tipos = EDUCATION_TO_TIPO[profile.education_level] || ["grado","master","doctorado","fp_superior"];
   const cities = profile.preferred_cities || [];
-  const isNonEU = ['extracomunitario', 'latam_convenio'].includes(profile.student_origin);
+  const isNonEU = ['extracomunitario', 'convenio', 'latam_convenio'].includes(profile.student_origin);
   let candidates = programs.filter(p => {
     const areaMatch = familias.includes(p.familia_area);
     const tipoMatch = tipos.includes(p.tipo);
@@ -1874,12 +1848,13 @@ const publicCss = `
 .pub-option-desc{font-size:13px;color:var(--pub-muted);}
 
 /* Area cards (study area selection) */
-.pub-area-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;}
+.pub-area-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;}
 .pub-area-card{display:flex;flex-direction:column;align-items:center;gap:8px;padding:24px 16px;border:2px solid var(--pub-border);border-radius:var(--pub-radius);cursor:pointer;transition:all .2s;text-align:center;}
 .pub-area-card:hover{border-color:var(--pub-primary);background:#eff6ff;}
 .pub-area-card.selected{border-color:var(--pub-primary);background:#dbeafe;box-shadow:0 0 0 2px rgba(37,99,235,.15);}
 .pub-area-card-icon{font-size:32px;}
 .pub-area-card-name{font-size:14px;font-weight:600;line-height:1.3;}
+.pub-area-card-desc{font-size:11px;color:var(--pub-muted);line-height:1.4;}
 
 /* City checkboxes */
 .pub-city-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;}
@@ -2496,9 +2471,9 @@ function MatchForm() {
   };
 
   const origins = [
-    { value: "eu", label: "Unión Europea / EEE", desc: "Ciudadano de un país de la UE o del Espacio Económico Europeo" },
-    { value: "latam_convenio", label: "Latinoamérica (con convenio)", desc: "Colombia, México, Argentina, Chile y otros países con convenio de títulos" },
-    { value: "extracomunitario", label: "Resto del mundo", desc: "Necesitarás visado de estudiante para estudiar en España" },
+    { value: "ue", label: "Soy de la Unión Europea", desc: "Sin visado, sin PCE. Accedes en las mismas condiciones que un estudiante español." },
+    { value: "convenio", label: "Soy de Latinoamérica", desc: "Colombia, México, Argentina y otros países tienen convenio con España. Necesitas visado pero no la prueba PCE/UNED." },
+    { value: "extracomunitario", label: "Soy de otro país", desc: "Necesitas visado de estudiante y en algunos casos homologar tu bachillerato mediante la prueba PCE/UNED." },
   ];
   const eduOptions = [
     { value: "bachillerato", label: "Bachillerato / Secundaria", desc: "He completado la educación secundaria o equivalente" },
@@ -2562,10 +2537,11 @@ function MatchForm() {
           <h2>¿Qué área te interesa?</h2>
           <p className="pub-card-sub">Selecciona el campo de estudio que más te atrae</p>
           <div className="pub-area-grid">
-            {Object.keys(STUDY_AREA_TO_FAMILIA).map(area => (
-              <div key={area} className={`pub-area-card ${studyArea === area ? "selected" : ""}`} onClick={() => setStudyArea(area)}>
-                <div className="pub-area-card-icon">{STUDY_AREA_ICONS[area]}</div>
-                <div className="pub-area-card-name">{area}</div>
+            {AREAS_FORMULARIO.map(area => (
+              <div key={area.id} className={`pub-area-card ${studyArea === area.id ? "selected" : ""}`} onClick={() => setStudyArea(area.id)}>
+                <div className="pub-area-card-icon">{area.emoji}</div>
+                <div className="pub-area-card-name">{area.label}</div>
+                <div className="pub-area-card-desc">{area.descripcion}</div>
               </div>
             ))}
           </div>
@@ -2687,7 +2663,7 @@ function MatchResults() {
     <div className="pub-container-wide">
       <div className="pub-card" style={{ marginBottom: 24 }}>
         <h2>Tus programas recomendados</h2>
-        <p className="pub-card-sub">Hemos encontrado <strong>{matches.length}</strong> programas que encajan con tu perfil en <strong>{profile.study_area}</strong></p>
+        <p className="pub-card-sub">Hemos encontrado <strong>{matches.length}</strong> programas que encajan con tu perfil en <strong>{AREAS_FORMULARIO.find(a => a.id === profile.study_area)?.label || profile.study_area}</strong></p>
         <div style={{ display: "flex", gap: 12, flexWrap: "wrap", alignItems: "center" }}>
           <select className="pub-select" style={{ width: "auto" }} value={filterCity} onChange={e => setFilterCity(e.target.value)}>
             <option value="">Todas las ciudades</option>
@@ -3459,7 +3435,7 @@ function PortalCliente({ currentUser, onLogout }) {
               { label: "Nivel de estudios",   value: lead.education_level },
               { label: "Área de interés",     value: lead.study_area },
               { label: "Ciudades preferidas", value: Array.isArray(lead.preferred_cities) ? lead.preferred_cities.join(", ") : lead.preferred_cities },
-              { label: "Tipo de estudiante",  value: lead.student_origin === "extracomunitario" ? "Extracomunitario" : lead.student_origin === "latam_convenio" ? "LATAM · Convenio" : lead.student_origin },
+              { label: "Tipo de estudiante",  value: lead.student_origin === "extracomunitario" ? "Extracomunitario" : (lead.student_origin === "latam_convenio" || lead.student_origin === "convenio") ? "LATAM · Convenio" : lead.student_origin === "ue" ? "UE / EEE" : lead.student_origin },
             ].filter(r => r.value).map(({ label, value }) => (
               <div key={label} className="portal-perfil-row" style={{ display: "flex", gap: 16, padding: "8px 0", borderBottom: "1px solid var(--border)" }}>
                 <span className="portal-perfil-label" style={{ fontSize: 11, color: "var(--muted)", fontFamily: "var(--mono)", minWidth: 140 }}>{label}</span>

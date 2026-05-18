@@ -2036,11 +2036,14 @@ const publicCss = `
 .pub-filter-select{font-family:'Bricolage Grotesque',system-ui,sans-serif;font-weight:500;cursor:pointer;-webkit-appearance:none;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M2 4l4 4 4-4' stroke='%2394A3B8' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round' fill='none'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;padding-right:30px;}
 .pub-compact-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;padding:20px 0;}
 /* Compact program card */
-.pub-card-compact{background:var(--blanco);border:1.5px solid var(--linea);border-radius:var(--card-radius);padding:14px;cursor:pointer;transition:border-color var(--dur-micro) var(--ease-out),box-shadow var(--dur-short) var(--ease-out);}
+.pub-card-compact{background:var(--blanco);border:1.5px solid var(--linea);border-radius:var(--card-radius);overflow:hidden;cursor:pointer;transition:border-color var(--dur-micro) var(--ease-out),box-shadow var(--dur-short) var(--ease-out);}
 .pub-card-compact:hover{border-color:var(--azure);box-shadow:0 2px 12px rgba(37,99,235,.08);}
 .pub-card-compact.selected{border-color:var(--azure);border-width:2px;background:var(--hielo);box-shadow:0 2px 12px rgba(37,99,235,.12);}
-.pub-card-compact-img{height:64px;background:var(--hielo);border-radius:8px;display:flex;align-items:center;justify-content:center;font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:500;color:var(--azure);opacity:.35;letter-spacing:.12em;text-transform:uppercase;margin-bottom:10px;overflow:hidden;position:relative;}
-.pub-card-compact-img img{max-height:40px;max-width:100px;object-fit:contain;position:absolute;opacity:1;}
+.pub-card-compact-img{height:140px;position:relative;overflow:hidden;flex-shrink:0;}
+.pub-card-compact-img .area-img{width:100%;height:100%;object-fit:cover;display:block;transition:transform var(--dur-medium) var(--ease-out);}
+.pub-card-compact:hover .area-img{transform:scale(1.04);}
+.pub-card-compact-img .logo-badge{position:absolute;bottom:8px;right:8px;height:22px;max-width:64px;object-fit:contain;background:rgba(255,255,255,.92);border-radius:4px;padding:2px 6px;box-shadow:0 1px 4px rgba(0,0,0,.12);}
+.pub-card-compact-body{padding:12px 14px 14px;}
 .pub-card-compact-tags{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:6px;}
 .pub-card-compact-title{font-family:'Bricolage Grotesque',system-ui,sans-serif;font-size:13px;font-weight:600;color:var(--grafito);line-height:1.35;margin-bottom:6px;}
 .pub-card-compact-price{font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:500;color:var(--azure);}
@@ -2722,26 +2725,38 @@ function LeadCaptureModal({ profile, onClose, onSuccess }) {
 }
 
 // ── Compact card for the explorer left panel ─────────────────────────────
+// Mapea familia_area (valor exacto de BD) → imagen genérica local
+const _AREA_FILE = { negocios:"negocios", tecnologia:"informatica", ingenieria:"ingenieria", salud:"salud", ciencias:"ciencias", derecho:"derecho", educacion:"educacion", humanidades:"humanidades", comunicacion:"comunicacion", arte:"arte", turismo:"turismo" };
+function getAreaImage(familiaArea) {
+  if (!familiaArea) return "/assets/areas/default.jpg";
+  const area = AREAS_FORMULARIO.find(a => a.familia_areas.includes(familiaArea));
+  const file = area ? (_AREA_FILE[area.id] || "default") : "default";
+  return `/assets/areas/${file}.jpg`;
+}
+
 function ProgramCardCompact({ program: p, selected, isDrawerOpen, onClick }) {
   const [logoErr, setLogoErr] = useState(false);
   const fmtPrice = (v) => v === 0 ? "Gratuito" : `${Number(v).toLocaleString("es-ES")} €/año`;
   const precioEU = p.precio_anual_eur != null ? fmtPrice(p.precio_anual_eur) : "Consultar precio";
   const hasIntl = p.precio_extracomunitario_eur != null && p.precio_extracomunitario_eur !== p.precio_anual_eur;
   const domain = p.url_detalle ? (() => { try { return new URL(p.url_detalle).hostname.replace(/^www\./,""); } catch { return null; } })() : null;
-  const abbr = domain ? domain.split(".")[0].toUpperCase().slice(0,5) : (p.nombre || "?").slice(0,4).toUpperCase();
   const tipoCls = p.tipo === "master" ? "master" : p.tipo === "fp_superior" ? "fp_superior" : p.tipo === "doctorado" ? "doctorado" : "";
   return (
     <div className={`pub-card-compact${isDrawerOpen ? " selected" : ""}`} onClick={onClick}>
       <div className="pub-card-compact-img">
-        <span style={{ position:"relative", zIndex:0 }}>{abbr}</span>
-        {domain && !logoErr && <img src={`https://logo.clearbit.com/${domain}`} alt="" onError={() => setLogoErr(true)} />}
+        <img src={getAreaImage(p.familia_area)} alt="" loading="lazy" className="area-img" />
+        {domain && !logoErr && (
+          <img src={`https://logo.clearbit.com/${domain}`} alt="" className="logo-badge" onError={() => setLogoErr(true)} />
+        )}
       </div>
-      <div className="pub-card-compact-tags">
-        <span className={`pub-badge pub-badge-tipo ${tipoCls}`}>{TIPO_LABELS[p.tipo] || p.tipo}</span>
-        {p.ciudad && <span className="pub-badge pub-badge-city">{p.ciudad}</span>}
+      <div className="pub-card-compact-body">
+        <div className="pub-card-compact-tags">
+          <span className={`pub-badge pub-badge-tipo ${tipoCls}`}>{TIPO_LABELS[p.tipo] || p.tipo}</span>
+          {p.ciudad && <span className="pub-badge pub-badge-city">{p.ciudad}</span>}
+        </div>
+        <div className="pub-card-compact-title">{p.nombre}</div>
+        <div className="pub-card-compact-price">{precioEU}{hasIntl && <span style={{ fontFamily:"Work Sans",fontSize:10,color:"var(--pizarra)",marginLeft:4 }}>· v. intl.</span>}</div>
       </div>
-      <div className="pub-card-compact-title">{p.nombre}</div>
-      <div className="pub-card-compact-price">{precioEU}{hasIntl && <span style={{ fontFamily:"Work Sans",fontSize:10,color:"var(--pizarra)",marginLeft:4 }}>· v. intl.</span>}</div>
     </div>
   );
 }

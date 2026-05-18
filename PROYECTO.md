@@ -406,6 +406,7 @@ sheet.addEventListener('touchend', e => {
 - [x] Implementar drawer lateral + bottom sheet completo ✅
 - [x] Añadir botón ×, toggle y Escape al drawer ✅
 - [x] Fix formulario /match: origen diferencia por convenio, no solo geografía ✅
+- [x] Fix formulario /match: texto opción LATAM corregido — homologación de bachillerato, no exención de PCE ✅
 - [x] Fix formulario /match: áreas mapeadas a familia_area real de la DB (11 categorías) ✅
 - [ ] Fix nav mobile (logo + links apelmazados en < 480px)
 - [ ] Filtros mobile en scroll horizontal (nowrap + overflow-x:auto)

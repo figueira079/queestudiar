@@ -2472,7 +2472,7 @@ function MatchForm() {
 
   const origins = [
     { value: "ue", label: "Soy de la Unión Europea", desc: "Sin visado, sin PCE. Accedes en las mismas condiciones que un estudiante español." },
-    { value: "convenio", label: "Soy de Latinoamérica", desc: "Colombia, México, Argentina y otros países tienen convenio con España. Necesitas visado pero no la prueba PCE/UNED." },
+    { value: "convenio", label: "Soy de Latinoamérica", desc: "Colombia, México, Argentina y otros países con convenio con España. Necesitas visado y puedes homologar tu bachillerato para acceder a la universidad." },
     { value: "extracomunitario", label: "Soy de otro país", desc: "Necesitas visado de estudiante y en algunos casos homologar tu bachillerato mediante la prueba PCE/UNED." },
   ];
   const eduOptions = [

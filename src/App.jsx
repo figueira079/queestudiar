@@ -2729,7 +2729,7 @@ function LeadCaptureModal({ profile, onClose, onSuccess }) {
 // Mapea familia_area (valor exacto de BD) → imagen genérica local
 // Variantes: area-1.jpg … area-4.jpg (elegidas por hash del ID del programa)
 const _AREA_FILE = { negocios:"negocios", tecnologia:"informatica", ingenieria:"ingenieria", salud:"salud", ciencias:"ciencias", derecho:"derecho", educacion:"educacion", humanidades:"humanidades", comunicacion:"comunicacion", arte:"arte", turismo:"turismo" };
-const _AREA_VARIANTS = 8;
+const _AREA_VARIANTS = 20;
 function getAreaImage(familiaArea, programId) {
   const area = AREAS_FORMULARIO.find(a => a.familia_areas.includes(familiaArea));
   const file = area ? (_AREA_FILE[area.id] || "default") : "default";

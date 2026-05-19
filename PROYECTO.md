@@ -206,30 +206,34 @@
 
 ---
 
-### [2026-05-18] Imágenes genéricas por área + rediseño tarjetas explorador
+### [2026-05-19] Imágenes genéricas por área + rediseño tarjetas explorador
 
 **Qué se hizo:**
 
 **Script de descarga de imágenes (`download-images.js`):**
 - Script Node.js independiente en la raíz del repo para descargar imágenes de Unsplash
-- 12 áreas cubiertas: negocios, ingenieria, salud, informatica, derecho, humanidades, arte, ciencias, educacion, comunicacion, turismo, default
-- Imágenes guardadas en `public/assets/areas/` (~72–180 KB cada una, tamaño `regular` de Unsplash ≈1080px)
+- 12 áreas × 20 variantes = 240 imágenes en `public/assets/areas/` (nombradas `area-1.jpg` … `area-20.jpg`)
 - Sin dependencias externas — usa `fetch` y `fs` nativos de Node 18+
 - Lee `UNSPLASH_ACCESS_KEY` del `.env` sin necesidad de `dotenv`
+- Áreas con búsquedas limitadas (ingeniería, ciencias) completadas con sub-queries temáticas variadas
 - Uso: `node download-images.js`
 
-**`getAreaImage(familiaArea)` — helper de mapeo:**
-- Función añadida justo antes de `ProgramCardCompact` en `App.jsx`
-- Usa `AREAS_FORMULARIO` (ya existía) como tabla de verdad para el mapeo exacto: `familia_area` de BD → imagen local
-- Mapeo explícito `_AREA_FILE` para el caso `tecnologia → informatica.jpg`
-- Devuelve `/assets/areas/default.jpg` si `familia_area` es null o no reconocida
+**`getAreaImage(familiaArea, offset)` — helper de mapeo:**
+- Usa `AREAS_FORMULARIO` como tabla de verdad para mapear `familia_area` de BD → archivo de imagen
+- Mapeo explícito `_AREA_FILE` para el caso `tecnologia → informatica`
+- `offset` = índice global de la card en la lista filtrada (`page * 24 + i`)
+- Selector: `(offset % 20) + 1` — garantiza que en cualquier bloque de 20 cards del mismo área cada variante aparece exactamente una vez, sin repeticiones visibles aunque los programas estén ordenados alfabéticamente
 
 **Rediseño de `ProgramCardCompact`:**
-- Imagen de área en la parte superior de la card: 140px de alto, `object-fit:cover`, a sangre (sin padding lateral)
+- Imagen de área en la parte superior: 140px de alto, `object-fit:cover`, a sangre (sin padding lateral)
 - Zoom suave `scale(1.04)` en hover via CSS transition
 - Logo Clearbit de la universidad como badge pequeño (22px) sobre la imagen, esquina inferior derecha
-- Contenido (badges, título, precio) envuelto en `pub-card-compact-body` con `padding:12px 14px 14px`
-- Card pasa de `padding:14px` a `overflow:hidden` para que la imagen llegue a los bordes redondeados
+- Contenido envuelto en `pub-card-compact-body` con `padding:12px 14px 14px`
+- Card: `padding:0; overflow:hidden` para que la imagen llegue a los bordes redondeados
+
+**`DrawerProgramDetail` actualizado:**
+- Imagen de área también visible en el drawer lateral y bottom sheet (180px de alto)
+- Mismo CSS que la card: `object-fit:cover`, badge de logo superpuesto
 
 ---
 

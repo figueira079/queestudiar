@@ -2058,8 +2058,9 @@ const publicCss = `
 .pub-drawer-close{width:32px;height:32px;border-radius:6px;border:none;background:transparent;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background var(--dur-micro) var(--ease-out);}
 .pub-drawer-close:hover{background:#f1f5f9;}
 .pub-drawer-close:hover path{stroke:var(--grafito-s);}
-.pub-drawer-img{width:100%;height:100px;background:var(--hielo);display:flex;align-items:center;justify-content:center;font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--azure);opacity:.30;letter-spacing:.12em;text-transform:uppercase;flex-shrink:0;position:relative;}
-.pub-drawer-img img{max-height:60px;max-width:140px;object-fit:contain;position:absolute;opacity:1;}
+.pub-drawer-img{width:100%;height:180px;flex-shrink:0;position:relative;overflow:hidden;}
+.pub-drawer-img .area-img{width:100%;height:100%;object-fit:cover;display:block;}
+.pub-drawer-img .logo-badge{position:absolute;bottom:12px;right:12px;height:26px;max-width:80px;object-fit:contain;background:rgba(255,255,255,.92);border-radius:5px;padding:3px 8px;box-shadow:0 1px 6px rgba(0,0,0,.15);}
 .pub-drawer-body{padding:20px 24px;flex:1;overflow-y:auto;scrollbar-width:thin;scrollbar-color:var(--linea) transparent;}
 .pub-drawer-section-title{font-family:'Bricolage Grotesque',system-ui,sans-serif;font-size:10px;font-weight:700;color:var(--azure);text-transform:uppercase;letter-spacing:.1em;margin:16px 0 8px;}
 .pub-drawer-title{font-family:'Bricolage Grotesque',system-ui,sans-serif;font-size:15px;font-weight:700;color:var(--grafito);line-height:1.35;margin-bottom:4px;}
@@ -2726,12 +2727,15 @@ function LeadCaptureModal({ profile, onClose, onSuccess }) {
 
 // ── Compact card for the explorer left panel ─────────────────────────────
 // Mapea familia_area (valor exacto de BD) → imagen genérica local
+// Variantes: area-1.jpg … area-4.jpg (elegidas por hash del ID del programa)
 const _AREA_FILE = { negocios:"negocios", tecnologia:"informatica", ingenieria:"ingenieria", salud:"salud", ciencias:"ciencias", derecho:"derecho", educacion:"educacion", humanidades:"humanidades", comunicacion:"comunicacion", arte:"arte", turismo:"turismo" };
-function getAreaImage(familiaArea) {
-  if (!familiaArea) return "/assets/areas/default.jpg";
+const _AREA_VARIANTS = 4;
+function getAreaImage(familiaArea, programId) {
   const area = AREAS_FORMULARIO.find(a => a.familia_areas.includes(familiaArea));
   const file = area ? (_AREA_FILE[area.id] || "default") : "default";
-  return `/assets/areas/${file}.jpg`;
+  const hash = programId ? [...String(programId)].reduce((acc, c) => acc + c.charCodeAt(0), 0) : 0;
+  const variant = (hash % _AREA_VARIANTS) + 1;
+  return `/assets/areas/${file}-${variant}.jpg`;
 }
 
 function ProgramCardCompact({ program: p, selected, isDrawerOpen, onClick }) {
@@ -2744,7 +2748,7 @@ function ProgramCardCompact({ program: p, selected, isDrawerOpen, onClick }) {
   return (
     <div className={`pub-card-compact${isDrawerOpen ? " selected" : ""}`} onClick={onClick}>
       <div className="pub-card-compact-img">
-        <img src={getAreaImage(p.familia_area)} alt="" loading="lazy" className="area-img" />
+        <img src={getAreaImage(p.familia_area, p.id)} alt="" loading="lazy" className="area-img" />
         {domain && !logoErr && (
           <img src={`https://logo.clearbit.com/${domain}`} alt="" className="logo-badge" onError={() => setLogoErr(true)} />
         )}
@@ -2775,8 +2779,10 @@ function DrawerProgramDetail({ program: p, selected, onToggleSelect, compact }) 
   return (
     <>
       <div className="pub-drawer-img">
-        <span>{abbr}</span>
-        {domain && !logoErr && <img src={`https://logo.clearbit.com/${domain}`} alt="" onError={() => setLogoErr(true)} />}
+        <img src={getAreaImage(p.familia_area, p.id)} alt="" className="area-img" />
+        {domain && !logoErr && (
+          <img src={`https://logo.clearbit.com/${domain}`} alt="" className="logo-badge" onError={() => setLogoErr(true)} />
+        )}
       </div>
       <div className={compact ? "pub-bs-body" : "pub-drawer-body"}>
         <div style={{ display:"flex", gap:6, flexWrap:"wrap", marginBottom:10 }}>

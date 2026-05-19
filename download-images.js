@@ -14,7 +14,9 @@
  * USO:
  *   node download-images.js
  *
- * Las imágenes se guardan en:  public/assets/areas/<area>.jpg
+ * Las imágenes se guardan en:  public/assets/areas/<area>-1.jpg … <area>-4.jpg
+ * El código usa hash del ID del programa para rotar entre las 4 variantes,
+ * así distintos programas del mismo área muestran imágenes diferentes.
  */
 
 'use strict';
@@ -27,8 +29,8 @@ const { Readable }  = require('stream');
 // ─── Configuración ──────────────────────────────────────────────────────────
 
 const OUTPUT_DIR = path.join(__dirname, 'public', 'assets', 'areas');
+const VARIANTS   = 4; // variantes por área (1 request por área, N descargas)
 
-// Lee las variables del .env sin dependencias externas
 function loadEnv() {
   const envPath = path.join(__dirname, '.env');
   if (!fs.existsSync(envPath)) return;
@@ -52,8 +54,6 @@ if (!ACCESS_KEY) {
 }
 
 // ─── Áreas y palabras clave ──────────────────────────────────────────────────
-// Las palabras clave en inglés mejoran la relevancia de los resultados.
-// Añade o cambia áreas según las familias de tu base de datos.
 
 const AREAS = {
   negocios:     'business school students',
@@ -72,11 +72,11 @@ const AREAS = {
 
 // ─── Funciones ───────────────────────────────────────────────────────────────
 
-async function searchUnsplash(query) {
+async function searchUnsplash(query, count) {
   const url = new URL('https://api.unsplash.com/search/photos');
   url.searchParams.set('query', query);
   url.searchParams.set('orientation', 'landscape');
-  url.searchParams.set('per_page', '1');
+  url.searchParams.set('per_page', String(count));
   url.searchParams.set('content_filter', 'high');
 
   const res = await fetch(url.toString(), {
@@ -91,8 +91,7 @@ async function searchUnsplash(query) {
   const data = await res.json();
   if (!data.results?.length) throw new Error(`Sin resultados para "${query}"`);
 
-  // 'regular' = ≈1080px de ancho, buena calidad sin exceso de peso
-  return data.results[0].urls.regular;
+  return data.results.map(r => r.urls.regular);
 }
 
 async function downloadImage(imageUrl, destPath) {
@@ -108,26 +107,30 @@ async function main() {
   fs.mkdirSync(OUTPUT_DIR, { recursive: true });
 
   const entries = Object.entries(AREAS);
-  console.log(`\n📦  Descargando ${entries.length} imágenes → ${OUTPUT_DIR}\n`);
+  console.log(`\n📦  Descargando ${entries.length} áreas × ${VARIANTS} variantes → ${OUTPUT_DIR}\n`);
 
   let ok = 0, ko = 0;
   for (const [area, keyword] of entries) {
-    const destPath = path.join(OUTPUT_DIR, `${area}.jpg`);
-    process.stdout.write(`  ⏳  ${area.padEnd(14)} "${keyword}" ... `);
+    process.stdout.write(`  ⏳  ${area.padEnd(14)} `);
     try {
-      const imgUrl = await searchUnsplash(keyword);
-      await downloadImage(imgUrl, destPath);
-      console.log('✅');
-      ok++;
+      const urls = await searchUnsplash(keyword, VARIANTS);
+      const available = Math.min(urls.length, VARIANTS);
+      for (let i = 0; i < available; i++) {
+        const destPath = path.join(OUTPUT_DIR, `${area}-${i + 1}.jpg`);
+        await downloadImage(urls[i], destPath);
+        process.stdout.write('✅');
+        ok++;
+      }
+      console.log();
     } catch (err) {
       console.log(`❌  ${err.message}`);
       ko++;
     }
-    // Respeta el rate-limit de la cuenta Demo (50 req/h)
-    await new Promise(r => setTimeout(r, 300));
+    // Pausa entre áreas para respetar rate-limit
+    await new Promise(r => setTimeout(r, 400));
   }
 
-  console.log(`\n🎉  Completado: ${ok} descargadas, ${ko} errores`);
+  console.log(`\n🎉  Completado: ${ok} imágenes descargadas, ${ko} errores`);
   console.log(`    Ruta: ${OUTPUT_DIR}\n`);
 }
 

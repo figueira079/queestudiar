@@ -2727,18 +2727,18 @@ function LeadCaptureModal({ profile, onClose, onSuccess }) {
 
 // ── Compact card for the explorer left panel ─────────────────────────────
 // Mapea familia_area (valor exacto de BD) → imagen genérica local
-// Variantes: area-1.jpg … area-4.jpg (elegidas por hash del ID del programa)
+// `offset` = índice global en la lista filtrada → garantiza que dentro de
+// cualquier bloque de 20 cards del mismo área no se repite ninguna imagen.
 const _AREA_FILE = { negocios:"negocios", tecnologia:"informatica", ingenieria:"ingenieria", salud:"salud", ciencias:"ciencias", derecho:"derecho", educacion:"educacion", humanidades:"humanidades", comunicacion:"comunicacion", arte:"arte", turismo:"turismo" };
 const _AREA_VARIANTS = 20;
-function getAreaImage(familiaArea, programId) {
+function getAreaImage(familiaArea, offset) {
   const area = AREAS_FORMULARIO.find(a => a.familia_areas.includes(familiaArea));
   const file = area ? (_AREA_FILE[area.id] || "default") : "default";
-  const hash = programId ? [...String(programId)].reduce((acc, c) => acc + c.charCodeAt(0), 0) : 0;
-  const variant = (hash % _AREA_VARIANTS) + 1;
+  const variant = (Math.abs(offset ?? 0) % _AREA_VARIANTS) + 1;
   return `/assets/areas/${file}-${variant}.jpg`;
 }
 
-function ProgramCardCompact({ program: p, selected, isDrawerOpen, onClick }) {
+function ProgramCardCompact({ program: p, selected, isDrawerOpen, onClick, imageOffset }) {
   const [logoErr, setLogoErr] = useState(false);
   const fmtPrice = (v) => v === 0 ? "Gratuito" : `${Number(v).toLocaleString("es-ES")} €/año`;
   const precioEU = p.precio_anual_eur != null ? fmtPrice(p.precio_anual_eur) : "Consultar precio";
@@ -2748,8 +2748,8 @@ function ProgramCardCompact({ program: p, selected, isDrawerOpen, onClick }) {
   return (
     <div className={`pub-card-compact${isDrawerOpen ? " selected" : ""}`} onClick={onClick}>
       <div className="pub-card-compact-img">
-        <img src={getAreaImage(p.familia_area, p.id)} alt="" loading="lazy" className="area-img"
-          onError={e => { e.target.onerror = null; e.target.src = getAreaImage(p.familia_area, null); }} />
+        <img src={getAreaImage(p.familia_area, imageOffset)} alt="" loading="lazy" className="area-img"
+          onError={e => { e.target.onerror = null; e.target.src = getAreaImage(p.familia_area, 0); }} />
         {domain && !logoErr && (
           <img src={`https://logo.clearbit.com/${domain}`} alt="" className="logo-badge" onError={() => setLogoErr(true)} />
         )}
@@ -2780,8 +2780,7 @@ function DrawerProgramDetail({ program: p, selected, onToggleSelect, compact }) 
   return (
     <>
       <div className="pub-drawer-img">
-        <img src={getAreaImage(p.familia_area, p.id)} alt="" className="area-img"
-          onError={e => { e.target.onerror = null; e.target.src = getAreaImage(p.familia_area, null); }} />
+        <img src={getAreaImage(p.familia_area, 0)} alt="" className="area-img" />
         {domain && !logoErr && (
           <img src={`https://logo.clearbit.com/${domain}`} alt="" className="logo-badge" onError={() => setLogoErr(true)} />
         )}
@@ -2947,8 +2946,9 @@ function ProgramBrowser() {
             </div>
 
             <div className="pub-compact-grid" style={{ padding:"8px var(--padding-x) 32px" }}>
-              {paged.map(p => (
+              {paged.map((p, i) => (
                 <ProgramCardCompact key={p.id} program={p}
+                  imageOffset={page * PER_PAGE + i}
                   selected={selected.has(p.id)}
                   isDrawerOpen={drawerProgram?.id === p.id || sheetProgram?.id === p.id}
                   onClick={() => openCard(p)} />

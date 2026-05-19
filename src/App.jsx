@@ -2729,7 +2729,7 @@ function LeadCaptureModal({ profile, onClose, onSuccess }) {
 // Mapea familia_area (valor exacto de BD) → imagen genérica local
 // Variantes: area-1.jpg … area-4.jpg (elegidas por hash del ID del programa)
 const _AREA_FILE = { negocios:"negocios", tecnologia:"informatica", ingenieria:"ingenieria", salud:"salud", ciencias:"ciencias", derecho:"derecho", educacion:"educacion", humanidades:"humanidades", comunicacion:"comunicacion", arte:"arte", turismo:"turismo" };
-const _AREA_VARIANTS = 4;
+const _AREA_VARIANTS = 8;
 function getAreaImage(familiaArea, programId) {
   const area = AREAS_FORMULARIO.find(a => a.familia_areas.includes(familiaArea));
   const file = area ? (_AREA_FILE[area.id] || "default") : "default";
@@ -2748,7 +2748,8 @@ function ProgramCardCompact({ program: p, selected, isDrawerOpen, onClick }) {
   return (
     <div className={`pub-card-compact${isDrawerOpen ? " selected" : ""}`} onClick={onClick}>
       <div className="pub-card-compact-img">
-        <img src={getAreaImage(p.familia_area, p.id)} alt="" loading="lazy" className="area-img" />
+        <img src={getAreaImage(p.familia_area, p.id)} alt="" loading="lazy" className="area-img"
+          onError={e => { e.target.onerror = null; e.target.src = getAreaImage(p.familia_area, null); }} />
         {domain && !logoErr && (
           <img src={`https://logo.clearbit.com/${domain}`} alt="" className="logo-badge" onError={() => setLogoErr(true)} />
         )}
@@ -2779,7 +2780,8 @@ function DrawerProgramDetail({ program: p, selected, onToggleSelect, compact }) 
   return (
     <>
       <div className="pub-drawer-img">
-        <img src={getAreaImage(p.familia_area, p.id)} alt="" className="area-img" />
+        <img src={getAreaImage(p.familia_area, p.id)} alt="" className="area-img"
+          onError={e => { e.target.onerror = null; e.target.src = getAreaImage(p.familia_area, null); }} />
         {domain && !logoErr && (
           <img src={`https://logo.clearbit.com/${domain}`} alt="" className="logo-badge" onError={() => setLogoErr(true)} />
         )}

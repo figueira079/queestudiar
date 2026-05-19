@@ -29,7 +29,7 @@ const { Readable }  = require('stream');
 // ─── Configuración ──────────────────────────────────────────────────────────
 
 const OUTPUT_DIR = path.join(__dirname, 'public', 'assets', 'areas');
-const VARIANTS   = 4; // variantes por área (1 request por área, N descargas)
+const VARIANTS   = 8; // variantes por área (1 request por área, N descargas)
 
 function loadEnv() {
   const envPath = path.join(__dirname, '.env');

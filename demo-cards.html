@@ -381,6 +381,45 @@ function showToast(msg, duration = 2500) {
     _toastTimer = null;
   }, duration);
 }
+
+const FavoritosManager = (() => {
+  const KEY = 'queestudiar_favoritos';
+
+  const load = () => {
+    try { return JSON.parse(localStorage.getItem(KEY)) || []; }
+    catch { return []; }
+  };
+
+  const save = (ids) => localStorage.setItem(KEY, JSON.stringify(ids));
+
+  return {
+    has(id) { return load().includes(id); },
+
+    getAll() { return load(); },
+
+    toggle(id, savedCount) {
+      const ids = load();
+      const isNowFav = !ids.includes(id);
+      const next = isNowFav ? [...ids, id] : ids.filter(x => x !== id);
+      save(next);
+
+      // Actualizar DOM de la card
+      const card = document.getElementById(`card-${id}`);
+      if (!card) return;
+      card.classList.toggle('is-favorited', isNowFav);
+
+      const btn = card.querySelector('.btn-fav');
+      btn.textContent  = isNowFav ? '★' : '☆';
+      btn.classList.toggle('fav-active', isNowFav);
+
+      const counter = card.querySelector('.qe-saved-count');
+      const base = savedCount ?? 0;
+      counter.textContent = `♥ ${isNowFav ? base + 1 : base} lo guardaron`;
+
+      if (isNowFav) showToast('✓ Guardado en tu lista');
+    },
+  };
+})();
 </script>
 </body>
 </html>

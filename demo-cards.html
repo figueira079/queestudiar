@@ -263,7 +263,90 @@ body {
 <!-- Barra comparadora, modal y toast se insertan por JS -->
 
 <script>
-// ── Task 2+: código JS aquí ──
+const PROGRAMS = [
+  {
+    id: 'p1',
+    nombre: 'MBA — Dirección y Administración de Empresas',
+    universidad: 'Universidad Autónoma de Barcelona',
+    ciudad: 'Barcelona',
+    tipo: 'master',
+    duracion: '1 año / 60 ECTS',
+    modalidad: 'Presencial',
+    idioma: 'Español / Inglés',
+    precio_anual_eur: 12400,
+    url_detalle: 'https://www.uab.cat',
+    empleabilidad: 87,
+    valoracion: 4.2,
+    num_resenas: 23,
+    sello: '⭐ Top 5 Ranking',
+    keywords: ['🌍 Internacional', '💡 Innovación', '📊 Finanzas'],
+    asignaturas: ['Dirección Estratégica', 'Marketing Global', 'Finanzas Corp.'],
+    saved_count: 234,
+  },
+  {
+    id: 'p2',
+    nombre: 'Máster en Marketing Digital y E-commerce',
+    universidad: 'ESIC Business School',
+    ciudad: 'Madrid',
+    tipo: 'master',
+    duracion: '1 año / 60 ECTS',
+    modalidad: 'Online',
+    idioma: 'Español',
+    precio_anual_eur: 7200,
+    url_detalle: 'https://www.esic.edu',
+    empleabilidad: 79,
+    valoracion: 4.0,
+    num_resenas: 31,
+    sello: null,
+    keywords: ['📱 Social Media', '🛒 E-commerce', '📈 Analytics'],
+    asignaturas: ['Marketing Digital', 'SEO / SEM', 'Analítica Web'],
+    saved_count: 89,
+  },
+  {
+    id: 'p3',
+    nombre: 'Máster en Inteligencia Artificial y Big Data',
+    universidad: 'Universidad Politécnica de Madrid',
+    ciudad: 'Madrid',
+    tipo: 'master',
+    duracion: '2 años / 120 ECTS',
+    modalidad: 'Presencial',
+    idioma: 'Español / Inglés',
+    precio_anual_eur: 9500,
+    url_detalle: 'https://www.upm.es',
+    empleabilidad: 94,
+    valoracion: 4.7,
+    num_resenas: 52,
+    sello: '🎓 Doble titulación',
+    keywords: ['🤖 IA', '📊 Big Data', '☁️ Cloud'],
+    asignaturas: ['Machine Learning', 'Python Avanzado', 'Estadística'],
+    saved_count: 341,
+  },
+  {
+    id: 'p4',
+    nombre: 'Máster en Derecho Internacional y Relaciones Internacionales',
+    universidad: 'Universidad Carlos III de Madrid',
+    ciudad: 'Sevilla',
+    tipo: 'master',
+    duracion: '1 año / 60 ECTS',
+    modalidad: 'Semipresencial',
+    idioma: 'Español',
+    precio_anual_eur: 6800,
+    url_detalle: 'https://www.uc3m.es',
+    empleabilidad: null,
+    valoracion: 4.4,
+    num_resenas: 18,
+    sello: null,
+    keywords: ['⚖️ Derecho', '🌐 Internacional', '🏛️ RRII'],
+    asignaturas: ['Derecho Internacional Público', 'Diplomacia', 'Derecho UE'],
+    saved_count: 67,
+  },
+];
+
+const TIPO_LABELS = {
+  master: 'Máster', grado: 'Grado',
+  fp_superior: 'FP Superior', doctorado: 'Doctorado',
+};
+const MODALIDAD_ICONS = { Presencial: '🏛', Online: '💻', Semipresencial: '🔀' };
 </script>
 </body>
 </html>

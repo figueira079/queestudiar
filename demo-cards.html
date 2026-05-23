@@ -420,6 +420,98 @@ const FavoritosManager = (() => {
     },
   };
 })();
+
+const ComparadorManager = (() => {
+  const KEY = 'queestudiar_comparar';
+
+  const load = () => {
+    try { return JSON.parse(localStorage.getItem(KEY)) || { ids: [], tipo: null }; }
+    catch { return { ids: [], tipo: null }; }
+  };
+
+  const save = (state) => localStorage.setItem(KEY, JSON.stringify(state));
+
+  const updateCardBtn = (id, isActive, isDisabled) => {
+    const card = document.getElementById(`card-${id}`);
+    if (!card) return;
+    const btn = card.querySelector('.btn-cmp');
+    if (!btn) return;
+    btn.classList.toggle('cmp-active',   isActive);
+    btn.classList.toggle('cmp-disabled', isDisabled);
+    btn.title = isDisabled
+      ? `Solo se pueden comparar ${TIPO_LABELS[ComparadorManager.getTipo()] || 'programas del mismo tipo'}s`
+      : '';
+  };
+
+  return {
+    getTipo() { return load().tipo; },
+    getAll()  { return load().ids; },
+
+    add(id, tipo, nombre) {
+      const state = load();
+
+      if (state.ids.includes(id)) return; // ya está — no hacer nada
+
+      if (state.tipo && state.tipo !== tipo) {
+        showToast(`Solo puedes comparar programas del mismo tipo. Limpia el comparador para empezar de nuevo.`);
+        return;
+      }
+      if (state.ids.length >= 4) {
+        showToast('Máximo 4 programas para comparar');
+        return;
+      }
+
+      state.ids.push(id);
+      if (!state.tipo) state.tipo = tipo;
+      save(state);
+
+      const card = document.getElementById(`card-${id}`);
+      if (card) {
+        card.classList.add('is-compared');
+        card.querySelector('.btn-cmp').classList.add('cmp-active');
+      }
+
+      // Deshabilitar botones ⊕ de otros tipos
+      PROGRAMS.forEach(p => {
+        if (!state.ids.includes(p.id) && p.tipo !== state.tipo) {
+          updateCardBtn(p.id, false, true);
+        }
+      });
+
+      renderComparadorBar();
+    },
+
+    remove(id) {
+      const state = load();
+      state.ids = state.ids.filter(x => x !== id);
+      if (state.ids.length === 0) state.tipo = null;
+      save(state);
+
+      const card = document.getElementById(`card-${id}`);
+      if (card) {
+        card.classList.remove('is-compared');
+        card.querySelector('.btn-cmp').classList.remove('cmp-active');
+      }
+
+      // Si se vació, rehabilitar todos los botones ⊕
+      if (!state.tipo) {
+        PROGRAMS.forEach(p => updateCardBtn(p.id, false, false));
+      }
+
+      renderComparadorBar();
+    },
+
+    clear() {
+      save({ ids: [], tipo: null });
+      PROGRAMS.forEach(p => {
+        const card = document.getElementById(`card-${p.id}`);
+        if (card) card.classList.remove('is-compared');
+        updateCardBtn(p.id, false, false);
+      });
+      renderComparadorBar();
+    },
+  };
+})();
 </script>
 </body>
 </html>

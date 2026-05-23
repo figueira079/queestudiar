@@ -512,6 +512,143 @@ const ComparadorManager = (() => {
     },
   };
 })();
+
+function renderCard(p) {
+  const isFav = FavoritosManager.has(p.id);
+  const isCmp = ComparadorManager.getAll().includes(p.id);
+  const lockedTipo = ComparadorManager.getTipo();
+  const isCmpDisabled = lockedTipo && lockedTipo !== p.tipo && !isCmp;
+
+  const fmtPrice = (v) => v === 0 ? 'Gratuito' : `${Number(v).toLocaleString('es-ES')} €/año`;
+  const starsHtml = (v) => {
+    const full  = Math.floor(v);
+    const empty = 5 - full;
+    return '★'.repeat(full) + '☆'.repeat(empty);
+  };
+  const abbr = p.universidad.split(' ')
+    .filter(w => w.length > 3)
+    .slice(0, 3)
+    .map(w => w[0])
+    .join('')
+    .toUpperCase()
+    .slice(0, 4);
+
+  const el = document.createElement('div');
+  el.className = [
+    'qe-card',
+    isFav ? 'is-favorited' : '',
+    isCmp ? 'is-compared'  : '',
+  ].filter(Boolean).join(' ');
+  el.id = `card-${p.id}`;
+
+  el.innerHTML = `
+    <div class="qe-card-header">
+      <div class="qe-card-header-img" style="background-image:url('https://picsum.photos/seed/${p.id}/400/200')"></div>
+      <div class="qe-card-header-overlay"></div>
+      <div class="qe-card-header-content">
+        <div class="qe-card-header-top">
+          <span class="qe-badge-tipo ${p.tipo}">${TIPO_LABELS[p.tipo] || p.tipo}</span>
+          ${p.sello ? `<span class="qe-badge-seal">${p.sello}</span>` : ''}
+        </div>
+        <div>
+          <div class="qe-card-title">${p.nombre}</div>
+          <div class="qe-card-univ">
+            <span class="qe-logo-badge">${abbr}</span>
+            ${p.universidad} · ${p.ciudad}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="qe-metrics">
+      <div class="qe-metric">
+        <span class="qe-metric-val empleo${p.empleabilidad == null ? ' na' : ''}">
+          ${p.empleabilidad != null ? p.empleabilidad + '%' : 'Próx.'}
+        </span>
+        <span class="qe-metric-lbl">Empleo</span>
+      </div>
+      <div class="qe-metric">
+        <span class="qe-metric-val">${p.duracion.split('/')[0].trim()}</span>
+        <span class="qe-metric-lbl">Duración</span>
+      </div>
+      <div class="qe-metric">
+        <span class="qe-metric-val">${MODALIDAD_ICONS[p.modalidad] || ''} ${p.modalidad}</span>
+        <span class="qe-metric-lbl">Modalidad</span>
+      </div>
+    </div>
+
+    <div class="qe-card-body">
+      <div class="qe-keywords">
+        ${p.keywords.map(k => `<span class="qe-kw">${k}</span>`).join('')}
+      </div>
+      <div class="qe-rating">
+        <span class="qe-stars">${starsHtml(p.valoracion)}</span>
+        <span class="qe-rating-text">${p.valoracion} · ${p.num_resenas} reseñas</span>
+      </div>
+      <button class="qe-quickview-btn" aria-expanded="false">
+        <i class="qe-quickview-arrow">›</i>&nbsp;Vista rápida — 1.er año
+      </button>
+      <div class="qe-quickview-content" role="region">
+        ${p.asignaturas.map(a => `<span>${a}</span>`).join('')}
+      </div>
+    </div>
+
+    <div class="qe-card-footer">
+      <div>
+        <div class="qe-price">${fmtPrice(p.precio_anual_eur)}</div>
+        <div class="qe-saved-count">♥ ${isFav ? p.saved_count + 1 : p.saved_count} lo guardaron</div>
+      </div>
+      <div class="qe-actions">
+        <button class="qe-btn-icon btn-fav ${isFav ? 'fav-active' : ''}"
+          title="${isFav ? 'Quitar de favoritos' : 'Guardar'}"
+          aria-label="${isFav ? 'Quitar de favoritos' : 'Guardar programa'}"
+          aria-pressed="${isFav}">
+          ${isFav ? '★' : '☆'}
+        </button>
+        <button class="qe-btn-icon btn-cmp ${isCmp ? 'cmp-active' : ''} ${isCmpDisabled ? 'cmp-disabled' : ''}"
+          title="${isCmpDisabled ? 'Solo se pueden comparar programas del mismo tipo' : isCmp ? 'Quitar del comparador' : 'Añadir al comparador'}"
+          aria-label="Añadir al comparador"
+          aria-pressed="${isCmp}"
+          ${isCmpDisabled ? 'disabled' : ''}>
+          ⊕
+        </button>
+        <a href="${p.url_detalle}" target="_blank" rel="noopener noreferrer"
+          class="qe-btn-ver" aria-label="Ver programa oficial en nueva pestaña">
+          Ver →
+        </a>
+      </div>
+    </div>
+  `;
+
+  // Vista rápida — acordeón
+  const qvBtn     = el.querySelector('.qe-quickview-btn');
+  const qvContent = el.querySelector('.qe-quickview-content');
+  qvBtn.addEventListener('click', () => {
+    const isOpen = qvContent.classList.toggle('open');
+    qvBtn.classList.toggle('open', isOpen);
+    qvBtn.setAttribute('aria-expanded', isOpen);
+  });
+
+  // Favorito
+  el.querySelector('.btn-fav').addEventListener('click', (e) => {
+    e.stopPropagation();
+    FavoritosManager.toggle(p.id, p.saved_count);
+    el.querySelector('.btn-fav').setAttribute('aria-pressed', FavoritosManager.has(p.id));
+  });
+
+  // Comparar
+  el.querySelector('.btn-cmp').addEventListener('click', (e) => {
+    e.stopPropagation();
+    if (ComparadorManager.getAll().includes(p.id)) {
+      ComparadorManager.remove(p.id);
+    } else {
+      ComparadorManager.add(p.id, p.tipo, p.nombre);
+    }
+    el.querySelector('.btn-cmp').setAttribute('aria-pressed', ComparadorManager.getAll().includes(p.id));
+  });
+
+  return el;
+}
 </script>
 </body>
 </html>

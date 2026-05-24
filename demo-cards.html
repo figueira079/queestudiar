@@ -840,6 +840,57 @@ document.addEventListener('keydown', function(e) {
     if (m) m.classList.remove('open');
   }
 });
+
+function init() {
+  const grid = document.getElementById('cardsGrid');
+  grid.innerHTML = '';
+
+  PROGRAMS.forEach(function(p) { grid.appendChild(renderCard(p)); });
+
+  const cmpIds = ComparadorManager.getAll();
+  const lockedTipo = ComparadorManager.getTipo();
+  PROGRAMS.forEach(function(p) {
+    if (cmpIds.includes(p.id)) {
+      var card = document.getElementById('card-' + p.id);
+      if (card) {
+        card.classList.add('is-compared');
+        var btn = card.querySelector('.btn-cmp');
+        if (btn) btn.classList.add('cmp-active');
+      }
+    } else if (lockedTipo && p.tipo !== lockedTipo) {
+      var card = document.getElementById('card-' + p.id);
+      if (card) {
+        var btn = card.querySelector('.btn-cmp');
+        if (btn) { btn.classList.add('cmp-disabled'); btn.disabled = true; }
+      }
+    }
+  });
+
+  if (cmpIds.length > 0) renderComparadorBar();
+
+  document.getElementById('resultCount').textContent = PROGRAMS.length + ' programas';
+  document.getElementById('resultsLabel').textContent = 'Mostrando ' + PROGRAMS.length + ' de ' + PROGRAMS.length + ' resultados';
+
+  document.getElementById('searchInput').addEventListener('input', function(e) {
+    var q = e.target.value.toLowerCase();
+    document.querySelectorAll('.qe-card').forEach(function(card) {
+      var title = (card.querySelector('.qe-card-title') || {}).textContent || '';
+      card.style.display = title.toLowerCase().includes(q) ? '' : 'none';
+    });
+  });
+
+  document.getElementById('filterTipo').addEventListener('change', function(e) {
+    var v = e.target.value;
+    document.querySelectorAll('.qe-card').forEach(function(card) {
+      if (!v) { card.style.display = ''; return; }
+      var badge = card.querySelector('.qe-badge-tipo');
+      var matches = badge && badge.classList.contains(v);
+      card.style.display = matches ? '' : 'none';
+    });
+  });
+}
+
+init();
 </script>
 </body>
 </html>

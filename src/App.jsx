@@ -3043,6 +3043,64 @@ function ProgramBrowser() {
   const [sheetProgram, setSheetProgram] = useState(null);
   const PER_PAGE = 24;
 
+  // ── Favoritos (localStorage) ──
+  const [favs, setFavs] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('queestudiar_favoritos')) || []; }
+    catch { return []; }
+  });
+  useEffect(() => {
+    localStorage.setItem('queestudiar_favoritos', JSON.stringify(favs));
+  }, [favs]);
+
+  const toggleFav = (id) => setFavs(prev =>
+    prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
+  );
+
+  // ── Comparador (localStorage) ──
+  const [comparar, setComparar] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('queestudiar_comparar')) || { ids: [], tipo: null }; }
+    catch { return { ids: [], tipo: null }; }
+  });
+  useEffect(() => {
+    localStorage.setItem('queestudiar_comparar', JSON.stringify(comparar));
+  }, [comparar]);
+  const [compareModalOpen, setCompareModalOpen] = useState(false);
+
+  // ── Toast ──
+  const [toast, setToast] = useState(null);
+  const toastTimerRef = useRef(null);
+
+  const showToast = (msg) => {
+    if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
+    setToast(msg);
+    toastTimerRef.current = setTimeout(() => setToast(null), 2500);
+  };
+
+  const addToComparar = (id, tipo) => {
+    setComparar(prev => {
+      if (prev.ids.includes(id)) return prev;
+      if (prev.tipo && prev.tipo !== tipo) {
+        showToast('Solo puedes comparar programas del mismo tipo. Limpia el comparador para empezar de nuevo.');
+        return prev;
+      }
+      if (prev.ids.length >= 4) {
+        showToast('Máximo 4 programas para comparar');
+        return prev;
+      }
+      return { ids: [...prev.ids, id], tipo: prev.tipo || tipo };
+    });
+  };
+
+  const removeFromComparar = (id) => setComparar(prev => {
+    const ids = prev.ids.filter(x => x !== id);
+    return { ids, tipo: ids.length === 0 ? null : prev.tipo };
+  });
+
+  const clearComparar = () => setComparar({ ids: [], tipo: null });
+
+  // ── Nav favoritos: mostrar solo guardados ──
+  const [showOnlyFavs, setShowOnlyFavs] = useState(false);
+
   useEffect(() => {
     (async () => {
       try {

@@ -3117,12 +3117,13 @@ function ProgramBrowser() {
   useEffect(() => {
     const onKey = (e) => {
       if (e.key !== "Escape") return;
+      if (compareModalOpen) { setCompareModalOpen(false); return; }
       if (sheetOpen) { closeSheet(); return; }
       closeDrawer();
     };
     document.addEventListener("keydown", onKey);
     return () => document.removeEventListener("keydown", onKey);
-  }, [sheetOpen]);
+  }, [sheetOpen, compareModalOpen]);
 
   const cities = [...new Set(programs.map(p => p.ciudad).filter(Boolean))].sort();
   const areas = [...new Set(programs.map(p => p.familia_area).filter(Boolean))].sort();
@@ -3279,6 +3280,95 @@ function ProgramBrowser() {
             onToggleSelect={toggleSelect} compact={true} />
         )}
       </div>
+      {/* COMPARE BAR */}
+      {comparar.ids.length > 0 && (
+        <div className="qe-compare-bar">
+          <span className="qe-cmp-label">Comparando:</span>
+          <span className="qe-cmp-tipo">
+            {TIPO_LABELS[comparar.tipo] ? TIPO_LABELS[comparar.tipo] + 'es' : 'Programas'} ({comparar.ids.length}/4)
+          </span>
+          <div className="qe-cmp-chips">
+            {comparar.ids.map(id => {
+              const prog = programs.find(x => x.id === id);
+              const name = prog ? prog.nombre.slice(0, 28) + (prog.nombre.length > 28 ? '…' : '') : id;
+              return (
+                <span key={id} className="qe-cmp-chip">
+                  {name}
+                  <button className="qe-cmp-chip-x" onClick={() => removeFromComparar(id)} aria-label={`Quitar ${name}`}>×</button>
+                </span>
+              );
+            })}
+          </div>
+          <button
+            className="qe-cmp-btn-now"
+            disabled={comparar.ids.length < 2}
+            title={comparar.ids.length < 2 ? 'Añade al menos 2 programas' : undefined}
+            onClick={() => setCompareModalOpen(true)}>
+            Comparar ahora →
+          </button>
+          <button className="qe-cmp-btn-clear" onClick={clearComparar}>Limpiar todo</button>
+        </div>
+      )}
+
+      {/* COMPARE MODAL */}
+      {compareModalOpen && (() => {
+        const progs = comparar.ids.map(id => programs.find(p => p.id === id)).filter(Boolean);
+        const fmtP = (v) => v == null ? '—' : v === 0 ? 'Gratuito' : `${Number(v).toLocaleString('es-ES')} €`;
+        const stars = (v) => v != null ? '★'.repeat(Math.floor(v)) + '☆'.repeat(5 - Math.floor(v)) : '—';
+        const MODALIDAD_ICONS = { Presencial: '🏛', Online: '💻', Semipresencial: '🔀' };
+        const close = () => setCompareModalOpen(false);
+        const rowDefs = [
+          ['Ciudad',        p => p.ciudad || '—'],
+          ['Modalidad',     p => p.modalidad ? `${MODALIDAD_ICONS[p.modalidad] || ''} ${p.modalidad}` : '—'],
+          ['Idioma',        p => p.idioma || '—'],
+          ['Precio/año',    p => `<strong>${fmtP(p.precio_anual_eur)}</strong>`],
+          ['Empleabilidad', p => p.empleabilidad != null ? `<span class="qe-cmp-empleo-val">${p.empleabilidad}%</span>` : '<span style="color:#9ca3af">—</span>'],
+          ['Valoración',    p => p.valoracion != null ? `<span class="qe-cmp-stars">${stars(p.valoracion)}</span> ${p.valoracion} (${p.num_resenas})` : '—'],
+          ['Sello',         p => p.sello || '—'],
+        ];
+        return (
+          <div className="qe-modal-overlay" onClick={e => { if (e.target === e.currentTarget) close(); }}>
+            <div className="qe-modal-box" role="dialog" aria-modal="true" aria-label="Comparativa de programas">
+              <div className="qe-modal-header">
+                <span className="qe-modal-title">
+                  Comparativa de {TIPO_LABELS[comparar.tipo] ? TIPO_LABELS[comparar.tipo] + 's' : 'Programas'}
+                </span>
+                <button className="qe-modal-close" aria-label="Cerrar" onClick={close}>×</button>
+              </div>
+              <div style={{ overflowX: 'auto' }}>
+                <table className="qe-cmp-table">
+                  <thead>
+                    <tr>
+                      <th></th>
+                      {progs.map(p => (
+                        <th key={p.id} className="prog-col">
+                          {p.nombre.slice(0, 40)}{p.nombre.length > 40 ? '…' : ''}
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {rowDefs.map(([label, fn]) => (
+                      <tr key={label}>
+                        <td className="attr">{label}</td>
+                        {progs.map(p => (
+                          <td key={p.id} dangerouslySetInnerHTML={{ __html: fn(p) }} />
+                        ))}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <div className="qe-modal-footer">
+                <button className="qe-modal-btn-close" onClick={close}>Cerrar comparativa</button>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
+
+      {/* TOAST */}
+      {toast && <div className="qe-toast">{toast}</div>}
     </>
   );
 }

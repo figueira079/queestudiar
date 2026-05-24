@@ -3104,7 +3104,7 @@ function ProgramBrowser() {
   useEffect(() => {
     (async () => {
       try {
-        const data = await publicQueryAll("programas", "id,nombre,ciudad,tipo,familia_area,modalidad,precio_anual_eur,precio_extracomunitario_eur,horas_semanales,url_detalle", "activo=eq.true&order=nombre.asc");
+        const data = await publicQueryAll("programas", "id,nombre,ciudad,tipo,familia_area,modalidad,precio_anual_eur,precio_extracomunitario_eur,horas_semanales,url_detalle,idioma", "activo=eq.true&order=nombre.asc");
         setPrograms(Array.isArray(data) ? data : []);
       } catch {}
       setLoading(false);
@@ -3218,11 +3218,21 @@ function ProgramBrowser() {
 
             <div className="pub-compact-grid" style={{ padding:"8px var(--padding-x) 32px" }}>
               {paged.map((p, i) => (
-                <ProgramCardCompact key={p.id} program={p}
+                <ProgramCardNew key={p.id} program={p}
                   imageOffset={page * PER_PAGE + i}
-                  selected={selected.has(p.id)}
-                  isDrawerOpen={drawerProgram?.id === p.id || sheetProgram?.id === p.id}
-                  onClick={() => openCard(p)} />
+                  isFav={favs.includes(p.id)}
+                  isCmp={comparar.ids.includes(p.id)}
+                  cmpDisabled={!!(comparar.tipo && comparar.tipo !== p.tipo && !comparar.ids.includes(p.id))}
+                  onFavToggle={id => {
+                    const adding = !favs.includes(id);
+                    toggleFav(id);
+                    if (adding) showToast('★ Guardado — ver todos en "Mis guardados"');
+                  }}
+                  onCmpToggle={(id, tipo) => {
+                    if (comparar.ids.includes(id)) removeFromComparar(id);
+                    else addToComparar(id, tipo);
+                  }}
+                  onCardClick={() => openCard(p)} />
               ))}
             </div>
 

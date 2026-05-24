@@ -244,6 +244,88 @@ body {
   from { opacity: 0; transform: translateX(-50%) translateY(-6px); }
   to   { opacity: 1; transform: translateX(-50%) translateY(0); }
 }
+
+/* BARRA COMPARADORA */
+.compare-bar {
+  position: fixed; bottom: 0; left: 0; right: 0; z-index: 200;
+  background: #1a1a2e;
+  padding: 12px 24px;
+  display: none;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  box-shadow: 0 -4px 24px rgba(0,0,0,0.3);
+  animation: slideUp 0.25s ease;
+}
+.compare-bar.visible { display: flex; }
+@keyframes slideUp {
+  from { transform: translateY(100%); }
+  to   { transform: translateY(0); }
+}
+.cmp-bar-label { font-size: 11px; color: rgba(255,255,255,0.5); white-space: nowrap; }
+.cmp-bar-tipo  { font-size: 12px; font-weight: 700; color: #93c5fd; white-space: nowrap; }
+.cmp-chips     { display: flex; gap: 6px; flex: 1; flex-wrap: wrap; }
+.cmp-chip {
+  background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2);
+  border-radius: 20px; padding: 4px 10px;
+  font-size: 10px; color: #fff;
+  display: flex; align-items: center; gap: 5px; white-space: nowrap;
+}
+.cmp-chip-x {
+  opacity: 0.55; cursor: pointer; font-size: 14px; line-height: 1;
+  transition: opacity 0.15s;
+}
+.cmp-chip-x:hover { opacity: 1; }
+.cmp-btn-now {
+  background: var(--blue); color: #fff; border: none;
+  border-radius: 8px; padding: 8px 16px;
+  font-size: 12px; font-weight: 700; cursor: pointer; white-space: nowrap;
+}
+.cmp-btn-now:hover { background: #2d5fd4; }
+.cmp-btn-now:disabled { background: #6b7280; cursor: not-allowed; }
+.cmp-btn-clear {
+  background: transparent; color: rgba(255,255,255,0.4);
+  border: none; font-size: 11px; cursor: pointer; white-space: nowrap;
+}
+.cmp-btn-clear:hover { color: rgba(255,255,255,0.9); }
+
+/* MODAL */
+.modal-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.55);
+  z-index: 300; display: none;
+  align-items: center; justify-content: center; padding: 20px;
+}
+.modal-overlay.open { display: flex; }
+.modal-box {
+  background: #fff; border-radius: 16px;
+  width: 100%; max-width: 760px; max-height: 85vh;
+  overflow-y: auto;
+  box-shadow: 0 24px 64px rgba(0,0,0,0.2);
+}
+.modal-header {
+  padding: 16px 20px; border-bottom: 1px solid var(--border);
+  display: flex; justify-content: space-between; align-items: center;
+  position: sticky; top: 0; background: #fff; z-index: 1;
+}
+.modal-title  { font-size: 15px; font-weight: 700; color: var(--dark); }
+.modal-close  { background: none; border: none; font-size: 22px; cursor: pointer; color: var(--gray); line-height: 1; }
+.modal-close:hover { color: var(--dark); }
+
+.cmp-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+.cmp-table th {
+  padding: 10px 14px; text-align: left;
+  background: #f9fafb; font-weight: 600; color: var(--gray); font-size: 11px;
+  border-bottom: 1px solid var(--border);
+  position: sticky; top: 53px; z-index: 1;
+}
+.cmp-table th.prog-col { color: var(--dark); font-size: 11px; font-weight: 700; min-width: 160px; }
+.cmp-table td { padding: 9px 14px; border-bottom: 1px solid var(--border); color: #374151; vertical-align: top; }
+.cmp-table td.attr { font-weight: 600; color: #6b7280; font-size: 11px; background: #fafafa; width: 100px; white-space: nowrap; }
+.cmp-table tr:last-child td { border-bottom: none; }
+.cmp-empleo-val { color: var(--green); font-weight: 700; }
+.cmp-stars { color: var(--gold); font-size: 11px; }
+.modal-footer { padding: 14px 20px; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; }
+.modal-btn-close { background: var(--blue); color: #fff; border: none; border-radius: 8px; padding: 8px 20px; font-size: 12px; font-weight: 700; cursor: pointer; }
 </style>
 </head>
 <body>
@@ -276,7 +358,11 @@ body {
   </div>
 </main>
 
-<!-- Barra comparadora, modal y toast se insertan por JS -->
+<div class="compare-bar" id="compareBar" aria-live="polite" aria-label="Comparador de programas"></div>
+<div class="modal-overlay" id="compareModal" role="dialog" aria-modal="true" aria-label="Comparativa de programas">
+  <div class="modal-box" id="compareModalBox"></div>
+</div>
+
 
 <script>
 const PROGRAMS = [
@@ -649,6 +735,111 @@ function renderCard(p) {
 
   return el;
 }
+
+function renderComparadorBar() {
+  const bar  = document.getElementById('compareBar');
+  const ids  = ComparadorManager.getAll();
+  const tipo = ComparadorManager.getTipo();
+
+  if (ids.length === 0) {
+    bar.classList.remove('visible');
+    bar.innerHTML = '';
+    return;
+  }
+
+  const tipoLabel = tipo ? (TIPO_LABELS[tipo] + 'es') : 'Programas';
+  const chips = ids.map(id => {
+    const p = PROGRAMS.find(x => x.id === id);
+    const shortName = p ? p.nombre.slice(0, 28) + (p.nombre.length > 28 ? '…' : '') : id;
+    return '<span class="cmp-chip">' +
+      shortName +
+      '<span class="cmp-chip-x" data-remove="' + id + '" aria-label="Quitar ' + shortName + '">×</span>' +
+      '</span>';
+  }).join('');
+
+  bar.innerHTML =
+    '<span class="cmp-bar-label">Comparando:</span>' +
+    '<span class="cmp-bar-tipo">' + tipoLabel + ' (' + ids.length + '/4)</span>' +
+    '<div class="cmp-chips">' + chips + '</div>' +
+    '<button class="cmp-btn-now"' + (ids.length < 2 ? ' disabled title="Añade al menos 2 programas"' : '') + '>Comparar ahora →</button>' +
+    '<button class="cmp-btn-clear">Limpiar todo</button>';
+
+  bar.classList.add('visible');
+
+  bar.querySelectorAll('.cmp-chip-x').forEach(function(btn) {
+    btn.addEventListener('click', function() { ComparadorManager.remove(btn.dataset.remove); });
+  });
+  bar.querySelector('.cmp-btn-now').addEventListener('click', function() {
+    if (ids.length >= 2) renderModal();
+  });
+  bar.querySelector('.cmp-btn-clear').addEventListener('click', function() { ComparadorManager.clear(); });
+}
+
+function renderModal() {
+  const ids   = ComparadorManager.getAll();
+  const progs = ids.map(function(id) { return PROGRAMS.find(function(p) { return p.id === id; }); }).filter(Boolean);
+  const tipo  = ComparadorManager.getTipo();
+  const fmtPrice = function(v) { return v === 0 ? 'Gratuito' : Number(v).toLocaleString('es-ES') + ' €'; };
+  const starsHtml = function(v) { return '★'.repeat(Math.floor(v)) + '☆'.repeat(5 - Math.floor(v)); };
+
+  const progHeaders = progs.map(function(p) {
+    return '<th class="prog-col">' + p.nombre.slice(0, 40) + (p.nombre.length > 40 ? '…' : '') + '</th>';
+  }).join('');
+
+  const rowDefs = [
+    ['Universidad', function(p) { return p.universidad; }],
+    ['Ciudad',      function(p) { return p.ciudad; }],
+    ['Duración',    function(p) { return p.duracion; }],
+    ['Modalidad',   function(p) { return (MODALIDAD_ICONS[p.modalidad] || '') + ' ' + p.modalidad; }],
+    ['Idioma',      function(p) { return p.idioma; }],
+    ['Precio/año', function(p) { return '<strong>' + fmtPrice(p.precio_anual_eur) + '</strong>'; }],
+    ['Empleabilidad', function(p) {
+      return p.empleabilidad != null
+        ? '<span class="cmp-empleo-val">' + p.empleabilidad + '%</span>'
+        : '<span style="color:#9ca3af">—</span>';
+    }],
+    ['Valoración', function(p) {
+      return '<span class="cmp-stars">' + starsHtml(p.valoracion) + '</span> ' + p.valoracion + ' (' + p.num_resenas + ')';
+    }],
+    ['Sello', function(p) { return p.sello || '—'; }],
+  ];
+
+  const rows = rowDefs.map(function(def) {
+    return '<tr><td class="attr">' + def[0] + '</td>' +
+      progs.map(function(p) { return '<td>' + def[1](p) + '</td>'; }).join('') +
+      '</tr>';
+  }).join('');
+
+  document.getElementById('compareModalBox').innerHTML =
+    '<div class="modal-header">' +
+      '<span class="modal-title">Comparativa de ' + (TIPO_LABELS[tipo] || 'Programas') + 's</span>' +
+      '<button class="modal-close" aria-label="Cerrar">&times;</button>' +
+    '</div>' +
+    '<div style="overflow-x:auto">' +
+      '<table class="cmp-table">' +
+        '<thead><tr><th></th>' + progHeaders + '</tr></thead>' +
+        '<tbody>' + rows + '</tbody>' +
+      '</table>' +
+    '</div>' +
+    '<div class="modal-footer">' +
+      '<button class="modal-btn-close">Cerrar comparativa</button>' +
+    '</div>';
+
+  const modal = document.getElementById('compareModal');
+  modal.classList.add('open');
+
+  const close = function() { modal.classList.remove('open'); };
+  modal.querySelector('.modal-close').addEventListener('click', close);
+  modal.querySelector('.modal-btn-close').addEventListener('click', close);
+  modal.addEventListener('click', function(e) { if (e.target === modal) close(); });
+}
+
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') {
+    var m = document.getElementById('compareModal');
+    if (m) m.classList.remove('open');
+  }
+});
 </script>
 </body>
 </html>

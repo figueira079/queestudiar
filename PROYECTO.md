@@ -206,6 +206,51 @@
 
 ---
 
+### [2026-05-23] Prototipo `demo-cards.html` — rediseño tarjetas + comparador
+
+**Qué se implementó:**
+
+Prototipo standalone (`demo-cards.html` en raíz del repo) con:
+- **Tarjetas rediseñadas** — imagen de área con overlay degradado, badge de tipo, sello destacado, métricas (empleo, duración, modalidad), keywords pills, rating con estrellas, acordeón "Vista rápida" con asignaturas del 1.er año
+- **FavoritosManager** — localStorage (`queestudiar_favoritos`), toggle ☆/★ con borde dorado, contador "♥ X lo guardaron" actualizado en tiempo real, toast de confirmación
+- **ComparadorManager** — localStorage (`queestudiar_comparar`), restricción de tipo (solo máster con máster, grado con grado...), máximo 4 programas, botón ⊕ deshabilitado para tipos incompatibles
+- **Barra comparadora fija** — aparece al añadir primer programa, chips con ×, "Comparar ahora →" (deshabilitado hasta 2), "Limpiar todo"
+- **Modal comparativo** — tabla con 9 atributos (universidad, ciudad, duración, modalidad, idioma, precio, empleabilidad, valoración, sello), sticky header, cierre con ×/overlay/Escape
+- **Grid responsive** — 3 columnas desktop, 2 tablet, 1 móvil
+
+**Por qué:**
+- Las tarjetas actuales (`ProgramCardCompact`) son básicas y no muestran los datos clave para la decisión del estudiante
+- Este prototipo sirve como base aprobada para la posterior integración en React
+
+**Estado:** Prototipo completo, pendiente de integración en `App.jsx`
+
+---
+
+### [2026-05-19] Automatizaciones Claude Code — hooks, skills, MCP, subagente
+
+**Qué se implementó:**
+
+**Hooks de seguridad (`.claude/settings.local.json`):**
+- Hook PreToolUse: bloquea cualquier edición a `.env.local`, `.env`, `.env.production`, `.env.development` — contienen API keys que nunca deben modificarse con Claude
+- Hook PreToolUse: bloquea ediciones a las líneas 1–170 de `App.jsx` (zona CRÍTICA: helpers, auth, `query()`, `patch()`) — detecta el número de línea antes de ejecutar el edit y cancela con mensaje explicativo
+
+**Skills nuevas (`.claude/commands/`):**
+- `/post-deploy-check` — verifica que `queestudiar.es` y `app.queestudiar.es` devuelven HTTP 200 y contenido esperado tras cada push a main
+- `/split-component` — protocolo guiado para extraer componentes de `App.jsx` de forma segura: localización, análisis de dependencias, plan, extracción y verificación con `npm run build`
+
+**MCP Server (`.mcp.json`):**
+- `context7` (`@upstash/context7-mcp`) — documentación actualizada de React 18, Vite 5 y Supabase disponible como contexto antes de generar código
+
+**Subagente (`.claude/agents/security-reviewer.md`):**
+- `security-reviewer` — auditor especializado: RLS de tablas críticas, Edge Functions, auth, datos de estudiantes (GDPR básico)
+
+**Por qué:**
+- `App.jsx` tiene 4.286 líneas y la zona 1–170 es CRÍTICA (todos los helpers dependen de ella)
+- El auto-deploy desde `main` sin verificación dejaba producción sin red de seguridad
+- Los datos de estudiantes internacionales requieren revisión de seguridad periódica
+
+---
+
 ### [2026-05-19] Imágenes genéricas por área + rediseño tarjetas explorador
 
 **Qué se hizo:**

@@ -2853,6 +2853,131 @@ function ProgramCardCompact({ program: p, selected, isDrawerOpen, onClick, image
   );
 }
 
+function ProgramCardNew({ program: p, isFav, isCmp, cmpDisabled, onFavToggle, onCmpToggle, onCardClick, imageOffset }) {
+  const [qvOpen, setQvOpen] = React.useState(false);
+  const [logoErr, setLogoErr] = React.useState(false);
+
+  const fmtPrice = (v) => v === 0 ? 'Gratuito' : `${Number(v).toLocaleString('es-ES')} €/año`;
+  const starsHtml = (v) => v != null ? '★'.repeat(Math.floor(v)) + '☆'.repeat(5 - Math.floor(v)) : '';
+  const MODALIDAD_ICONS = { Presencial: '🏛', Online: '💻', Semipresencial: '🔀' };
+  const domain = p.url_detalle
+    ? (() => { try { return new URL(p.url_detalle).hostname.replace(/^www\./, ''); } catch { return null; } })()
+    : null;
+  const abbr = (p.nombre || '').split(' ').filter(w => w.length > 3).slice(0, 3).map(w => w[0]).join('').toUpperCase().slice(0, 4) || '??';
+
+  const cardClass = ['qe-card', isFav ? 'is-favorited' : '', isCmp ? 'is-compared' : ''].filter(Boolean).join(' ');
+
+  return (
+    <div className={cardClass} onClick={onCardClick}>
+      {/* HEADER */}
+      <div className="qe-card-header">
+        <div className="qe-card-header-img"
+          style={{ backgroundImage: `url('${getAreaImage(p.familia_area, imageOffset)}')` }} />
+        <div className="qe-card-header-overlay" />
+        <div className="qe-card-header-content">
+          <div className="qe-card-header-top">
+            <span className={`qe-badge-tipo ${p.tipo || ''}`}>{TIPO_LABELS[p.tipo] || p.tipo}</span>
+            {p.sello && <span className="qe-badge-seal">{p.sello}</span>}
+          </div>
+          <div>
+            <div className="qe-card-title">{p.nombre}</div>
+            <div className="qe-card-univ">
+              {domain && !logoErr
+                ? <img src={`https://logo.clearbit.com/${domain}`} alt="" className="qe-logo-img" onError={() => setLogoErr(true)} />
+                : <span className="qe-logo-badge">{abbr}</span>
+              }
+              {p.ciudad && <span>{p.ciudad}</span>}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* MÉTRICAS */}
+      <div className="qe-metrics">
+        <div className="qe-metric">
+          <span className={`qe-metric-val${p.empleabilidad != null ? ' empleo' : ' na'}`}>
+            {p.empleabilidad != null ? `${p.empleabilidad}%` : 'Próx.'}
+          </span>
+          <span className="qe-metric-lbl">Empleo</span>
+        </div>
+        <div className="qe-metric">
+          <span className="qe-metric-val">
+            {p.modalidad ? `${MODALIDAD_ICONS[p.modalidad] || ''} ${p.modalidad}` : '—'}
+          </span>
+          <span className="qe-metric-lbl">Modalidad</span>
+        </div>
+        <div className="qe-metric">
+          <span className="qe-metric-val">
+            {p.idioma || '—'}
+          </span>
+          <span className="qe-metric-lbl">Idioma</span>
+        </div>
+      </div>
+
+      {/* BODY */}
+      <div className="qe-card-body">
+        {p.keywords?.length > 0 && (
+          <div className="qe-keywords">
+            {p.keywords.map((k, i) => <span key={i} className="qe-kw">{k}</span>)}
+          </div>
+        )}
+        {p.valoracion != null && (
+          <div className="qe-rating">
+            <span className="qe-stars">{starsHtml(p.valoracion)}</span>
+            <span className="qe-rating-text">{p.valoracion} · {p.num_resenas} reseñas</span>
+          </div>
+        )}
+        {p.asignaturas?.length > 0 && (
+          <>
+            <button
+              className={`qe-quickview-btn${qvOpen ? ' open' : ''}`}
+              onClick={e => { e.stopPropagation(); setQvOpen(v => !v); }}>
+              <i className="qe-quickview-arrow">›</i>&nbsp;Vista rápida — 1.er año
+            </button>
+            <div className={`qe-quickview-content${qvOpen ? ' open' : ''}`}>
+              {p.asignaturas.map((a, i) => <span key={i}>{a}</span>)}
+            </div>
+          </>
+        )}
+      </div>
+
+      {/* FOOTER */}
+      <div className="qe-card-footer">
+        <div>
+          <div className="qe-price">{fmtPrice(p.precio_anual_eur)}</div>
+          {p.saved_count != null && (
+            <div className="qe-saved-count">♥ {isFav ? p.saved_count + 1 : p.saved_count} lo guardaron</div>
+          )}
+        </div>
+        <div className="qe-actions">
+          <button
+            className={`qe-btn-icon btn-fav${isFav ? ' fav-active' : ''}`}
+            title={isFav ? 'Quitar de favoritos' : 'Guardar'}
+            aria-pressed={isFav}
+            onClick={e => { e.stopPropagation(); onFavToggle(p.id); }}>
+            {isFav ? '★' : '☆'}
+          </button>
+          <button
+            className={`qe-btn-icon btn-cmp${isCmp ? ' cmp-active' : ''}${cmpDisabled ? ' cmp-disabled' : ''}`}
+            title={cmpDisabled ? 'Solo se pueden comparar programas del mismo tipo' : isCmp ? 'Quitar del comparador' : 'Añadir al comparador'}
+            aria-pressed={isCmp}
+            disabled={cmpDisabled}
+            onClick={e => { e.stopPropagation(); onCmpToggle(p.id, p.tipo); }}>
+            ⊕
+          </button>
+          {p.url_detalle && (
+            <a href={p.url_detalle} target="_blank" rel="noopener noreferrer"
+              className="qe-btn-ver"
+              onClick={e => e.stopPropagation()}>
+              Ver →
+            </a>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ── Drawer / sheet program detail ────────────────────────────────────────
 function DrawerProgramDetail({ program: p, selected, onToggleSelect, compact }) {
   const [logoErr, setLogoErr] = useState(false);

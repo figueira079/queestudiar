@@ -2034,6 +2034,9 @@ const publicCss = `
 .pub-filter-search{font-family:'Lora',serif;min-width:180px;}
 .pub-filter-search:focus,.pub-filter-select:focus{outline:none;border-color:var(--azure);}
 .pub-filter-select{font-family:'Bricolage Grotesque',system-ui,sans-serif;font-weight:500;cursor:pointer;-webkit-appearance:none;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M2 4l4 4 4-4' stroke='%2394A3B8' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round' fill='none'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;padding-right:30px;}
+.pub-filter-favs-btn{background:var(--blanco);border:1.5px solid #fbbf24;border-radius:8px;padding:6px 12px;font-size:12px;font-weight:600;color:#92400e;cursor:pointer;transition:background .15s,border-color .15s;white-space:nowrap;}
+.pub-filter-favs-btn.active{background:#fff9e6;border-color:#f59e0b;}
+.pub-filter-favs-btn:hover{background:#fffbeb;}
 .pub-compact-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;padding:20px 0;}
 /* Compact program card */
 .pub-card-compact{background:var(--blanco);border:1.5px solid var(--linea);border-radius:var(--card-radius);overflow:hidden;cursor:pointer;transition:border-color var(--dur-micro) var(--ease-out),box-shadow var(--dur-short) var(--ease-out);}
@@ -2860,8 +2863,9 @@ function ProgramCardNew({ program: p, isFav, isCmp, cmpDisabled, onFavToggle, on
   const fmtPrice = (v) => v == null ? '—' : v === 0 ? 'Gratuito' : `${Number(v).toLocaleString('es-ES')} €/año`;
   const starsHtml = (v) => v != null ? '★'.repeat(Math.floor(v)) + '☆'.repeat(5 - Math.floor(v)) : '';
   const MODALIDAD_ICONS = { Presencial: '🏛', Online: '💻', Semipresencial: '🔀' };
-  const domain = p.url_detalle
-    ? (() => { try { return new URL(p.url_detalle).hostname.replace(/^www\./, ''); } catch { return null; } })()
+  const IDIOMA_LABELS = { es: 'Español', en: 'Inglés', ca: 'Catalán', eu: 'Euskera', gl: 'Gallego', fr: 'Francés', de: 'Alemán', it: 'Italiano' };
+  const domain = p.url_solicitud
+    ? (() => { try { return new URL(p.url_solicitud).hostname.replace(/^www\./, ''); } catch { return null; } })()
     : null;
   const abbr = (p.nombre || '').split(' ').filter(w => w.length > 3).slice(0, 3).map(w => w[0]).join('').toUpperCase().slice(0, 4) || '??';
 
@@ -2895,10 +2899,10 @@ function ProgramCardNew({ program: p, isFav, isCmp, cmpDisabled, onFavToggle, on
       {/* MÉTRICAS */}
       <div className="qe-metrics">
         <div className="qe-metric">
-          <span className={`qe-metric-val${p.empleabilidad != null ? ' empleo' : ' na'}`}>
-            {p.empleabilidad != null ? `${p.empleabilidad}%` : 'Próx.'}
+          <span className="qe-metric-val">
+            {p.duracion_anios ? `${p.duracion_anios} año${p.duracion_anios === '1' ? '' : 's'}` : '—'}
           </span>
-          <span className="qe-metric-lbl">Empleo</span>
+          <span className="qe-metric-lbl">Duración</span>
         </div>
         <div className="qe-metric">
           <span className="qe-metric-val">
@@ -2908,7 +2912,7 @@ function ProgramCardNew({ program: p, isFav, isCmp, cmpDisabled, onFavToggle, on
         </div>
         <div className="qe-metric">
           <span className="qe-metric-val">
-            {p.idioma || '—'}
+            {IDIOMA_LABELS[p.idioma] || p.idioma || '—'}
           </span>
           <span className="qe-metric-lbl">Idioma</span>
         </div>
@@ -2965,8 +2969,8 @@ function ProgramCardNew({ program: p, isFav, isCmp, cmpDisabled, onFavToggle, on
             onClick={e => { e.stopPropagation(); onCmpToggle(p.id, p.tipo); }}>
             ⊕
           </button>
-          {p.url_detalle && (
-            <a href={p.url_detalle} target="_blank" rel="noopener noreferrer"
+          {p.url_solicitud && (
+            <a href={p.url_solicitud} target="_blank" rel="noopener noreferrer"
               className="qe-btn-ver"
               onClick={e => e.stopPropagation()}>
               Ver →
@@ -3104,7 +3108,7 @@ function ProgramBrowser() {
   useEffect(() => {
     (async () => {
       try {
-        const data = await publicQueryAll("programas", "id,nombre,ciudad,tipo,familia_area,modalidad,precio_anual_eur,precio_extracomunitario_eur,horas_semanales,url_detalle,idioma", "activo=eq.true&order=nombre.asc");
+        const data = await publicQueryAll("programas", "id,nombre,ciudad,tipo,familia_area,modalidad,precio_anual_eur,precio_extracomunitario_eur,horas_semanales,url_detalle,url_solicitud,idioma,duracion_anios", "activo=eq.true&order=nombre.asc");
         setPrograms(Array.isArray(data) ? data : []);
       } catch {}
       setLoading(false);
@@ -3129,6 +3133,7 @@ function ProgramBrowser() {
   const areas = [...new Set(programs.map(p => p.familia_area).filter(Boolean))].sort();
 
   const filtered = programs.filter(p => {
+    if (showOnlyFavs && !favs.includes(p.id)) return false;
     if (search && !p.nombre?.toLowerCase().includes(search.toLowerCase())) return false;
     if (filterCity && p.ciudad !== filterCity) return false;
     if (filterTipo && p.tipo !== filterTipo) return false;
@@ -3201,6 +3206,13 @@ function ProgramBrowser() {
               <option value="">Todas las áreas</option>
               {areas.map(a => <option key={a} value={a}>{a}</option>)}
             </select>
+            {favs.length > 0 && (
+              <button
+                className={`pub-filter-favs-btn${showOnlyFavs ? ' active' : ''}`}
+                onClick={() => { setShowOnlyFavs(v => !v); setPage(0); }}>
+                {showOnlyFavs ? '★' : '☆'} Mis guardados ({favs.length})
+              </button>
+            )}
           </div>
 
           <div className="pub-cards-scroll">

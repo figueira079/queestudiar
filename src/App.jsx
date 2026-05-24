@@ -2857,7 +2857,7 @@ function ProgramCardNew({ program: p, isFav, isCmp, cmpDisabled, onFavToggle, on
   const [qvOpen, setQvOpen] = React.useState(false);
   const [logoErr, setLogoErr] = React.useState(false);
 
-  const fmtPrice = (v) => v === 0 ? 'Gratuito' : `${Number(v).toLocaleString('es-ES')} €/año`;
+  const fmtPrice = (v) => v == null ? '—' : v === 0 ? 'Gratuito' : `${Number(v).toLocaleString('es-ES')} €/año`;
   const starsHtml = (v) => v != null ? '★'.repeat(Math.floor(v)) + '☆'.repeat(5 - Math.floor(v)) : '';
   const MODALIDAD_ICONS = { Presencial: '🏛', Online: '💻', Semipresencial: '🔀' };
   const domain = p.url_detalle
@@ -2924,7 +2924,7 @@ function ProgramCardNew({ program: p, isFav, isCmp, cmpDisabled, onFavToggle, on
         {p.valoracion != null && (
           <div className="qe-rating">
             <span className="qe-stars">{starsHtml(p.valoracion)}</span>
-            <span className="qe-rating-text">{p.valoracion} · {p.num_resenas} reseñas</span>
+            <span className="qe-rating-text">{p.valoracion}{p.num_resenas != null ? ` · ${p.num_resenas} reseñas` : ''}</span>
           </div>
         )}
         {p.asignaturas?.length > 0 && (

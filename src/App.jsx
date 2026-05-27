@@ -2034,9 +2034,9 @@ const publicCss = `
 .pub-filter-search{font-family:'Lora',serif;min-width:180px;}
 .pub-filter-search:focus,.pub-filter-select:focus{outline:none;border-color:var(--azure);}
 .pub-filter-select{font-family:'Bricolage Grotesque',system-ui,sans-serif;font-weight:500;cursor:pointer;-webkit-appearance:none;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M2 4l4 4 4-4' stroke='%2394A3B8' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round' fill='none'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;padding-right:30px;}
-.pub-filter-favs-btn{background:var(--blanco);border:1.5px solid #fbbf24;border-radius:8px;padding:6px 12px;font-size:12px;font-weight:600;color:#92400e;cursor:pointer;transition:background .15s,border-color .15s;white-space:nowrap;}
-.pub-filter-favs-btn.active{background:#fff9e6;border-color:#f59e0b;}
-.pub-filter-favs-btn:hover{background:#fffbeb;}
+.pub-filter-favs-btn{background:var(--blanco);border:1.5px solid var(--azure);border-radius:8px;padding:6px 12px;font-size:12px;font-weight:600;color:var(--azure);cursor:pointer;transition:background .15s,border-color .15s;white-space:nowrap;}
+.pub-filter-favs-btn.active{background:var(--hielo);border-color:var(--azure);}
+.pub-filter-favs-btn:hover{background:var(--hielo);}
 .pub-compact-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;padding:20px 0;}
 /* Compact program card */
 .pub-card-compact{background:var(--blanco);border:1.5px solid var(--linea);border-radius:var(--card-radius);overflow:hidden;cursor:pointer;transition:border-color var(--dur-micro) var(--ease-out),box-shadow var(--dur-short) var(--ease-out);}
@@ -2089,7 +2089,7 @@ const publicCss = `
 .qe-quickview-arrow{transition:transform 0.2s;display:inline-block;font-style:normal;}
 .qe-quickview-btn.open .qe-quickview-arrow{transform:rotate(90deg);}
 .qe-quickview-content{overflow:hidden;max-height:0;transition:max-height 0.25s ease;}
-.qe-quickview-content.open{max-height:60px;padding:6px 0 2px;}
+.qe-quickview-content.open{max-height:160px;padding:6px 0 2px;}
 .qe-quickview-content span{display:inline-block;background:var(--hielo);padding:2px 7px;border-radius:4px;margin:2px 2px 0 0;font-size:9px;color:var(--grafito-s);}
 .qe-card-footer{display:flex;align-items:center;justify-content:space-between;padding:9px 12px 12px;margin-top:8px;border-top:1px solid var(--linea);flex-shrink:0;}
 .qe-price{font-size:13px;font-weight:800;color:var(--grafito);line-height:1;font-family:'IBM Plex Mono',monospace;}
@@ -2931,15 +2931,23 @@ function ProgramCardNew({ program: p, isFav, isCmp, cmpDisabled, onFavToggle, on
             <span className="qe-rating-text">{p.valoracion}{p.num_resenas != null ? ` · ${p.num_resenas} reseñas` : ''}</span>
           </div>
         )}
-        {p.asignaturas?.length > 0 && (
+        {(p.match_perfil_ideal || p.horas_semanales || (p.precio_extracomunitario_eur != null && p.precio_extracomunitario_eur !== p.precio_anual_eur)) && (
           <>
             <button
               className={`qe-quickview-btn${qvOpen ? ' open' : ''}`}
               onClick={e => { e.stopPropagation(); setQvOpen(v => !v); }}>
-              <i className="qe-quickview-arrow">›</i>&nbsp;Vista rápida — 1.er año
+              <i className="qe-quickview-arrow">›</i>&nbsp;Ver más
             </button>
             <div className={`qe-quickview-content${qvOpen ? ' open' : ''}`}>
-              {p.asignaturas.map((a, i) => <span key={i}>{a}</span>)}
+              {p.match_perfil_ideal && (
+                <p style={{fontSize:10,color:'var(--grafito-s)',margin:'2px 0 4px',lineHeight:1.4,display:'block'}}>
+                  {p.match_perfil_ideal.slice(0, 150)}{p.match_perfil_ideal.length > 150 ? '…' : ''}
+                </p>
+              )}
+              {p.horas_semanales && <span>{p.horas_semanales}h/semana</span>}
+              {p.precio_extracomunitario_eur != null && p.precio_extracomunitario_eur !== p.precio_anual_eur && (
+                <span>Intl: {fmtPrice(p.precio_extracomunitario_eur)}</span>
+              )}
             </div>
           </>
         )}
@@ -2949,8 +2957,8 @@ function ProgramCardNew({ program: p, isFav, isCmp, cmpDisabled, onFavToggle, on
       <div className="qe-card-footer">
         <div>
           <div className="qe-price">{fmtPrice(p.precio_anual_eur)}</div>
-          {p.saved_count != null && (
-            <div className="qe-saved-count">♥ {isFav ? p.saved_count + 1 : p.saved_count} lo guardaron</div>
+          {p.precio_extracomunitario_eur != null && p.precio_extracomunitario_eur !== p.precio_anual_eur && (
+            <div className="qe-saved-count">Intl: {fmtPrice(p.precio_extracomunitario_eur)}</div>
           )}
         </div>
         <div className="qe-actions">
@@ -2989,7 +2997,7 @@ function DrawerProgramDetail({ program: p, selected, onToggleSelect, compact }) 
   const precioEU = p.precio_anual_eur != null ? fmtPrice(p.precio_anual_eur) : null;
   const hasIntl = p.precio_extracomunitario_eur != null && p.precio_extracomunitario_eur !== p.precio_anual_eur;
   const precioIntl = hasIntl ? fmtPrice(p.precio_extracomunitario_eur) : null;
-  const domain = p.url_detalle ? (() => { try { return new URL(p.url_detalle).hostname.replace(/^www\./,""); } catch { return null; } })() : null;
+  const domain = (p.url_solicitud || p.url_detalle) ? (() => { try { return new URL(p.url_solicitud || p.url_detalle).hostname.replace(/^www\./,""); } catch { return null; } })() : null;
   const abbr = domain ? domain.split(".")[0].toUpperCase().slice(0,5) : (p.nombre || "?").slice(0,4).toUpperCase();
   const desc = TIPO_DESC[p.tipo] || "";
   const tipoCls = p.tipo === "master" ? "master" : p.tipo === "fp_superior" ? "fp_superior" : p.tipo === "doctorado" ? "doctorado" : "";
@@ -3026,7 +3034,7 @@ function DrawerProgramDetail({ program: p, selected, onToggleSelect, compact }) 
         </>}
       </div>
       <div className={compact ? "pub-bs-footer" : "pub-drawer-footer"}>
-        {p.url_detalle && <a href={p.url_detalle} target="_blank" rel="noopener noreferrer" className="pub-btn-oficial">Ver programa oficial →</a>}
+        {(p.url_solicitud || p.url_detalle) && <a href={p.url_solicitud || p.url_detalle} target="_blank" rel="noopener noreferrer" className="pub-btn-oficial">Ver programa oficial →</a>}
         {onToggleSelect && <button className={`pub-btn-guardar${selected ? " saved" : ""}`} onClick={() => onToggleSelect(p.id)}>{selected ? "✓ Guardado" : "Guardar"}</button>}
       </div>
     </>
@@ -3108,7 +3116,7 @@ function ProgramBrowser() {
   useEffect(() => {
     (async () => {
       try {
-        const data = await publicQueryAll("programas", "id,nombre,ciudad,tipo,familia_area,modalidad,precio_anual_eur,precio_extracomunitario_eur,horas_semanales,url_detalle,url_solicitud,idioma,duracion_anios", "activo=eq.true&order=nombre.asc");
+        const data = await publicQueryAll("programas", "id,nombre,ciudad,tipo,familia_area,modalidad,precio_anual_eur,precio_extracomunitario_eur,horas_semanales,url_detalle,url_solicitud,idioma,duracion_anios,match_perfil_ideal,match_salidas_profesionales", "activo=eq.true&order=nombre.asc");
         setPrograms(Array.isArray(data) ? data : []);
       } catch {}
       setLoading(false);
@@ -3238,6 +3246,7 @@ function ProgramBrowser() {
                   onFavToggle={id => {
                     const adding = !favs.includes(id);
                     toggleFav(id);
+                    toggleSelect(id);
                     if (adding) showToast('★ Guardado — ver todos en "Mis guardados"');
                   }}
                   onCmpToggle={(id, tipo) => {
@@ -3278,8 +3287,8 @@ function ProgramBrowser() {
                   </svg>
                 </button>
               </div>
-              <DrawerProgramDetail program={drawerProgram} selected={selected.has(drawerProgram.id)}
-                onToggleSelect={toggleSelect} compact={false} />
+              <DrawerProgramDetail program={drawerProgram} selected={favs.includes(drawerProgram.id)}
+                onToggleSelect={(id) => { toggleSelect(id); toggleFav(id); }} compact={false} />
             </div>
           ) : (
             <div className="pub-drawer-empty">
@@ -3298,8 +3307,8 @@ function ProgramBrowser() {
         onTouchEnd={e => { if (e.changedTouches[0].clientY - touchStartY.current > 80) closeSheet(); }}>
         <div className="pub-bs-handle" />
         {sheetProgram && (
-          <DrawerProgramDetail program={sheetProgram} selected={selected.has(sheetProgram.id)}
-            onToggleSelect={toggleSelect} compact={true} />
+          <DrawerProgramDetail program={sheetProgram} selected={favs.includes(sheetProgram.id)}
+            onToggleSelect={(id) => { toggleSelect(id); toggleFav(id); }} compact={true} />
         )}
       </div>
       {/* COMPARE BAR */}
@@ -3339,14 +3348,17 @@ function ProgramBrowser() {
         const stars = (v) => v != null ? '★'.repeat(Math.floor(v)) + '☆'.repeat(5 - Math.floor(v)) : '—';
         const MODALIDAD_ICONS = { Presencial: '🏛', Online: '💻', Semipresencial: '🔀' };
         const close = () => setCompareModalOpen(false);
+        const IDIOMA_LABELS_CMP = { es: 'Español', en: 'Inglés', ca: 'Catalán', eu: 'Euskera', gl: 'Gallego', fr: 'Francés', de: 'Alemán', it: 'Italiano' };
         const rowDefs = [
-          ['Ciudad',        p => p.ciudad || '—'],
-          ['Modalidad',     p => p.modalidad ? `${MODALIDAD_ICONS[p.modalidad] || ''} ${p.modalidad}` : '—'],
-          ['Idioma',        p => p.idioma || '—'],
-          ['Precio/año',    p => `<strong>${fmtP(p.precio_anual_eur)}</strong>`],
-          ['Empleabilidad', p => p.empleabilidad != null ? `<span class="qe-cmp-empleo-val">${p.empleabilidad}%</span>` : '<span style="color:#9ca3af">—</span>'],
-          ['Valoración',    p => p.valoracion != null ? `<span class="qe-cmp-stars">${stars(p.valoracion)}</span> ${p.valoracion} (${p.num_resenas})` : '—'],
-          ['Sello',         p => p.sello || '—'],
+          ['Ciudad',           p => p.ciudad || '—'],
+          ['Duración',         p => p.duracion_anios ? `${p.duracion_anios} año${p.duracion_anios === '1' ? '' : 's'}` : '—'],
+          ['Modalidad',        p => p.modalidad ? `${MODALIDAD_ICONS[p.modalidad] || ''} ${p.modalidad}` : '—'],
+          ['Idioma',           p => IDIOMA_LABELS_CMP[p.idioma] || p.idioma || '—'],
+          ['Precio/año (UE)',  p => `<strong>${fmtP(p.precio_anual_eur)}</strong>`],
+          ['Precio intl.',     p => (p.precio_extracomunitario_eur != null && p.precio_extracomunitario_eur !== p.precio_anual_eur) ? `<strong>${fmtP(p.precio_extracomunitario_eur)}</strong>` : '—'],
+          ['Horas/sem',        p => p.horas_semanales ? `${p.horas_semanales}h` : '—'],
+          ['Perfil ideal',     p => p.match_perfil_ideal ? p.match_perfil_ideal.slice(0, 130) + (p.match_perfil_ideal.length > 130 ? '…' : '') : '—'],
+          ['Salidas prof.',    p => p.match_salidas_profesionales ? p.match_salidas_profesionales.slice(0, 130) + (p.match_salidas_profesionales.length > 130 ? '…' : '') : '—'],
         ];
         return (
           <div className="qe-modal-overlay" onClick={e => { if (e.target === e.currentTarget) close(); }}>

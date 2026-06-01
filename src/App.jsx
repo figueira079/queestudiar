@@ -2090,7 +2090,7 @@ const publicCss = `
 .qe-quickview-arrow{transition:transform 0.2s;display:inline-block;font-style:normal;}
 .qe-quickview-btn.open .qe-quickview-arrow{transform:rotate(90deg);}
 .qe-quickview-content{overflow:hidden;max-height:0;transition:max-height 0.25s ease;}
-.qe-quickview-content.open{max-height:160px;padding:6px 0 2px;}
+.qe-quickview-content.open{max-height:240px;padding:6px 0 2px;}
 .qe-quickview-content span{display:inline-block;background:var(--hielo);padding:2px 7px;border-radius:4px;margin:2px 2px 0 0;font-size:9px;color:var(--grafito-s);}
 .qe-card-footer{display:flex;align-items:center;justify-content:space-between;padding:9px 12px 12px;margin-top:8px;border-top:1px solid var(--linea);flex-shrink:0;}
 .qe-price{font-size:13px;font-weight:800;color:var(--grafito);line-height:1;font-family:'IBM Plex Mono',monospace;}
@@ -2910,9 +2910,14 @@ function ProgramCardNew({ program: p, isFav, isCmp, cmpDisabled, onFavToggle, on
           <span className="qe-metric-lbl">Duración</span>
         </div>
         <div className="qe-metric">
-          <span className="qe-metric-val">
-            {p.modalidad ? `${MODALIDAD_ICONS[p.modalidad] || ''} ${p.modalidad}` : '—'}
-          </span>
+          {p.modalidad
+            ? <span className="qe-metric-val">{MODALIDAD_ICONS[p.modalidad] || ''} {p.modalidad}</span>
+            : p.url_detalle
+              ? <a href={p.url_detalle} target="_blank" rel="noopener noreferrer"
+                  className="qe-metric-val" style={{color:'var(--azure)',fontSize:10,textDecoration:'none',fontWeight:600}}
+                  onClick={e => e.stopPropagation()}>Consultar →</a>
+              : <span className="qe-metric-val na">—</span>
+          }
           <span className="qe-metric-lbl">Modalidad</span>
         </div>
         <div className="qe-metric">
@@ -2936,26 +2941,37 @@ function ProgramCardNew({ program: p, isFav, isCmp, cmpDisabled, onFavToggle, on
             <span className="qe-rating-text">{p.valoracion}{p.num_resenas != null ? ` · ${p.num_resenas} reseñas` : ''}</span>
           </div>
         )}
-        {(p.match_perfil_ideal || p.horas_semanales || (p.precio_extracomunitario_eur != null && p.precio_extracomunitario_eur !== p.precio_anual_eur)) && (
-          <>
-            <button
-              className={`qe-quickview-btn${qvOpen ? ' open' : ''}`}
-              onClick={e => { e.stopPropagation(); setQvOpen(v => !v); }}>
-              <i className="qe-quickview-arrow">›</i>&nbsp;Ver más
-            </button>
-            <div className={`qe-quickview-content${qvOpen ? ' open' : ''}`}>
-              {p.match_perfil_ideal && (
-                <p style={{fontSize:10,color:'var(--grafito-s)',margin:'2px 0 4px',lineHeight:1.4,display:'block'}}>
-                  {p.match_perfil_ideal.slice(0, 150)}{p.match_perfil_ideal.length > 150 ? '…' : ''}
-                </p>
-              )}
-              {p.horas_semanales && <span>{p.horas_semanales}h/semana</span>}
-              {p.precio_extracomunitario_eur != null && p.precio_extracomunitario_eur !== p.precio_anual_eur && (
-                <span>Intl: {fmtPrice(p.precio_extracomunitario_eur)}</span>
-              )}
-            </div>
-          </>
-        )}
+        <>
+          <button
+            className={`qe-quickview-btn${qvOpen ? ' open' : ''}`}
+            onClick={e => { e.stopPropagation(); setQvOpen(v => !v); }}>
+            <i className="qe-quickview-arrow">›</i>&nbsp;Ver más
+          </button>
+          <div className={`qe-quickview-content${qvOpen ? ' open' : ''}`}>
+            {p.match_perfil_ideal && (
+              <p style={{fontSize:10,color:'var(--grafito-s)',margin:'2px 0 6px',lineHeight:1.4,display:'block'}}>
+                <strong style={{color:'var(--grafito)'}}>Perfil: </strong>
+                {p.match_perfil_ideal.slice(0, 120)}{p.match_perfil_ideal.length > 120 ? '…' : ''}
+              </p>
+            )}
+            {p.match_salidas_profesionales && (
+              <p style={{fontSize:10,color:'var(--grafito-s)',margin:'2px 0 6px',lineHeight:1.4,display:'block'}}>
+                <strong style={{color:'var(--grafito)'}}>Salidas: </strong>
+                {p.match_salidas_profesionales.slice(0, 120)}{p.match_salidas_profesionales.length > 120 ? '…' : ''}
+              </p>
+            )}
+            {p.precio_extracomunitario_eur != null && p.precio_extracomunitario_eur !== p.precio_anual_eur && (
+              <span>Precio No-UE: {fmtPrice(p.precio_extracomunitario_eur)}</span>
+            )}
+            {p.url_detalle && (
+              <a href={p.url_detalle} target="_blank" rel="noopener noreferrer"
+                style={{fontSize:10,color:'var(--azure)',fontWeight:600,textDecoration:'none',display:'inline-block',marginTop:4}}
+                onClick={e => e.stopPropagation()}>
+                Ver programa oficial →
+              </a>
+            )}
+          </div>
+        </>
       </div>
 
       {/* FOOTER */}

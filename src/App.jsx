@@ -2032,6 +2032,7 @@ const publicCss = `
 .pub-filters-bar{display:flex;gap:8px;flex-wrap:wrap;padding:16px var(--padding-x);border-bottom:1px solid var(--linea);background:var(--blanco);flex-shrink:0;}
 .pub-filter-search,.pub-filter-select{font-size:13px;padding:9px 14px;border:1.5px solid var(--linea);border-radius:8px;background:var(--blanco);color:var(--grafito-s);transition:border-color var(--dur-micro) var(--ease-out);}
 .pub-filter-search{font-family:'Lora',serif;min-width:180px;}
+.pub-filter-search::placeholder{font-family:'Lora',serif;font-style:italic;color:#94A3B8;}
 .pub-filter-search:focus,.pub-filter-select:focus{outline:none;border-color:var(--azure);}
 .pub-filter-select{font-family:'Bricolage Grotesque',system-ui,sans-serif;font-weight:500;cursor:pointer;-webkit-appearance:none;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M2 4l4 4 4-4' stroke='%2394A3B8' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round' fill='none'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;padding-right:30px;}
 .pub-filter-favs-btn{background:var(--blanco);border:1.5px solid var(--azure);border-radius:8px;padding:6px 12px;font-size:12px;font-weight:600;color:var(--azure);cursor:pointer;transition:background .15s,border-color .15s;white-space:nowrap;}
@@ -2161,8 +2162,12 @@ const publicCss = `
   .pub-filters .pub-select,.pub-filters .pub-input{width:100%;max-width:none;}
   .pub-nav{padding:0 16px;}
   .pub-nav-links{gap:12px;}
+  .pub-filters-bar{flex-wrap:nowrap;overflow-x:auto;padding:10px 16px;gap:6px;-webkit-overflow-scrolling:touch;scrollbar-width:none;}
+  .pub-filters-bar::-webkit-scrollbar{display:none;}
 }
 @media(max-width:480px){
+  .pub-nav-link-test{display:none;}
+  .pub-nav{padding:0 12px;height:52px;}
   .pub-hero{padding:48px 16px 40px;}
   .pub-hero h1{font-size:26px;}
   .pub-hero-btns{flex-direction:column;}
@@ -2222,7 +2227,7 @@ function PublicNav({ route }) {
     <nav className={`pub-nav${scrolled ? " scrolled" : ""}`}>
       <div className="pub-nav-logo" onClick={() => navigate("/")}>QueEstudiar</div>
       <div className="pub-nav-links">
-        <span className={`pub-nav-link ${route?.startsWith("/match") || route?.startsWith("#/match") ? "active" : ""}`} onClick={() => navigate("/match")}>Test vocacional</span>
+        <span className={`pub-nav-link pub-nav-link-test ${route?.startsWith("/match") || route?.startsWith("#/match") ? "active" : ""}`} onClick={() => navigate("/match")}>Test vocacional</span>
         <button className="pub-btn pub-btn-outline" style={{ padding: "8px 18px", fontSize: 14 }} onClick={() => navigate("/programas")}>Explorar programas →</button>
         {!IS_PUBLIC_DOMAIN && <span className="pub-nav-link admin" onClick={() => location.hash = "#/admin"}>Acceso equipo</span>}
       </div>

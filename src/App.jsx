@@ -3373,7 +3373,7 @@ function ProgramBrowser() {
         const rowDefs = [
           ['Ciudad',           p => p.ciudad || '—'],
           ['Duración',         p => p.duracion_anios ? `${p.duracion_anios} año${p.duracion_anios === '1' ? '' : 's'}` : '—'],
-          ['Modalidad',        p => p.modalidad ? `${MODALIDAD_ICONS[p.modalidad] || ''} ${p.modalidad}` : '—'],
+          ['Modalidad',        p => p.modalidad ? `${MODALIDAD_ICONS[p.modalidad] || ''} ${p.modalidad}` : p.url_detalle ? `<a href="${p.url_detalle}" target="_blank" rel="noopener noreferrer" style="color:var(--azure);font-weight:600;text-decoration:none;">Consultar →</a>` : '—'],
           ['Idioma',           p => IDIOMA_LABELS_CMP[p.idioma] || p.idioma || '—'],
           ['Precio/año (UE)',  p => `<strong>${fmtP(p.precio_anual_eur)}</strong>`],
           ['Precio intl.',     p => (p.precio_extracomunitario_eur != null && p.precio_extracomunitario_eur !== p.precio_anual_eur) ? `<strong>${fmtP(p.precio_extracomunitario_eur)}</strong>` : '—'],

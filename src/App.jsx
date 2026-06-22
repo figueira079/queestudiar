@@ -2895,7 +2895,10 @@ function ProgramCardNew({ program: p, isFav, isCmp, cmpDisabled, onFavToggle, on
                 ? <img src={`https://logo.clearbit.com/${domain}`} alt="" className="qe-logo-img" onError={() => setLogoErr(true)} />
                 : <span className="qe-logo-badge">{abbr}</span>
               }
-              {p.ciudad && <span>{p.ciudad}</span>}
+              {p.ciudad
+                ? <span>{p.ciudad}</span>
+                : p.tipo === 'fp_superior' && <span style={{color:'var(--grafito-s)',fontStyle:'italic'}}>Toda España</span>
+              }
             </div>
           </div>
         </div>
@@ -3164,7 +3167,7 @@ function ProgramBrowser() {
   const filtered = programs.filter(p => {
     if (showOnlyFavs && !favs.includes(p.id)) return false;
     if (search && !p.nombre?.toLowerCase().includes(search.toLowerCase())) return false;
-    if (filterCity && p.ciudad !== filterCity) return false;
+    if (filterCity && p.ciudad !== filterCity && !(p.tipo === 'fp_superior' && p.ciudad == null)) return false;
     if (filterTipo && p.tipo !== filterTipo) return false;
     if (filterArea && p.familia_area !== filterArea) return false;
     return true;
